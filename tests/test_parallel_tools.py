@@ -117,4 +117,3 @@ class ParallelToolTests(unittest.TestCase):
         execute.assert_not_called()
         self.assertFalse(attempted)
         self.assertEqual(results[0][1]['error_type'], 'TimeoutError')
-
