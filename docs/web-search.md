@@ -1,5 +1,7 @@
 # 웹검색 도구
 
+[레코드 입력 비교025](research/2026-10-18-025-google-record-differential.md)에서는 새 Google 요청 없이 저장 응답을 고정 조건에서 비교했다. `scripts/analyze_google_challenge.py --matrix`로 입력별 변화 구간을 관찰한다. 일부 언어·너비 구간을 확인했지만 오프셋은 해당 캡처에 한정되며 Google 서버 통과 검증은 아니다. Node24 비교기 테스트는 `node --test tests/test_google_record_matrix.cjs`로 별도 실행한다.
+
 [커뮤니티·소스·실행 비교024](research/2026-10-18-024-community-http-research.md)에서 Reddit 추천 HTTP 구현과 SearXNG WML을 재현하고 jsdom도 시험했다. 정상 검색은 확보하지 못했다. `scripts/probe_google_candidates.py`로 후보를 진단하고 `scripts/analyze_google_challenge.py`로 보존한 응답을 오프라인 분석할 수 있다. toolkit 관찰에서 실제로 읽은 document.location·document.URL의 누락을 수정했고 지원 중단 안내는 unsupported_client로 구분한다. 분석 성공은 Google 서버 통과와 별개다.
 
 [후속 요청 검증023](research/2026-10-18-023-google-followup-consistency.md)에서 HTTP·JS 식별 정보, Promise·타이머 순서, HttpOnly 가시성, Referer와 fetch-site를 수정했다. `--javascript --wire`로 실행하면 실제 전송 헤더에서 쿠키 값 없이 이름·SG_SS 길이·요청 맥락을 확인할 수 있다. 실제 SG_SS 전송은 관찰했지만 검색은 여전히302→429이며 성공으로 처리하지 않는다.

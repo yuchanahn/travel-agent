@@ -28,6 +28,8 @@
 
 ## 실행
 
+025의 고정 입력 행렬은 jsdom 환경에서 언어·너비·hardwareConcurrency와 대조군의 레코드 의존 구간을 측정했다. 오프셋은 VM빌드·캡처에 한정한다. JS UA·query가 이번 레코드를 바꾸지 않았다는 관찰을 HTTP 서버 판정의 무관함으로 일반화하지 않는다. 기준 반복과 관찰 전후 토큰 동일성 확인 뒤에만 차이를 해석한다. --matrix 전체 프로세스 제한과 호스트 JS 타이머를 구분한다.
+
 Google HTTP 조사024는 Reddit 후기→실제 GitHub 코드·이슈→현재 환경 재현 순서로 진행했다. Lynx는 지원 중단 안내, SearXNG WML은403, jsdom 후속 요청도/sorry였다. 오프라인 toolkit으로 접근표81행·레코드604바이트를 얻었지만 서버 통과 검증은 아니다. 실제 관찰한 document.location·document.URL 누락을 수정했다. 후속 분석은 알려진 다른 VM 빌드의 상수를 임의로 재사용하지 않는다.
 
 Google HTTP 후속 검증은023을 따른다. 전송·JS 식별 정보는 google_identity.py에서 함께 관리하고, document.cookie에는 실제 curl의 http_only 표기도 반영해 URL에 맞는 비 HttpOnly 쿠키만 제공한다. Promise·타이머 실험과 --wire 진단은 실제 브라우저 동등성·확인 값 유효성 검증과 구분한다. SG_SS 실제 전송을 확인했지만 Google 검색은 여전히 실패 상태다.

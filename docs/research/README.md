@@ -32,6 +32,10 @@
 
 ## 인덱스
 
+- [025: 같은 확인 응답의 입력을 하나씩 바꿔 레코드 구간을 찾다](2026-10-18-025-google-record-differential.md) — 고정 입력14조건·28회 VM 실행, 언어·너비·수치·생성자 의존 구간 확인, Python88개·Node3개 테스트 통과, 서버 검증 전
+
+025 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e81e9a457de8d61a1bc23
+
 - [024: Reddit 사례에서 GitHub 소스와 실제 재현으로 이어가기](2026-10-18-024-community-http-research.md) — 원본 Lynx·SearXNG WML·jsdom 재현 실패, 오프라인 접근표·604바이트 레코드 분석, 관찰한 URL 입력 수정, 88개 테스트 통과
 
 024 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e81b78659ccd879796f40
