@@ -32,6 +32,10 @@
 
 ## 인덱스
 
+- [022: 브라우저 없이 Google HTTP 세션과 확인 스크립트를 구현하다](2026-10-18-022-google-http-session.md) — HTTP 직접 요청·파일 쿠키·선택형 QuickJS, 실제 SG_SS 생성 후 재요청429, 검색 미해결, 브라우저 구현 제거, 최종83개 테스트 통과
+
+022 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e818b8abfc10fe60ae3a1
+
 - [021: 직접 만드는 Google 검색기 — 전용 프로필과 첫 실행](2026-10-18-021-google-browser-first-step.md) — webserp 수리 중단, 독립 브라우저 모듈·디스크 프로필·DOM 추출, 실제 Google429, 79개 테스트 통과
 
 021 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e81ff996beabdc2ff9aeb

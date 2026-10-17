@@ -16,7 +16,7 @@
 - LLM이 메모리 검색·원문 조회를 선택하는 Agentic RAG와 요청별 실행 추적
 - API 키 없는 웹검색 도구: 제목·URL·검색 요약과 출처 ID 반환
 - 선택형 webserp Google·DuckDuckGo·Yahoo 경로: Google은 미해결, DuckDuckGo/Yahoo 조합에서 공식 주소 조회와 실제 에이전트 답변 확인 (연구일지019)
-- Google 직접 구현 시작: `python -m travel_agent.google_browser search "Python official website"`. 전용 Chrome 프로필 저장·DOM 추출·실패 감지 구현. 실제 Google은 접근 확인으로 실패했고 에이전트 연결 전이다. webserp 추가 수리는 중단했다. [첫 단계 기록](docs/research/2026-10-18-021-google-browser-first-step.md)
+- Google HTTP 직접 구현: `python -m travel_agent.google_http "Python official website"`. 쿠키 파일 저장·재사용, HTML 결과 파서, 선택형 QuickJS 확인 스크립트 실험. 브라우저 방식은 폐기했다. 실제 검색은 아직 실패하며 에이전트 연결 전이다. [HTTP 구현 기록](docs/research/2026-10-18-022-google-http-session.md)
 - 한 응답의 여러 웹검색을 병렬 실행하고 호출별 결과·오류를 모델에 전달
 - 프로젝트 기술 결정과 연구일지 기반
 
