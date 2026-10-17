@@ -1,5 +1,7 @@
 # 웹검색 도구
 
+현재 진행은 [직접 구현 Google 검색기021](research/2026-10-18-021-google-browser-first-step.md)이다. `python -m travel_agent.google_browser search "Python official website"`로 독립 실행하고 `python -m travel_agent.google_browser open`으로 전용 Chrome 창을 수동 확인할 수 있다. 프로필은 `data/private/google-browser`에 보존한다. webserp 수리는 중단했다. 첫 실제 요청은 접근 확인429로 실패했으며 새 모듈은 아직 에이전트 공급자로 연결하지 않았다. 아래 webserp 설명은 기존 구현과 비교 이력이다.
+
 최신 [Google 전용 진단020](research/2026-10-18-020-google-failure-stages.md)에서는 다른 엔진을 호출하지 않았다. prog 프레임을 바이트 길이로 해석하도록 수정했지만 실제 응답에는 검색 링크가 없었다. `protocol_error`, `no_search_markup`, `/sorry`의 `access_interstitial`을 구분하며, 최종 URL은 호스트·경로만 기록한다. 새 Chrome의 홈페이지 검색창 제출도 302→429였으나 사용자의 평소 브라우저는 정상이라는 보고를 받았다. Google 검색은 여전히 미해결이며 세션·브라우저 실행 방식의 차이는 아직 분리하지 못했다.
 
 공개 후보 조사(015)·클론 검증(016)·Google 어댑터 비교(017) 이후 [이슈·프로토콜·원본 CLI 재검증](research/2026-10-18-019-webserp-deep-validation.md)을 수행했다. Google 요청은 여전히 실패하지만 webserp의 DuckDuckGo·Yahoo 경로는 실제 결과를 반환했다. 현재는 이 경로도 명시적으로 선택할 수 있다. 세 질문을 두 번씩 실행해6회 모두 기대한 공식 도메인을 찾았고, 실제64K 에이전트도 케이블카·박물관 주소와 출처를 반환했다. 반복 실험의 실질적인 결과 제공 엔진은 Yahoo였으며 범용 안정성이 입증된 것은 아니다. 기본 공급자는 DDGS로 유지한다. Google을 다른 엔진으로 조용히 대체하지 않으며, 계정 인증 파일 재사용 기능은 아직 없다.

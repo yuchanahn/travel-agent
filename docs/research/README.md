@@ -32,6 +32,10 @@
 
 ## 인덱스
 
+- [021: 직접 만드는 Google 검색기 — 전용 프로필과 첫 실행](2026-10-18-021-google-browser-first-step.md) — webserp 수리 중단, 독립 브라우저 모듈·디스크 프로필·DOM 추출, 실제 Google429, 79개 테스트 통과
+
+021 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e81ff996beabdc2ff9aeb
+
 - [020: Google 실패를 요청·프로토콜·브라우저 단계로 나누다](2026-10-18-020-google-failure-stages.md) — Google만 진단, prog 디코딩·오류 분류 수정, 실제 검색은 미해결, 74개 테스트 통과
 
 020 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e81c1ba6ade99cbd02359

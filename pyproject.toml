@@ -17,6 +17,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+browser = ["playwright>=1.64,<2"]
 webserp = ["webserp @ git+https://github.com/PaperBoardOfficial/webserp.git@e13148334995745f104a69ce7127179785ee741e"]
 
 [project.scripts]
