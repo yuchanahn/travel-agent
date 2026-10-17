@@ -9,6 +9,7 @@ from pathlib import Path
 from urllib.request import Request, urlopen
 
 from .memory import MemoryStore, build_index, canonical, search
+from .llm_config import generation_options, input_byte_limit
 
 
 def add_parser(subparsers):
@@ -35,7 +36,8 @@ def add_parser(subparsers):
             action.add_argument("--max-steps", type=int, default=6, help="Maximum model calls including final answer")
             action.add_argument("--max-tool-calls", type=int, default=8)
             action.add_argument("--timeout", type=float, default=120)
-            action.add_argument("--max-input-bytes", type=int, default=10000)
+            action.add_argument("--max-input-bytes", type=int, default=None,
+                                help="UTF-8 byte guard; default AGENT_MAX_INPUT_BYTES or 196608")
             action.add_argument("--trace-dir", type=Path, default=Path("data/private/traces"))
             action.add_argument("--no-web", action="store_true", help="Disable web search and keep all retrieval local")
             action.add_argument("--tool-workers", type=int, default=3, help="Concurrent web tools (1..4); 1 runs all tools serially")
@@ -52,14 +54,14 @@ RECALL_SYSTEM = """너는 여행 상담의 과거 기록을 근거로 답한다.
 
 def recall_answer(query, hits, summary=""):
     # Conservative UTF-8 byte bound, NOT an exact model tokenizer count.
-    # Intentionally small for the initial 4K context; skip whole chunks instead of cutting qualifiers.
-    input_budget = 3000
+    # Skip whole chunks instead of cutting qualifiers.
+    input_budget = input_byte_limit()
     base_user = f"현재 요약(생략 가능):\n{summary}\n질문:\n{query}\n과거 원문 근거:\n"
     messages = [{"role": "system", "content": RECALL_SYSTEM}, {"role": "user", "content": base_user}]
     def byte_size():
         return sum(len(message["content"].encode("utf-8")) for message in messages)
     if byte_size() > input_budget:
-        raise ValueError("Question/summary exceeds initial recall budget; provide a shorter focused query/summary")
+        raise ValueError("Question/summary exceeds AGENT_MAX_INPUT_BYTES")
     selected = []
     for hit in hits:
         evidence = {"id": hit["chunk_id"], "text": hit["text"], "events": hit["events"]}
@@ -73,7 +75,7 @@ def recall_answer(query, hits, summary=""):
     selected.sort(key=lambda hit: datetime.fromisoformat(hit["timestamp"].replace("Z", "+00:00")))
     messages[1]["content"] = base_user + "".join(canonical({"id": hit["chunk_id"], "text": hit["text"], "events": hit["events"]}) + "\n" for hit in selected)
     base = os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
-    body = {"model": os.environ.get("OLLAMA_MODEL", "qwen3.5:4b-q4_K_M"), "messages": messages, "stream": False, "think": False, "options": {"num_ctx": 4096, "num_predict": 512, "temperature": 0}}
+    body = {"model": os.environ.get("OLLAMA_MODEL", "qwen3.5:4b-q4_K_M"), "messages": messages, "stream": False, "think": False, "options": generation_options()}
     request = Request(base + "/api/chat", data=json.dumps(body, ensure_ascii=False).encode("utf-8"), headers={"Content-Type": "application/json"})
     with urlopen(request, timeout=180) as response:
         reply = json.load(response)

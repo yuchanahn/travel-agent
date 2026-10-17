@@ -4,6 +4,7 @@ import tempfile
 import unittest
 import io
 import json
+import os
 from pathlib import Path
 from unittest.mock import patch
 
@@ -74,7 +75,7 @@ class RecallTests(unittest.TestCase):
         self.assertEqual(result["evidence_ids"], [])
 
     def test_oversized_summary_rejected_before_network(self):
-        with patch("travel_agent.memory_cli.urlopen") as network:
+        with patch.dict(os.environ, {"AGENT_MAX_INPUT_BYTES": "3000"}), patch("travel_agent.memory_cli.urlopen") as network:
             with self.assertRaises(ValueError):
                 recall_answer("질문", [self.hit()], "가" * 3000)
         network.assert_not_called()

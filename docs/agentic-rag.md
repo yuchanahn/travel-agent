@@ -63,7 +63,7 @@ travel-agent trace show REQUEST_ID
 travel-agent memory --user demo --session trip agent "최신 예산은?" --max-steps 4 --max-tool-calls 3 --timeout 90
 ```
 
-`--max-input-bytes` 기본 10000은 메시지·도구 스키마 JSON의 UTF-8 크기 제한이다. 정확한 Qwen 토큰 수가 아니므로 num_ctx4096에 항상 맞는다는 보장은 없다. 문맥을 몰래 잘라 계속 진행하지 않고 `context_limit`으로 중단한다. 생성 출력은 최대512토큰이며 길이 종료는 `output_limit`으로 구분한다.
+Ollama 호출은 `AGENT_CONTEXT_TOKENS`를 읽으며 기본 `num_ctx=65536`이다. Agentic과 2-Step answer가 공통 설정을 사용한다. 앱의 바이트 제한은 별도로 `AGENT_MAX_INPUT_BYTES`(기본196608), 에이전트 CLI의 `--max-input-bytes`로 조정한다. 기존 10000바이트 기본값과 12000바이트 상한은 제거했다. 바이트는 정확한 Qwen 토큰 수가 아니므로 설정한 num_ctx에 항상 맞는다는 보장은 없다. 앱의 바이트 한도를 넘으면 `context_limit`으로 중단한다. 생성 출력은 최대512토큰이며 길이 종료는 `output_limit`으로 구분한다. `.env`는 자동으로 읽지 않으므로 환경변수는 실행할 터미널에 설정한다.
 
 시간 예산은 요청 전·모델 응답 후·도구 단계 경계에서 검사하고 남은 시간을 HTTP timeout에 전달한다. CPU 모델 로딩이나 동기 검색 실행을 강제 중단하는 hard deadline은 아니다. 한 단계가 오래 걸리면 실제 종료가 예산보다 늦을 수 있다.
 

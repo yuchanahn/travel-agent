@@ -61,6 +61,10 @@
 
 017 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e814a9e54c34a67c2ab9e
 
+- [018: 실패 상태를 명확히 하고 컨텍스트 64K를 요청에 반영하다](2026-10-18-018-context-64k.md) — Agentic·2-Step 공통 설정, 별도 바이트 제한 정리, 짧은 실제 호출과63개 테스트
+
+018 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e81488ec9c03d46d6258b
+
 013 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e81d192ecefeaad3c20ab
 
 012 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e81d1a6efccb5f55af2a2

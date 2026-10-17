@@ -114,7 +114,7 @@ class AgentTests(unittest.TestCase):
 
     def test_context_limit_prevents_model_call(self):
         with patch("travel_agent.agent.chat") as model:
-            result = self.run_agent(summary="가" * 10000)
+            result = self.run_agent(summary="가" * 10000, max_input_bytes=10000)
         self.assertEqual(result["status"], "context_limit")
         model.assert_not_called()
 

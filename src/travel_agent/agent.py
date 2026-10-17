@@ -11,6 +11,7 @@ from urllib.error import URLError
 from urllib.request import Request, urlopen
 
 from .memory import canonical, search
+from .llm_config import generation_options, input_byte_limit
 from .trace import Trace
 from .web import WebSearchError, web_search
 
@@ -57,7 +58,7 @@ SYSTEM = """너는 여행 준비를 돕는 한국어 에이전트다.
 
 def chat(messages, *, model, base_url, timeout, tools=None):
     body = {"model": model, "messages": messages, "tools": TOOLS if tools is None else tools, "stream": False, "think": False,
-            "options": {"num_ctx": 4096, "num_predict": 512, "temperature": 0}}
+            "options": generation_options()}
     request = Request(base_url + "/api/chat", data=json.dumps(body, ensure_ascii=False).encode("utf-8"),
                       headers={"Content-Type": "application/json"})
     with urlopen(request, timeout=timeout) as response:
@@ -189,14 +190,16 @@ def execute_batch(calls, *, store, user, session, mode, rerank, seen, enable_web
 
 
 def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=False,
-              max_steps=6, max_tool_calls=8, timeout=120, max_input_bytes=10000,
+              max_steps=6, max_tool_calls=8, timeout=120, max_input_bytes=None,
               trace_dir="data/private/traces", enable_web=True, tool_workers=3):
     if not isinstance(query, str) or not query.strip():
         raise ValueError("Query must be non-empty")
     if not 1 <= max_steps <= 12 or not 1 <= max_tool_calls <= 20 or not 0 < timeout <= 600:
         raise ValueError("Limits: max_steps 1..12, max_tool_calls 1..20, timeout 0..600 seconds")
-    if not 1000 <= max_input_bytes <= 12000 or mode not in {"bm25", "dense", "hybrid"}:
-        raise ValueError("Invalid mode or input byte budget (1000..12000)")
+    max_input_bytes = input_byte_limit() if max_input_bytes is None else max_input_bytes
+    if type(max_input_bytes) is not int or not 1000 <= max_input_bytes <= 1048576 or mode not in {"bm25", "dense", "hybrid"}:
+        raise ValueError("Invalid mode or input byte budget (1000..1048576)")
+    options = generation_options()
     if type(tool_workers) is not int or not 1 <= tool_workers <= 4:
         raise ValueError("tool_workers must be an integer 1..4")
     trace = Trace(trace_dir)
@@ -222,7 +225,7 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
                web_backend=os.environ.get("WEB_SEARCH_BACKEND", "google" if os.environ.get("WEB_SEARCH_PROVIDER") == "webserp" else "duckduckgo,bing"),
                limits={"max_steps": max_steps, "max_tool_calls": max_tool_calls,
                        "timeout": timeout, "max_input_bytes": max_input_bytes, "tool_workers": tool_workers},
-               options={"num_ctx": 4096, "num_predict": 512, "temperature": 0, "think": False})
+               options={**options, "think": False})
 
     def finish(status, answer="", **extra):
         citations = CITATIONS.findall(answer)
