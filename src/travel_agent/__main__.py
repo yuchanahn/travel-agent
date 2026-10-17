@@ -18,7 +18,15 @@ def main() -> int:
     add_parser(commands)
     from .trace import add_parser as add_trace_parser, run as run_trace
     add_trace_parser(commands)
+    from .web import add_parser as add_web_parser, run as run_web
+    add_web_parser(commands)
     args = parser.parse_args()
+    if args.command == "web":
+        try:
+            return run_web(args)
+        except (OSError, ValueError, RuntimeError, ImportError) as exc:
+            print(f"Web search failed: {exc}", file=sys.stderr)
+            return 1
     if args.command == "trace":
         try:
             return run_trace(args)

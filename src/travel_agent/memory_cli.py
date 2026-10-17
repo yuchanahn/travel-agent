@@ -37,6 +37,7 @@ def add_parser(subparsers):
             action.add_argument("--timeout", type=float, default=120)
             action.add_argument("--max-input-bytes", type=int, default=10000)
             action.add_argument("--trace-dir", type=Path, default=Path("data/private/traces"))
+            action.add_argument("--no-web", action="store_true", help="Disable web search and keep all retrieval local")
 
 
 RECALL_SYSTEM = """너는 여행 상담의 과거 기록을 근거로 답한다.
@@ -106,7 +107,7 @@ def run(args):
             result = run_agent(store, args.user, args.session, args.query, summary=summary,
                                mode=args.mode, rerank=args.rerank, max_steps=args.max_steps,
                                max_tool_calls=args.max_tool_calls, timeout=args.timeout,
-                               max_input_bytes=args.max_input_bytes, trace_dir=args.trace_dir)
+                               max_input_bytes=args.max_input_bytes, trace_dir=args.trace_dir, enable_web=not args.no_web)
         else:
             result = search(store, args.user, args.session, args.query, mode=args.mode, top_k=args.top_k, rerank=args.rerank)
             if args.memory_action == "answer":

@@ -13,6 +13,7 @@ dependencies = [
     "rank-bm25>=0.2.2,<0.3",
     "kiwipiepy>=0.20,<1",
     "sentence-transformers>=3,<6",
+    "ddgs>=9,<10",
 ]
 
 [project.scripts]

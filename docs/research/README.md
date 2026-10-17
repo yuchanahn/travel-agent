@@ -39,6 +39,9 @@
 - [007: 문맥 압축에 대비한 대화 원문 메모리 RAG](2026-10-17-007-conversation-memory-rag.md) — 첫 구현·합성 검증 완료
 - [008: 전체 구현 해설과 코드·다이어그램 기록](2026-10-17-008-code-walkthrough.md)
 - [009: Agentic RAG와 요청별 실행 추적](2026-10-17-009-agentic-rag.md)
+- [010: 메모리 도구 옆에 웹검색을 연결하다](2026-10-17-010-web-search.md)
+
+010 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e81829b63f3d304cb9b16
 
 009 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e81c9b671c1ed757cc8b1
 

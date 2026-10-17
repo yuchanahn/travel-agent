@@ -42,7 +42,8 @@ def main():
         for case in CASES:
             if args.case and case["id"] != args.case:
                 continue
-            result = run_agent(store, "demo", case.get("session", "trip"), case["query"], summary=summary)
+            # This experiment measures historical memory retrieval, not live web results.
+            result = run_agent(store, "demo", case.get("session", "trip"), case["query"], summary=summary, enable_web=False)
             trace = read_trace("data/private/traces", result["request_id"])
             returned_events = set()
             for record in trace:
@@ -51,7 +52,7 @@ def main():
                 data = record["result"]
                 if record["name"] == "memory_show":
                     returned_events.add(data["event"]["event_id"])
-                else:
+                elif record["name"] == "memory_search":
                     for hit in data["hits"]:
                         returned_events.update(event["event_id"] for event in hit["events"])
             entry = {"case": case, "agent": result, "checks": {
