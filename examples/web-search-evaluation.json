@@ -1,5 +1,6 @@
 {
-  "status": "planned_not_executed",
+  "status": "executed_once_ddgs_and_webserp_2026-10-17",
+  "results_document": "../docs/research/2026-10-17-017-webserp-integration-comparison.md",
   "purpose": "Compare search providers before changing the default; not an agent-answer quality benchmark.",
   "top_k": 5,
   "cases": [

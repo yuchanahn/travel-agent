@@ -12,7 +12,7 @@ from urllib.request import Request, urlopen
 
 from .memory import canonical, search
 from .trace import Trace
-from .web import web_search
+from .web import WebSearchError, web_search
 
 
 TOOLS = [
@@ -129,7 +129,8 @@ def execute_batch(calls, *, store, user, session, mode, rerank, seen, enable_web
                    call_index=index, tool_call_id=call.get("id"), arguments=call["function"].get("arguments"))
 
     def error(exc):
-        return {"error": str(exc), "error_type": type(exc).__name__, "web_search_performed": False}
+        return {"error": str(exc), "error_type": type(exc).__name__, "web_search_performed": False,
+                **(exc.details if isinstance(exc, WebSearchError) else {})}
 
     # Reserve duplicates before starting threads, including duplicates within this batch.
     for index, call in enumerate(calls):
@@ -217,6 +218,8 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
     seen = set()
     trace.emit("run_start", user=user, session=session, query=query, summary=summary,
                model=model, base_url=base_url, mode=mode, rerank=rerank, tools=tools, enable_web=enable_web,
+               web_provider=os.environ.get("WEB_SEARCH_PROVIDER", "ddgs"),
+               web_backend=os.environ.get("WEB_SEARCH_BACKEND", "google" if os.environ.get("WEB_SEARCH_PROVIDER") == "webserp" else "duckduckgo,bing"),
                limits={"max_steps": max_steps, "max_tool_calls": max_tool_calls,
                        "timeout": timeout, "max_input_bytes": max_input_bytes, "tool_workers": tool_workers},
                options={"num_ctx": 4096, "num_predict": 512, "temperature": 0, "think": False})

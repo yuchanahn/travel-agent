@@ -16,6 +16,9 @@ dependencies = [
     "ddgs>=9,<10",
 ]
 
+[project.optional-dependencies]
+webserp = ["webserp @ git+https://github.com/PaperBoardOfficial/webserp.git@e13148334995745f104a69ce7127179785ee741e"]
+
 [project.scripts]
 travel-agent = "travel_agent.__main__:main"
 

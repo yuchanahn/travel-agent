@@ -57,6 +57,10 @@
 
 016 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e8113b94ce7dc9dded318
 
+- [017: webserp 공급자 연결과 DDGS 비교 — 연결과 품질을 구분하다](2026-10-17-017-webserp-integration-comparison.md) — 선택형 공급자 구현, 같은 검색 질의10개·실제 모델 답변 비교 완료, 품질 향상 없음
+
+017 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e814a9e54c34a67c2ab9e
+
 013 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e81d192ecefeaad3c20ab
 
 012 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e81d1a6efccb5f55af2a2

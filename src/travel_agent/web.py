@@ -17,6 +17,10 @@ BACKENDS = {"duckduckgo", "bing", "brave", "google", "yahoo", "mojeek", "startpa
 class WebSearchError(RuntimeError):
     """The search provider failed; this is not proof that no information exists."""
 
+    def __init__(self, message, *, details=None):
+        super().__init__(message)
+        self.details = details or {}
+
 
 def _provider_search(query, top_k, timeout, backend):
     from ddgs import DDGS
@@ -29,22 +33,33 @@ def _provider_search(query, top_k, timeout, backend):
         raise WebSearchError(f"Web search provider failed: {exc}") from exc
 
 
-def web_search(query, *, top_k=3, timeout=15, max_bytes=3500, backend=None):
+def web_search(query, *, top_k=3, timeout=15, max_bytes=3500, backend=None, provider=None):
     if not isinstance(query, str) or not 0 < len(query.strip()) <= 500:
         raise ValueError("Web query must contain 1..500 characters")
     if type(top_k) is not int or not 1 <= top_k <= 5:
         raise ValueError("top_k must be an integer 1..5")
     if not 0 < timeout <= 30 or not 1000 <= max_bytes <= 10000:
         raise ValueError("Web timeout must be 0..30 seconds and output budget 1000..10000 bytes")
-    backend = backend if backend is not None else os.environ.get("WEB_SEARCH_BACKEND", "duckduckgo,bing")
+    provider = provider if provider is not None else os.environ.get("WEB_SEARCH_PROVIDER", "ddgs")
+    if provider not in {"ddgs", "webserp"}:
+        raise ValueError("WEB_SEARCH_PROVIDER must be ddgs or webserp")
+    default_backend = "google" if provider == "webserp" else "duckduckgo,bing"
+    backend = backend if backend is not None else os.environ.get("WEB_SEARCH_BACKEND", default_backend)
     engines = [item.strip().lower() for item in backend.split(",")]
     if not engines or any(item not in BACKENDS for item in engines):
         raise ValueError("Unsupported WEB_SEARCH_BACKEND; choose explicit supported engines")
     backend = ",".join(engines)
-    rows = _provider_search(query.strip(), top_k, timeout, backend)
+    metadata = {}
+    if provider == "webserp":
+        if backend != "google":
+            raise ValueError("The webserp adapter currently supports only backend=google")
+        from .webserp_provider import search_google
+        rows, metadata = search_google(query.strip(), top_k, timeout)
+    else:
+        rows = _provider_search(query.strip(), top_k, timeout, backend)
     if not isinstance(rows, list):
         raise WebSearchError("Web search provider returned malformed results")
-    result = {"provider": "ddgs", "backend_requested": backend,
+    result = {"provider": provider, "backend_requested": backend, **metadata,
               "searched_at": datetime.now(timezone.utc).isoformat(),
               "content_kind": "search_snippet", "page_fetched": False,
               "web_search_performed": True, "status": "no_results", "omitted_results": 0, "hits": []}
@@ -87,9 +102,16 @@ def add_parser(subparsers):
     search.add_argument("--top-k", type=int, default=3)
     search.add_argument("--timeout", type=float, default=15)
     search.add_argument("--backend", help="Override WEB_SEARCH_BACKEND for this invocation")
+    search.add_argument("--provider", choices=["ddgs", "webserp"], help="Override WEB_SEARCH_PROVIDER")
 
 
 def run(args):
-    result = web_search(args.query, top_k=args.top_k, timeout=args.timeout, backend=args.backend)
+    try:
+        result = web_search(args.query, top_k=args.top_k, timeout=args.timeout, backend=args.backend,
+                            provider=args.provider)
+    except WebSearchError as exc:
+        print(json.dumps({"error": str(exc), "error_type": type(exc).__name__,
+                          "web_search_performed": False, **exc.details}, ensure_ascii=False, indent=2))
+        return 1
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0
