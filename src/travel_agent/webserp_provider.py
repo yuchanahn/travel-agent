@@ -60,6 +60,8 @@ def response_kind(text):
     """Conservative diagnostics: ambiguous empty pages are never proven no-results."""
     from lxml import html
 
+    if text.lstrip().startswith(")]}'"):
+        return "async_framed"
     lower = text.lower()
     tree = html.fromstring(text or "<html></html>")
     if tree.xpath('//form[contains(@action,"/sorry/")] | //iframe[contains(@src,"recaptcha")] '
@@ -71,8 +73,6 @@ def response_kind(text):
         return "html_with_headings"
     if "/httpservice/retry/enablejs" in lower:
         return "javascript_required"
-    if text.lstrip().startswith(")]}'"):
-        return "async_framed"
     if "did not match any documents" in lower:
         return "explicit_no_results"
     return "unclassified"
@@ -105,6 +105,12 @@ def search_google(query, top_k, timeout):
                                        impersonate=profile)
             metadata["http_status"] = response.status_code
             metadata["response_bytes"] = len(response.content)
+            from urllib.parse import urlsplit
+            final = urlsplit(str(getattr(response, "url", spec.url)))
+            metadata["final_host"], metadata["final_path"] = final.hostname, final.path
+            if final.path.startswith("/sorry") or final.hostname == "sorry.google.com":
+                metadata["response_kind"] = "captcha"
+                fail("access_interstitial", "Google redirected the request to its access-check page; no search evidence")
             if response.status_code != 200:
                 fail("http_error", f"webserp Google returned HTTP {response.status_code}")
             try:
@@ -112,7 +118,24 @@ def search_google(query, top_k, timeout):
                 metadata["response_kind"] = kind
                 if kind in {"captcha", "consent", "javascript_required"}:
                     fail("access_interstitial", f"webserp Google returned {kind}; no search evidence")
-                hits = engine.parse_response(response.text)
+                document = response.text
+                if kind == "async_framed":
+                    from lxml import html
+                    from .google_protocol import decode_prog
+                    try:
+                        document, framing = decode_prog(response.content)
+                    except ValueError:
+                        fail("protocol_error", "Google returned an unsupported or incomplete prog response")
+                    metadata.update(framing)
+                    dom = html.fromstring(document)
+                    metadata["markup_link_count"] = len(dom.xpath('//a[@href]'))
+                    metadata["markup_h3_count"] = len(dom.xpath('//h3'))
+                    metadata["decoded_response_kind"] = response_kind(document.decode("utf-8", errors="replace"))
+                    if metadata["decoded_response_kind"] in {"captcha", "consent", "javascript_required"}:
+                        fail("access_interstitial", "Google returned an access check inside a prog response")
+                    if not metadata["markup_link_count"]:
+                        fail("no_search_markup", "Google's prog payload contains no result links; result extraction has no search evidence")
+                hits = engine.parse_response(document)
             except (ValueError, TypeError, LxmlError) as exc:
                 fail("parse_error", f"webserp could not parse Google response ({type(exc).__name__})")
             if not hits and kind != "explicit_no_results":

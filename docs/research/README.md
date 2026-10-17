@@ -32,6 +32,10 @@
 
 ## 인덱스
 
+- [020: Google 실패를 요청·프로토콜·브라우저 단계로 나누다](2026-10-18-020-google-failure-stages.md) — Google만 진단, prog 디코딩·오류 분류 수정, 실제 검색은 미해결, 74개 테스트 통과
+
+020 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e81c1ba6ade99cbd02359
+
 - [001: 로컬 LLM 공급과 초기 실패](2026-10-17-001-local-llm.md)
 - [002: 프로젝트 기반과 기록 체계](2026-10-17-002-project-foundation.md)
 - [003: Python 실행 절차 단순화](2026-10-17-003-editable-install.md)

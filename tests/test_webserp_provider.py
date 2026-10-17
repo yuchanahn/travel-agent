@@ -76,7 +76,7 @@ class AdapterTests(unittest.TestCase):
 
     def test_200_async_empty_or_js_page_is_not_success(self):
         for text, expected in [("<html>unrecognized page</html>", "unparsed_response"),
-                               (")]}'\nconfiguration", "unparsed_response"),
+                               (")]}'\nconfiguration", "protocol_error"),
                                ('<a href="/httpservice/retry/enablejs">Enable JS</a>', "access_interstitial")]:
             with self.subTest(text=text), self.assertRaises(WebSearchError) as context:
                 self.search(text)
@@ -90,6 +90,31 @@ class AdapterTests(unittest.TestCase):
         with self.assertRaises(WebSearchError) as context:
             self.search("blocked", 403)
         self.assertEqual(context.exception.details["http_status"], 403)
+
+    def test_google_prog_with_real_markup_can_reach_the_upstream_parser(self):
+        markup = b'<div class="MjjYud"><a href="https://example.invalid/"><h3>Fixture</h3></a></div>'
+        text = ")]}'\n" + f"{len(markup):x};" + markup.decode() + "0;"
+        rows, metadata = self.search(text)
+        self.assertEqual(rows[0]["href"], "https://example.invalid/")
+        self.assertEqual(metadata["protocol_frame_count"], 2)
+
+    def test_google_prog_with_only_setup_script_is_a_specific_failure(self):
+        markup = '<div><script>window.fixture=1;</script></div>'
+        text = ")]}'\n" + f"{len(markup.encode()):x};" + markup + "0;"
+        with self.assertRaises(WebSearchError) as context:
+            self.search(text)
+        self.assertEqual(context.exception.details["status"], "no_search_markup")
+        self.assertEqual(context.exception.details["markup_link_count"], 0)
+
+    def test_google_sorry_redirect_is_identified_without_exposing_query_tokens(self):
+        response = SimpleNamespace(text="access check", content=b"access check", status_code=429,
+                                   url="https://www.google.com/sorry/index?secret=private")
+        with patch("curl_cffi.requests.Session") as session, self.assertRaises(WebSearchError) as context:
+            session.return_value.__enter__.return_value.request.return_value = response
+            search_google("q", 3, 15)
+        self.assertEqual(context.exception.details["status"], "access_interstitial")
+        self.assertEqual(context.exception.details["final_path"], "/sorry/index")
+        self.assertNotIn("private", str(context.exception.details))
 
     def test_transport_exception_does_not_leak_internals(self):
         from curl_cffi.requests.exceptions import RequestException
