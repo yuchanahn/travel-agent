@@ -23,6 +23,8 @@
 
 - [001: 로컬 LLM 공급과 초기 실패](2026-10-17-001-local-llm.md)
 - [002: 프로젝트 기반과 기록 체계](2026-10-17-002-project-foundation.md)
+- [003: Python 실행 절차 단순화](2026-10-17-003-editable-install.md)
+- [004: 변경 완료 시 커밋·푸시 정책](2026-10-17-004-git-workflow.md)
 - 초기 아키텍처 결정은 docs/decisions/0001-initial-architecture.md에 기록.
 
 노션 기술 결정: https://app.notion.com/p/3fcd058c022e81d9b7fbe5fb6f37652a
