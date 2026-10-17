@@ -1,17 +1,28 @@
-"""Read-only Ollama connectivity check. No inference or model mutations."""
+"""Travel agent diagnostics and scoped conversation memory RAG."""
 
 import argparse
 import json
 import os
 import sys
+import sqlite3
 from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
 
 
 def main() -> int:
+    sys.stdout.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=["doctor"])
-    parser.parse_args()
+    commands = parser.add_subparsers(dest="command", required=True)
+    commands.add_parser("doctor", help="Read-only Ollama connectivity check")
+    from .memory_cli import add_parser, run
+    add_parser(commands)
+    args = parser.parse_args()
+    if args.command == "memory":
+        try:
+            return run(args)
+        except (HTTPError, URLError, TimeoutError, OSError, ValueError, sqlite3.Error, ImportError) as exc:
+            print(f"Memory operation failed: {exc}", file=sys.stderr)
+            return 1
     base_url = os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
     model = os.environ.get("OLLAMA_MODEL", "qwen3.5:4b-q4_K_M")
     try:

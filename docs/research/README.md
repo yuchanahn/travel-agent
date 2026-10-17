@@ -26,7 +26,10 @@
 - [003: Python 실행 절차 단순화](2026-10-17-003-editable-install.md)
 - [004: 변경 완료 시 커밋·푸시 정책](2026-10-17-004-git-workflow.md)
 - [005: 미정인 여행 요청에서 시작하는 구현·검증 계획](2026-10-17-005-questions-and-validation.md)
-- [006: 한국어 여행 RAG 구현안 고찰](2026-10-17-006-rag-design-review.md) — 검토안, 구현 전
+- [006: 한국어 여행 RAG 구현안 고찰](2026-10-17-006-rag-design-review.md) — 초기 검토 이력, 첫 코퍼스는 007에서 변경
+- [007: 문맥 압축에 대비한 대화 원문 메모리 RAG](2026-10-17-007-conversation-memory-rag.md) — 첫 구현·합성 검증 완료
+
+007 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e81cdaf18e02657f84d18
 
 006 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e8196b896e69ed2353bfb
 

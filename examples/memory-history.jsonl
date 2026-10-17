@@ -1,0 +1,7 @@
+{"event_id":"e01","turn_id":"t01","timestamp":"2026-10-01T10:00:00+09:00","role":"user","content":"이번 여행은 여자친구와 둘이 갈 거고 총예산은 40만 원이야. 차는 없어."}
+{"event_id":"e02","turn_id":"t02","timestamp":"2026-10-01T10:05:00+09:00","role":"user","content":"강릉은 이번 후보에서 빼자. 기차로 이동한 다음에도 숙소까지 환승하는 시간이 길어서 부담스러워. 여행하는 것보다 이동에 시간을 쓰는 느낌이야."}
+{"event_id":"e03","turn_id":"t02","timestamp":"2026-10-01T10:05:10+09:00","role":"assistant","content":"이번에는 이동 부담 때문에 강릉을 후보에서 제외하겠습니다. 이 판단은 이번에 검토한 일정에 대한 것이고 모든 강릉 여행이 불편하다는 뜻은 아닙니다."}
+{"event_id":"e04","turn_id":"t03","timestamp":"2026-10-01T10:10:00+09:00","role":"tool","content":"테스트용 가상 숙소 A의 당시 표시 가격은 1박 8만 원. 실제 검색이 아니며 현재 예약 가능 여부와 가격은 확인하지 않았다.","source_url":"https://example.invalid/synthetic-hotel","synthetic":true}
+{"event_id":"e05","turn_id":"t04","timestamp":"2026-10-02T11:00:00+09:00","role":"user","content":"예산 변경할게. 이번 여행의 최신 총예산은 둘이 합쳐 25만 원이야. 차가 없다는 조건은 그대로야."}
+{"event_id":"e06","turn_id":"t05","timestamp":"2026-10-02T11:05:00+09:00","role":"user","content":"해산물보다는 따뜻한 국물 요리를 좋아해. 음식은 나중에 정하자."}
+{"event_id":"e07","turn_id":"t06","timestamp":"2026-10-02T11:10:00+09:00","role":"assistant","content":"어느 여행지를 최종 선택할지는 아직 결정하지 않았습니다."}
