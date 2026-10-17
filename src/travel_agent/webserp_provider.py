@@ -1,10 +1,59 @@
-"""Google adapter using the reviewed webserp request builder and parser.
+"""Search adapters using the reviewed webserp request builders and parsers.
 
 Each invocation owns its HTTP session, including when agent tools run in threads.
 This does not import browser credentials or persist cookies between invocations.
 """
 
 from .web import WebSearchError
+
+
+def search_html(query, top_k, timeout, engines):
+    """Reuse pinned upstream fetch/parse steps, before its lossy URL deduplication.
+
+    Only the engines exercised by this project are exposed. Empty parsing is
+    reported separately, including when another engine returned useful results.
+    """
+    import asyncio
+    import re
+
+    if not engines or any(name not in {"duckduckgo", "yahoo"} for name in engines):
+        raise ValueError("webserp HTML engines must be duckduckgo and/or yahoo")
+    engines = list(dict.fromkeys(engines))
+    try:
+        from curl_cffi.requests import AsyncSession
+        from webserp.engines import ALL_ENGINES
+        from webserp.search import _fetch_engine
+    except ImportError as exc:
+        raise WebSearchError("webserp is not installed; install the project's [webserp] extra",
+                             details={"provider": "webserp", "status": "dependency_missing"}) from exc
+
+    async def fetch_all():
+        async with AsyncSession() as session:
+            return await asyncio.gather(*[
+                _fetch_engine(ALL_ENGINES[name], query, top_k, timeout, None, session) for name in engines
+            ])
+
+    outcomes = asyncio.run(fetch_all())
+    rows, empty, failures = [], [], []
+    returned = []
+    for name, hits, error in outcomes:
+        if error:
+            # The upstream exception text is not guaranteed to exclude secrets.
+            status_match = re.search(r"HTTP Error (\d{3})", error)
+            failures.append({"engine": name, "status": "upstream_error",
+                             **({"http_status": int(status_match[1])} if status_match else {})})
+        elif not hits:
+            empty.append(name)
+        else:
+            returned.append(name)
+            rows.extend({"href": hit.url, "title": hit.title, "body": hit.content, "engine": name} for hit in hits)
+    metadata = {"request_mode": "upstream_html", "engines_requested": engines,
+                "engines_returned": returned, "empty_or_unparsed_engines": empty, "engine_errors": failures}
+    if not rows:
+        raise WebSearchError("webserp HTML engines returned no usable evidence; empty parsing is not a proven empty search",
+                             details={"provider": "webserp", "backend_requested": ",".join(engines),
+                                      "status": "no_usable_evidence", **metadata})
+    return rows, metadata
 
 
 def response_kind(text):

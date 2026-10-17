@@ -51,10 +51,14 @@ def web_search(query, *, top_k=3, timeout=15, max_bytes=3500, backend=None, prov
     backend = ",".join(engines)
     metadata = {}
     if provider == "webserp":
-        if backend != "google":
-            raise ValueError("The webserp adapter currently supports only backend=google")
-        from .webserp_provider import search_google
-        rows, metadata = search_google(query.strip(), top_k, timeout)
+        if backend == "google":
+            from .webserp_provider import search_google
+            rows, metadata = search_google(query.strip(), top_k, timeout)
+        elif all(engine in {"duckduckgo", "yahoo"} for engine in engines):
+            from .webserp_provider import search_html
+            rows, metadata = search_html(query.strip(), top_k, timeout, engines)
+        else:
+            raise ValueError("webserp supports google alone, or duckduckgo and/or yahoo; no implicit Google fallback")
     else:
         rows = _provider_search(query.strip(), top_k, timeout, backend)
     if not isinstance(rows, list):
@@ -86,6 +90,8 @@ def web_search(query, *, top_k=3, timeout=15, max_bytes=3500, backend=None, prov
         hit = {"id": "web:" + sha256(url.encode("utf-8")).hexdigest()[:16],
                "title": title[:200], "url": url, "snippet": snippet[:600],
                "snippet_truncated": len(snippet) > 600}
+        if provider == "webserp" and isinstance(row.get("engine"), str) and row["engine"] in engines:
+            hit["engine"] = row["engine"]
         trial = {**result, "status": "ok", "omitted_results": len(rows), "hits": [*result["hits"], hit]}
         if len(canonical(trial).encode("utf-8")) <= max_bytes and len(result["hits"]) < top_k:
             result["hits"].append(hit)

@@ -12,7 +12,7 @@ from travel_agent.agent import run_agent
 from travel_agent.memory import MemoryStore
 from travel_agent.trace import read_trace
 from travel_agent.web import WebSearchError, web_search
-from travel_agent.webserp_provider import search_google
+from travel_agent.webserp_provider import search_google, search_html
 
 
 class RoutingTests(unittest.TestCase):
@@ -98,6 +98,48 @@ class AdapterTests(unittest.TestCase):
             search_google("q", 3, 15)
         self.assertNotIn("secret", str(context.exception))
         self.assertEqual(context.exception.details["status"], "transport_error")
+
+    def test_html_empty_engine_is_visible_when_another_engine_returns_hits(self):
+        from webserp.engines.base import Result
+
+        async def fetch(engine, *args):
+            if engine.name == "duckduckgo":
+                return engine.name, [], None
+            return engine.name, [Result("Fixture", "https://example.invalid/A", "text", engine.name)], None
+
+        with patch("webserp.search._fetch_engine", side_effect=fetch):
+            rows, metadata = search_html("q", 3, 15, ["duckduckgo", "yahoo"])
+        self.assertEqual(rows[0]["engine"], "yahoo")
+        self.assertEqual(metadata["empty_or_unparsed_engines"], ["duckduckgo"])
+
+    def test_html_zero_results_is_not_silent_success(self):
+        async def fetch(engine, *args):
+            return engine.name, [], None
+
+        with patch("webserp.search._fetch_engine", side_effect=fetch), self.assertRaises(WebSearchError) as context:
+            search_html("q", 3, 15, ["yahoo"])
+        self.assertEqual(context.exception.details["status"], "no_usable_evidence")
+
+    def test_html_upstream_error_text_is_sanitized(self):
+        async def fetch(engine, *args):
+            return engine.name, [], "HTTP Error 429: sensitive transport context"
+
+        with patch("webserp.search._fetch_engine", side_effect=fetch), self.assertRaises(WebSearchError) as context:
+            search_html("q", 3, 15, ["yahoo"])
+        self.assertNotIn("sensitive", str(context.exception.details))
+        self.assertEqual(context.exception.details["engine_errors"][0]["http_status"], 429)
+
+    def test_shared_url_packing_preserves_case_and_engine_provenance(self):
+        from webserp.engines.base import Result
+
+        async def fetch(engine, *args):
+            return engine.name, [Result("Upper", "https://example.invalid/A", "one", engine.name),
+                                 Result("Lower", "https://example.invalid/a", "two", engine.name)], None
+
+        with patch("webserp.search._fetch_engine", side_effect=fetch):
+            result = web_search("q", provider="webserp", backend="yahoo", top_k=3)
+        self.assertEqual([x["url"] for x in result["hits"]], ["https://example.invalid/A", "https://example.invalid/a"])
+        self.assertEqual(result["hits"][0]["engine"], "yahoo")
 
 
 if __name__ == "__main__":

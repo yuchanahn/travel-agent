@@ -15,7 +15,7 @@
 - 대화 원문 저장·BM25/dense/hybrid 검색·검색 근거 기반 답변 CLI
 - LLM이 메모리 검색·원문 조회를 선택하는 Agentic RAG와 요청별 실행 추적
 - API 키 없는 웹검색 도구: 제목·URL·검색 요약과 출처 ID 반환
-- 선택형 webserp Google 어댑터와 DDGS 비교 실행: 연결 완료, 실제 검색 품질 향상은 확인되지 않음
+- 선택형 webserp Google·DuckDuckGo·Yahoo 경로: Google은 미해결, DuckDuckGo/Yahoo 조합에서 공식 주소 조회와 실제 에이전트 답변 확인 (연구일지019)
 - 한 응답의 여러 웹검색을 병렬 실행하고 호출별 결과·오류를 모델에 전달
 - 프로젝트 기술 결정과 연구일지 기반
 

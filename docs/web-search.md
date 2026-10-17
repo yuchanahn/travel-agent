@@ -1,6 +1,6 @@
 # 웹검색 도구
 
-공개 후보 조사(015)와 클론 검증(016) 이후, 사용자의 요청으로 **webserp를 선택 가능한 공급자로 연결**했다. 동일한 검색 질의10개에서 DDGS는1개에 결과를 반환했고 webserp는10개 모두 비동기 응답을 해석하지 못했다. 실제 모델의 동일 질문 비교도 두 공급자 모두 검색 실패였다. [도입·비교 연구일지](research/2026-10-17-017-webserp-integration-comparison.md)에 실제 답변·툴콜·한계를 기록했다. 기본값은 DDGS이며 webserp는 명시적으로 선택한다. 로컬 인증·세션 파일 재사용은 아직 없다.
+공개 후보 조사(015)·클론 검증(016)·Google 어댑터 비교(017) 이후 [이슈·프로토콜·원본 CLI 재검증](research/2026-10-18-019-webserp-deep-validation.md)을 수행했다. Google 요청은 여전히 실패하지만 webserp의 DuckDuckGo·Yahoo 경로는 실제 결과를 반환했다. 현재는 이 경로도 명시적으로 선택할 수 있다. 세 질문을 두 번씩 실행해6회 모두 기대한 공식 도메인을 찾았고, 실제64K 에이전트도 케이블카·박물관 주소와 출처를 반환했다. 반복 실험의 실질적인 결과 제공 엔진은 Yahoo였으며 범용 안정성이 입증된 것은 아니다. 기본 공급자는 DDGS로 유지한다. Google을 다른 엔진으로 조용히 대체하지 않으며, 계정 인증 파일 재사용 기능은 아직 없다.
 
 `memory agent`가 과거 원문용 메모리 도구와 공개 웹검색을 선택한다. 여행 검색어·사이트 순서는 고정하지 않는다. 기존 `memory answer`는 메모리만 사용하는 2-Step RAG로 유지한다.
 
@@ -22,23 +22,25 @@ travel-agent memory --user demo --session trip agent "강릉을 제외한 이유
 
 ```powershell
 python -m pip install -e ".[webserp]"
-travel-agent web search "국립춘천박물관 공식 홈페이지" --provider webserp --backend google
+travel-agent web search "국립춘천박물관 공식 홈페이지" --provider webserp --backend duckduckgo,yahoo
 # 에이전트의 공급자는 호스트 설정으로 선택한다.
 $env:WEB_SEARCH_PROVIDER = 'webserp'
-$env:WEB_SEARCH_BACKEND = 'google'
+$env:WEB_SEARCH_BACKEND = 'duckduckgo,yahoo'
 travel-agent memory --user demo --session trip agent "국립춘천박물관 공식 홈페이지를 찾아줘"
 # 기존 공급자로 복귀
 $env:WEB_SEARCH_PROVIDER = 'ddgs'
 $env:WEB_SEARCH_BACKEND = 'duckduckgo,bing'
 ```
 
-`webserp` extra는 검토한 Git 커밋 e13148334995745f104a69ce7127179785ee741e를 고정한다. 이번 로컬 설치는 동일 커밋의 클론을 설치하고 프로젝트를 다시 개발 모드로 설치했다. 어댑터는 원본 Google 요청 생성기·파서를 사용하며 HTTP 세션은 호출마다 소유하고 닫는다. 원본의 영어 설정·arc 요청을 유지한다. 자동 공급자 대체는 하지 않는다.
+`webserp` extra는 검토한 Git 커밋 e13148334995745f104a69ce7127179785ee741e를 고정한다. 원본의 요청 생성·파싱 단계를 재사용하고 세션은 호출마다 소유하고 닫는다. HTML 엔진은 원본의 최종 URL 소문자 중복 제거 전에 결과를 받아 공통 URL 처리로 보낸다. Google은 원본 영어·arc 요청을 유지하며 `--backend google`로 별도 진단할 수 있다. 다른 엔진으로 자동 대체하지 않는다.
 
 이전에 만든 합성 메모리를 활용하려면 [Agentic RAG 실행 절차](agentic-rag.md)를 따른다. 웹검색 자체에는 메모리 색인이 필요 없다. DB를 여는 현재 CLI 구조는 유지한다.
 
 ## 공급자와 반환 범위
 
-공급자는 `WEB_SEARCH_PROVIDER` 또는 검색 단독 CLI의 `--provider`로 선택한다. 기본 `ddgs`의 엔진은 `duckduckgo,bing`, 선택형 `webserp` 어댑터는 `google`만 지원한다. 엔진은 `WEB_SEARCH_BACKEND` 또는 `--backend`로 지정하며 공급자를 바꿀 때 엔진도 맞춰야 한다. 환경변수가 없을 때만 공급자별 기본 엔진을 적용한다. `auto`는 허용하지 않는다. DDGS 지원 목록은 duckduckgo,bing,brave,google,yahoo,mojeek,startpage,yandex다. API 키·별도 검색 서버는 필요 없지만 엔진별 가용성은 보장하지 않는다.
+공급자는 `WEB_SEARCH_PROVIDER` 또는 검색 단독 CLI의 `--provider`로 선택한다. 기본 `ddgs`의 엔진은 `duckduckgo,bing`이다. `webserp`는 `google` 단독, 또는 `duckduckgo`·`yahoo` 단독/조합을 지원한다. 공급자를 바꿀 때 엔진도 명시적으로 맞춘다. webserp의 엔진 설정을 생략하면 기존 호환성상 google이 선택되므로 현재 동작 사례를 재현하려면 반드시 `duckduckgo,yahoo`를 지정한다. `auto`는 허용하지 않는다. DDGS 지원 목록은 duckduckgo,bing,brave,google,yahoo,mojeek,startpage,yandex다. API 키·별도 검색 서버는 필요 없지만 엔진별 가용성은 보장하지 않는다.
+
+HTML 경로의 각 결과에는 실제 `engine`이 포함되고 `engines_returned`, `empty_or_unparsed_engines`, `engine_errors`가 개별 엔진 상태를 나타낸다. 한 엔진만 결과를 냈을 때 두 엔진 모두 성공했다고 기록하지 않는다. 모든 엔진이 빈 파싱 결과를 내면 정상적인 빈 검색으로 단정하지 않고 오류를 반환한다. 한 도구에서 두 엔진을 선택하면 내부 요청도 두 개이며, 병렬 도구 worker3개와 조합하면 동시에 최대6개 엔진 요청이 생길 수 있다.
 
 webserp의 HTTP 오류·접근 안내·해석되지 않은 응답은 `WebSearchError`로 전달한다. `provider`, `status`, `http_status`, `response_kind` 등을 CLI JSON과 에이전트 trace의 오류 결과에 보존한다. HTTP 200의 빈 파싱 결과를 검색 성공으로 만들지 않는다. 검색 단독 CLI는 이 오류에 종료 코드1을 반환한다. 응답 HTML·쿠키·인증 헤더는 기록하지 않는다.
 

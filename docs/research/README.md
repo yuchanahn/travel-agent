@@ -65,6 +65,10 @@
 
 018 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e81488ec9c03d46d6258b
 
+- [019: webserp 재검증 — Google 실패와 다중 엔진 동작을 구분하다](2026-10-18-019-webserp-deep-validation.md) — 이슈·변경 이력·응답 프레임·익명 쿠키 재사용 검증, HTML 엔진 경로 연결, 공식 도메인6/6 및 실제 모델 답변 확인
+
+019 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e81c3a984d9dfecf8b13b
+
 013 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e81d192ecefeaad3c20ab
 
 012 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e81d1a6efccb5f55af2a2
