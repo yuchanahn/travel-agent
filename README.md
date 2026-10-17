@@ -70,5 +70,6 @@ $env:OLLAMA_MODEL = 'qwen3.5:4b-q4_K_M'
 - [연구일지 인덱스와 기록 규칙](docs/research/README.md)
 - [첫 실험: 로컬 모델 공급과 실패 발견](docs/research/2026-10-17-001-local-llm.md)
 - [개발 단계](docs/roadmap.md)
+- [대표 질문·검증 기준·구현 접근](docs/research/2026-10-17-005-questions-and-validation.md)
 
 실제 사용자 대화와 원본 실행 로그는 기본적으로 Git에서 제외한다. 공개용 평가 사례는 익명화한 고정 데이터로 별도 관리한다. GitHub 원격 저장소와 공개 라이선스는 아직 설정하지 않았다.
