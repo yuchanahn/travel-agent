@@ -26,6 +26,9 @@
 - [003: Python 실행 절차 단순화](2026-10-17-003-editable-install.md)
 - [004: 변경 완료 시 커밋·푸시 정책](2026-10-17-004-git-workflow.md)
 - [005: 미정인 여행 요청에서 시작하는 구현·검증 계획](2026-10-17-005-questions-and-validation.md)
+- [006: 한국어 여행 RAG 구현안 고찰](2026-10-17-006-rag-design-review.md) — 검토안, 구현 전
+
+006 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e8196b896e69ed2353bfb
 
 005 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e811ca9cafd98586ef76a
 - 초기 아키텍처 결정은 docs/decisions/0001-initial-architecture.md에 기록.
