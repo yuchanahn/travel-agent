@@ -47,7 +47,7 @@ Qwen은 실제로 한 응답의 tool_calls에 검색 두 개를 넣었다. 순�
 다른 검색어로 시도하거나, 과거에 기록된 정보를 찾아보시는 것이 좋을 것 같습니다.
 ```
 
-모델은 이번에도 도구 두 개를 한 번에 요청했다. 두 실행 구간은 겹쳤고, 두 오류를 받은 뒤 최종 답변을 냈다. 그러나 이번에는 외부 제공자가 두 검색 모두 `No results found` 오류를 반환해 주소를 받지 못했다. 실행 병렬화는 확인됐지만 두 공식 주소를 안내한다는 답변 기준은 통과하지 못했다.
+모델은 이번에도 도구 두 개를 한 번에 요청했다. 두 실행 구간은 겹쳤고, 두 오류를 받은 뒤 최종 답변을 냈다. 그러나 이번에는 검색 라이브러리 DDGS가 두 검색 모두에서 `No results found.` 예외를 발생시켜 주소를 받지 못했다. 실행 병렬화는 확인됐지만 두 공식 주소를 안내한다는 답변 기준은 통과하지 못했다.
 
 실행 구간은 요청 시작 이후의 초 단위 상대 시각이다.
 
@@ -70,7 +70,7 @@ Qwen은 실제로 한 응답의 tool_calls에 검색 두 개를 넣었다. 순�
 다른 검색어로 시도하거나, 과거에 기록된 정보를 찾아보시는 것이 좋을 것 같습니다.
 ```
 
-대체 엔진 조합도 두 검색 모두 같은 제공자 오류를 반환했다. 원인이 차단인지·질의 문제인지·공급자의 결과 추출 문제인지는 확인하지 못했다. 이번 결과만으로 병렬화가 검색 실패를 일으켰다고 결론 내릴 수도 없다. 순차 실행에서도 실패가 있었다.
+대체 엔진 조합에서도 DDGS가 두 검색 모두에 같은 예외를 발생시켰다. 원인이 차단인지·질의 문제인지·공급자의 결과 추출 문제인지는 확인하지 못했다. 이번 결과만으로 병렬화가 검색 실패를 일으켰다고 결론 내릴 수도 없다. 순차 실행에서도 실패가 있었다.
 
 ## 결과와 남은 한계
 
@@ -153,4 +153,139 @@ Qwen은 실제로 한 응답의 tool_calls에 검색 두 개를 넣었다. 순�
 	```
 
 	연구 스크립트는 개인 대화가 없는 별도 로컬 메모리 DB를 사용한다. 실행할 때마다 외부 검색 결과는 달라질 수 있다. 출력의 completed는 모델이 최종 답변을 냈다는 상태이며 품질 통과가 아니다.
+</details>
+
+## 추가 확인: 실제 검색어와 오류를 실행 기록에서 다시 확인하다
+
+사용자가 “외부 검색 오류가 무엇이고 모델은 무슨 검색어를 보냈는가”를 물었다. 이전 설명의 “외부 검색 오류”는 너무 넓은 표현이었다. 확인된 사실은 **검색 라이브러리 DDGS가 결과 목록을 반환하지 못하고 `No results found.` 예외를 냈다**는 것이다. 검색 서버가 HTTP 오류를 반환했다고 확인한 것은 아니다.
+
+아래는 문제가 된 기본 병렬 실행에 실제로 보냈던 질문과 최종 답변이다.
+
+> **질문**
+> 춘천 삼악산 호수케이블카와 국립춘천박물관의 공식 홈페이지 주소를 각각 찾아줘. 서로 독립적인 두 웹검색을 한 응답의 도구 요청 묶음으로 보내고, 각 검색은 top_k=1로 해줘. 반환된 주소와 출처를 간결하게 알려줘. 본문을 읽었다고 말하지 마.
+
+```text
+죄송합니다. 현재 웹 검색을 통해 공식 홈페이지를 찾을 수 없었습니다.
+
+*   **춘천 삼악산 호수케이블카**: 공식 홈페이지가 확인되지 않았습니다.
+*   **국립춘천박물관**: 공식 홈페이지가 확인되지 않았습니다.
+
+다른 검색어로 시도하거나, 과거에 기록된 정보를 찾아보시는 것이 좋을 것 같습니다.
+```
+
+### 모델이 요청한 두 검색
+
+모델 응답의 tool_calls, 실행기의 tool_start, 다음 모델 호출의 tool 메시지를 대조했다. 세 번의 실행에 포함된6개 호출에서 검색 인자·호출 ID와 전달된 결과가 일치했다. 병렬 실행에서 종료 순서는 달랐지만 다음 모델 입력은 원래 요청 순서를 유지했다.
+
+| 도구 | 실제 query | top_k |
+|---|---|---|
+| web_search | 춘천 삼악산 호수케이블카 공식 홈페이지 | 1 |
+| web_search | 국립춘천박물관 공식 홈페이지 | 1 |
+
+이 검색어는 실행기에서 앞뒤 공백만 제거한 뒤 DDGS.text의 query로 전달하는 구조다. 기본 지역은 kr-kr, safesearch는 moderate, max_results는1이다. 모델이 특정 검색엔진 주소를 직접 호출하는 방식은 아니다.
+
+### 각 실행에서 돌아온 결과
+
+| 실행 | 케이블카 검색 | 박물관 검색 |
+|---|---|---|
+| 순차 · 기본 설정 duckduckgo,bing | 성공, samaksancablecar.com URL 1개 | 아래 예외 |
+| 병렬 · 기본 설정 duckduckgo,bing | 아래 예외 | 아래 예외 |
+| 병렬 · brave,google 요청 설정 | 아래 예외 | 아래 예외 |
+
+검색 실패5건에서 다음과 같은 결과가 도구 메시지로 모델에 전달됐다.
+
+```json
+{
+  "error": "Web search provider failed: No results found.",
+  "error_type": "WebSearchError",
+  "web_search_performed": false
+}
+```
+
+이것은 잘못된 인자·허용하지 않은 도구·반복 호출 거부가 아니다. 검색 어댑터가 받은 DDGS 예외를 WebSearchError로 바꾸고 실행기가 이를 오류 결과로 전달한 것이다. 실행 완료 상태 completed는 그 오류를 읽은 모델이 최종 답변을 냈다는 뜻이다. 웹검색이 성공했다는 뜻은 아니다.
+
+기본 병렬 실행에서 케이블카 검색은 시작 후0.330초, 박물관 검색은0.322초 만에 오류로 끝났다. 이 기록에는 timeout이라는 메시지가 없다. 빠르게 끝났다는 이유만으로 차단·rate limit·통신 장애를 확정할 수는 없다.
+
+### 확인할 수 없는 부분
+
+DDGS 9.16.0의 설치된 코드는 최종 결과가 없으면 마지막 엔진 예외 또는 기본 문자열 `No results found.`로 DDGSException을 발생시킨다. 따라서 이 문구만으로 “웹에 해당 정보가 존재하지 않는다”고 결론 내릴 수 없다. 순차 실행의 모델 답변도 제공자 예외를 “검색 결과가 없었습니다”로 단순화한 한계가 있다.
+
+현재 추적에는 DDGS에 전달하는 검색어와 도구 결과가 남지만 검색엔진별 실제 HTTP 요청 URL·상태 코드·응답 본문·사용된 엔진은 남지 않는다. 설정에 엔진 이름 두 개가 있다고 두 엔진 모두 실제 요청을 처리했다는 뜻도 아니다. 기존 기록만으로 더 구체적인 원인을 복원할 수는 없다. 엔진별 진단을 추가한 재현은 별도 후속 작업이다.
+
+<details>
+<summary>실제 도구 호출·시각·오류 전달 코드</summary>
+
+	코드 기준 커밋: c0ef9f6. 이번 확인에서는 실행 로직을 변경하지 않았다. 아래는 기본 병렬 실행의 실제 model_end.message.tool_calls다.
+
+	```json
+	[
+	  {
+	    "id": "call_ucvi5bst",
+	    "function": {
+	      "index": 0,
+	      "name": "web_search",
+	      "arguments": {
+	        "query": "춘천 삼악산 호수케이블카 공식 홈페이지",
+	        "top_k": 1
+	      }
+	    }
+	  },
+	  {
+	    "id": "call_grf02oaf",
+	    "function": {
+	      "index": 1,
+	      "name": "web_search",
+	      "arguments": {
+	        "query": "국립춘천박물관 공식 홈페이지",
+	        "top_k": 1
+	      }
+	    }
+	  }
+	]
+	```
+
+	기본 병렬 요청의 실제 호출 시각은 Asia/Seoul 기준 2026-10-17 21:18:04다. 아래 시작·종료는 요청 시작 이후의 상대 초다.
+
+	| 실행 | tool_call_id | query 구분 | 시작 | 종료 | 기록 |
+	|---|---|---|---|---|---|
+	| 순차 | call_p0tav9k8 | 케이블카 | 6.036900 | 7.264514 | tool_end |
+	| 순차 | call_fmjzfcbg | 박물관 | 7.265000 | 7.644128 | tool_error |
+	| 기본 병렬 | call_ucvi5bst | 케이블카 | 1.046809 | 1.376946 | tool_error |
+	| 기본 병렬 | call_grf02oaf | 박물관 | 1.047455 | 1.370122 | tool_error |
+	| 대체 엔진 병렬 | call_q1vfpee4 | 케이블카 | 1.419523 | 2.189864 | tool_error |
+	| 대체 엔진 병렬 | call_pd0g7xyd | 박물관 | 1.420063 | 2.095559 | tool_error |
+
+	다음 모델 입력에서 두 tool 메시지의 tool_call_id는 실제 모델 요청 ID와 일치했고, 내용은 해당 tool_end/tool_error 결과와 일치했다. 성공한 케이블카 검색에서 반환된 URL은 https://samaksancablecar.com/ 이었다. 현재 홈페이지를 다시 조회한 결과와 혼동하지 않는다.
+
+	```mermaid
+	flowchart LR
+	    M["Qwen: query + top_k"] --> V["web_search: 인자 확인"]
+	    V --> D["DDGS.text: query 전달"]
+	    D --> E["DDGSException: No results found."]
+	    E --> W["WebSearchError로 변환"]
+	    W --> T["tool_error + tool 메시지"]
+	    T --> N["Qwen 다음 입력과 최종 답변"]
+	```
+
+	`src/travel_agent/web.py` · `_provider_search`: 검색 라이브러리 예외가 프로젝트의 WebSearchError가 되는 실제 경로다.
+
+	```python
+	def _provider_search(query, top_k, timeout, backend):
+	    from ddgs import DDGS
+	    from ddgs.exceptions import DDGSException
+
+	    try:
+	        with DDGS(timeout=timeout, verify=True) as client:
+	            return client.text(query, region="kr-kr", safesearch="moderate", max_results=top_k, backend=backend)
+	    except DDGSException as exc:
+	        raise WebSearchError(f"Web search provider failed: {exc}") from exc
+	```
+
+	로컬에서 같은 기록을 열려면 다음 명령을 사용한다. 검색이나 모델 추론을 다시 수행하지 않고 저장된 trace를 읽는다.
+
+	```powershell
+	travel-agent trace show 1e7955ece3c8461dbc03cbb5ed417c9a
+	travel-agent trace show 8adabbccd3f04981bec4775d362254b5
+	travel-agent trace show 9c59e65f23294b79b415d22a0b944ce7
+	```
 </details>
