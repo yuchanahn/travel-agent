@@ -49,6 +49,10 @@
 
 014 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e8115b3afd982490dd92d
 
+- [015: 구글 웹 검색 요청 재현과 로컬 세션 재사용 후보](2026-10-17-015-google-web-reverse-repositories.md) — 공개 소스 확인, 설치·검색 실험 전
+
+015 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e8140870bcef43c5dc7df
+
 013 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e81d192ecefeaad3c20ab
 
 012 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e81d1a6efccb5f55af2a2
