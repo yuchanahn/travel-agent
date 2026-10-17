@@ -22,7 +22,7 @@
 
 ## 실행
 
-Python 3.12 이상, Ollama 호스트 실행을 기준으로 한다. 모델 태그는 qwen3.5:4b-q4_K_M. Docker와 에이전트 런타임 등 미구현 범위는 docs/roadmap.md에서 확인한다. 모델 다운로드·삭제·업데이트는 사용자가 요청한 범위에서만 수행한다.
+Python 3.12 이상, Ollama 호스트 실행을 기준으로 한다. 모델 태그는 qwen3.5:4b-q4_K_M. memory answer는 2-Step RAG, memory agent는 선택적 메모리 도구 호출과 로컬 실행 추적을 제공한다. 사용법과 한계는 docs/agentic-rag.md, Docker·자동 세션 저장 등 후속 범위는 docs/roadmap.md에서 확인한다. 모델 다운로드·삭제·업데이트는 사용자가 요청한 범위에서만 수행한다.
 
 ## Git 작업
 

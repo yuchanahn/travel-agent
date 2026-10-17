@@ -22,14 +22,21 @@ def add_parser(subparsers):
     actions.add_parser("index", help="Build embeddings; downloads E5 on first use")
     show = actions.add_parser("show", help="Read a raw event with all original metadata")
     show.add_argument("event_id")
-    for command in ("search", "answer"):
+    for command in ("search", "answer", "agent"):
         action = actions.add_parser(command)
         action.add_argument("query")
         action.add_argument("--mode", choices=("bm25", "dense", "hybrid"), default="hybrid")
-        action.add_argument("--top-k", type=int, default=5)
+        if command != "agent":
+            action.add_argument("--top-k", type=int, default=5)
         action.add_argument("--rerank", action="store_true", help="CPU BGE reranker; downloads model on first use")
-        if command == "answer":
+        if command in {"answer", "agent"}:
             action.add_argument("--summary", type=Path, help="Optional current compressed summary; original memory remains separate")
+        if command == "agent":
+            action.add_argument("--max-steps", type=int, default=6, help="Maximum model calls including final answer")
+            action.add_argument("--max-tool-calls", type=int, default=8)
+            action.add_argument("--timeout", type=float, default=120)
+            action.add_argument("--max-input-bytes", type=int, default=10000)
+            action.add_argument("--trace-dir", type=Path, default=Path("data/private/traces"))
 
 
 RECALL_SYSTEM = """너는 여행 상담의 과거 기록을 근거로 답한다.
@@ -93,6 +100,13 @@ def run(args):
             if not found:
                 raise ValueError("Event not found in this user/session")
             result = found[0]
+        elif args.memory_action == "agent":
+            from .agent import run_agent
+            summary = args.summary.read_text(encoding="utf-8-sig") if args.summary else ""
+            result = run_agent(store, args.user, args.session, args.query, summary=summary,
+                               mode=args.mode, rerank=args.rerank, max_steps=args.max_steps,
+                               max_tool_calls=args.max_tool_calls, timeout=args.timeout,
+                               max_input_bytes=args.max_input_bytes, trace_dir=args.trace_dir)
         else:
             result = search(store, args.user, args.session, args.query, mode=args.mode, top_k=args.top_k, rerank=args.rerank)
             if args.memory_action == "answer":
@@ -100,4 +114,4 @@ def run(args):
                 result = recall_answer(args.query, result["hits"], summary)
     result["elapsed_seconds"] = round(time.perf_counter() - start, 3)
     print(json.dumps(result, ensure_ascii=False, indent=2))
-    return 0
+    return 0 if args.memory_action != "agent" or result["status"] == "completed" else 1

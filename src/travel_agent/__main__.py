@@ -16,7 +16,15 @@ def main() -> int:
     commands.add_parser("doctor", help="Read-only Ollama connectivity check")
     from .memory_cli import add_parser, run
     add_parser(commands)
+    from .trace import add_parser as add_trace_parser, run as run_trace
+    add_trace_parser(commands)
     args = parser.parse_args()
+    if args.command == "trace":
+        try:
+            return run_trace(args)
+        except (OSError, ValueError) as exc:
+            print(f"Trace operation failed: {exc}", file=sys.stderr)
+            return 1
     if args.command == "memory":
         try:
             return run(args)
