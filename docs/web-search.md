@@ -1,6 +1,6 @@
 # 웹검색 도구
 
-현재 공급자 조사의 우선순위는 [Google 웹 요청 재현과 로컬 세션 재사용 후보](research/2026-10-17-015-google-web-reverse-repositories.md)다. 직접 구현 전에 webserp·OpenSERP 등의 공개 소스를 검토했다. 디스크 쿠키 재사용과 메모리 세션을 구분하며, 설치·공급자 전환·검색 성공 실험은 아직 하지 않았다. 현재 런타임은 아래 DDGS 구현이다.
+공개 후보는 [Google 웹 요청 재현과 로컬 세션 재사용 조사](research/2026-10-17-015-google-web-reverse-repositories.md)에 정리했다. 이후 webserp를 클론해 별도 가상환경에서 검증했지만 두 공개 질문과 추가 요청 조건에서 쓸 수 있는 검색 결과를 얻지 못했다. HTTP 200·CLI 성공 표시에도 결과는 0개였고 비동기 응답·JS 안내 표식을 관찰했다. [클론 검증 결과와 재현법](research/2026-10-17-016-webserp-clone-validation.md)을 참고한다. 기본 검색기 전환과 파일 기반 세션 재사용 구현은 보류했으며 현재 런타임은 아래 DDGS다.
 
 `memory agent`가 과거 원문용 메모리 도구와 공개 웹검색을 선택한다. 여행 검색어·사이트 순서는 고정하지 않는다. 기존 `memory answer`는 메모리만 사용하는 2-Step RAG로 유지한다.
 

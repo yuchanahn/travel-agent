@@ -53,6 +53,10 @@
 
 015 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e8140870bcef43c5dc7df
 
+- [016: webserp 클론 검증 — 성공 표시와 검색 성공을 구분하다](2026-10-17-016-webserp-clone-validation.md) — 격리 설치·실제 요청 검증 완료, 검색 결과 미확보로 기본 도입 보류
+
+016 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e8113b94ce7dc9dded318
+
 013 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e81d192ecefeaad3c20ab
 
 012 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e81d1a6efccb5f55af2a2
