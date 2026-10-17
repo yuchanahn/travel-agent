@@ -1,0 +1,17 @@
+{
+  "status": "planned_not_executed",
+  "purpose": "Compare search providers before changing the default; not an agent-answer quality benchmark.",
+  "top_k": 5,
+  "cases": [
+    {"id": "cable_official", "query": "춘천 삼악산 호수케이블카 공식 홈페이지", "known_relevant_domain": "samaksancablecar.com"},
+    {"id": "museum_official", "query": "국립춘천박물관 공식 홈페이지", "known_relevant_domain": "chuncheon.museum.go.kr"},
+    {"id": "museum_hours", "query": "국립춘천박물관 관람시간 휴관일 공식 안내", "manual_review": "Does a relevant official source appear? Do not assert current hours from an old snippet."},
+    {"id": "cable_weather", "query": "춘천 삼악산 호수케이블카 기상 악화 운행 중단 공식 안내", "manual_review": "Relevant official policy; not proof of today's operation."},
+    {"id": "indoor", "query": "춘천 비 오는 날 실내 관광지 대중교통", "manual_review": "Assess relevance of the top five results, not just request success."},
+    {"id": "public_transport", "query": "서울 출발 춘천 1박 2일 대중교통 여행", "manual_review": "Look for actionable transport information; inspect timestamps separately."},
+    {"id": "museum_fee", "query": "국립춘천박물관 관람료 공식 안내", "manual_review": "Official evidence, without pre-filling a price as ground truth."},
+    {"id": "cable_bus", "query": "춘천 삼악산 호수케이블카 버스 대중교통 이용 안내", "manual_review": "Distinguish official access instructions from outdated third-party routes."},
+    {"id": "tourism_portal", "query": "춘천 관광 공식 홈페이지", "manual_review": "Identify official ownership from the returned source, not the title alone."},
+    {"id": "synthetic_unknown", "query": "\"traveldemo-no-such-place-20261017\" 공식 홈페이지", "synthetic": true, "manual_review": "Do not call an unrelated result an official site. A nonempty search is possible."}
+  ]
+}
