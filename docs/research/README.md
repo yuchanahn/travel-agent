@@ -32,6 +32,10 @@
 
 ## 인덱스
 
+- [024: Reddit 사례에서 GitHub 소스와 실제 재현으로 이어가기](2026-10-18-024-community-http-research.md) — 원본 Lynx·SearXNG WML·jsdom 재현 실패, 오프라인 접근표·604바이트 레코드 분석, 관찰한 URL 입력 수정, 88개 테스트 통과
+
+024 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e81b78659ccd879796f40
+
 - [023: Google 확인 값과 후속 요청의 불일치를 검증하다](2026-10-18-023-google-followup-consistency.md) — HTTP·JS 식별 정보, 작업 순서와 HttpOnly 수정, SG_SS 실제 전송 확인, 검색 미해결, 87개 테스트 통과
 
 023 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e8138b17ceb2e311d2f74

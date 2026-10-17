@@ -1,5 +1,7 @@
 # 웹검색 도구
 
+[커뮤니티·소스·실행 비교024](research/2026-10-18-024-community-http-research.md)에서 Reddit 추천 HTTP 구현과 SearXNG WML을 재현하고 jsdom도 시험했다. 정상 검색은 확보하지 못했다. `scripts/probe_google_candidates.py`로 후보를 진단하고 `scripts/analyze_google_challenge.py`로 보존한 응답을 오프라인 분석할 수 있다. toolkit 관찰에서 실제로 읽은 document.location·document.URL의 누락을 수정했고 지원 중단 안내는 unsupported_client로 구분한다. 분석 성공은 Google 서버 통과와 별개다.
+
 [후속 요청 검증023](research/2026-10-18-023-google-followup-consistency.md)에서 HTTP·JS 식별 정보, Promise·타이머 순서, HttpOnly 가시성, Referer와 fetch-site를 수정했다. `--javascript --wire`로 실행하면 실제 전송 헤더에서 쿠키 값 없이 이름·SG_SS 길이·요청 맥락을 확인할 수 있다. 실제 SG_SS 전송은 관찰했지만 검색은 여전히302→429이며 성공으로 처리하지 않는다.
 
 현재 진행은 [Google HTTP 직접 구현022](research/2026-10-18-022-google-http-session.md)이다. 사용자 요청에 따라021의 브라우저 모듈·extra·테스트를 제거했다. `python -m travel_agent.google_http "Python official website"`는 브라우저 없이 curl_cffi로 요청하고 쿠키를 `data/private/google-http/cookies.txt`에 저장·재사용한다. `--javascript`는 선택형 QuickJS 실험이며 실제 검색 성공을 보장하지 않는다. 일반·basic 요청은 JS 확인 페이지였고 확인 스크립트 재요청은 /sorry의429였다. 아직 에이전트 공급자로 연결하지 않았다. 아래 webserp 설명은 기존 구현과 비교 이력이다.

@@ -148,6 +148,9 @@ def parse_page(body, url, status_code, top_k=5):
             break
     if rows:
         return "ok", rows
+    visible_text = " ".join(dom.xpath('//body//text()[not(ancestor::script) and not(ancestor::style)]')).lower()
+    if "your browser isn't supported any more" in visible_text:
+        return "unsupported_client", []
     if "/httpservice/retry/enablejs" in lower:
         return "javascript_required", []
     return "no_search_markup", []

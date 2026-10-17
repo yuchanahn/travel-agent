@@ -43,6 +43,8 @@ class ParserTests(unittest.TestCase):
         self.assertEqual(parse_page(b'<form id="captcha-form"></form>' + FIXTURE, "https://www.google.com/search", 200), ("access_interstitial", []))
         self.assertEqual(parse_page(b'<a href="/httpservice/retry/enablejs">Enable</a>', "https://www.google.com/search", 200), ("javascript_required", []))
         self.assertEqual(parse_page(b'<h3>No link</h3>', "https://www.google.com/search", 200), ("no_search_markup", []))
+        self.assertEqual(parse_page(b"<html><body>Update your browser. Your browser isn't supported any more.</body></html>",
+                                    "https://www.google.com/search", 200), ("unsupported_client", []))
 
 
 @unittest.skipUnless(importlib.util.find_spec("curl_cffi"), "Optional HTTP dependency missing")
@@ -125,6 +127,16 @@ class SessionTests(unittest.TestCase):
 
 @unittest.skipUnless(importlib.util.find_spec("quickjs"), "Optional JavaScript experiment missing")
 class JavaScriptTests(unittest.TestCase):
+    def test_document_url_inputs_observed_in_google_vm_match_actual_request(self):
+        from travel_agent.google_javascript import evaluate_challenge
+        url = "https://www.google.com/search?q=synthetic&hl=en"
+        state = evaluate_challenge(b'''<script>
+            if(document.location!==window.location || document.location.hostname!=='www.google.com')throw Error('wrong origin');
+            document.cookie='url='+encodeURIComponent(document.URL);
+            location.replace('/search?q=synthetic');</script>''', url)
+        self.assertEqual(unquote(state["cookies"]["url"]), url)
+        self.assertEqual(state["diagnostics"]["errors"], [])
+
     def test_promises_finish_before_timers_and_navigation_abandons_them(self):
         from travel_agent.google_javascript import evaluate_challenge
         state = evaluate_challenge(b'''<script>
