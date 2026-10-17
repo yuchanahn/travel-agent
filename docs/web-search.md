@@ -40,6 +40,15 @@ DDGS 9.x를 사용하며 기본 엔진은 `duckduckgo,bing`이다. API 키·별�
 
 DDGS는 비공식 검색 경로이므로 차단·속도 제한·결과 변동이 가능하다. 기본 도구 timeout은15초, 단독 CLI에서 최대30초다. 라이브러리 내부 재시도·동기 작업 때문에 전체 종료 시각을 강제 보장하지는 않는다. 과거 메모리와 공개 웹을 구분하도록 프롬프트를 제공하지만 완전한 라우팅·프롬프트 인젝션 방어는 검증하지 않았다.
 
+DDGS 9.16.0 진단에서 기본 설정의 bing은 비활성화되어 실제 선택 엔진이 duckduckgo 하나였다. 재현 시 박물관 검색은 DuckDuckGo 202(봇 확인 표식), 대체 엔진은 Brave 429·Google 403을 반환했다. DDGS가 200 이외 응답을 결과 없이 처리해 최종 `No results found.` 예외로 나타났다. 이전 실패의 HTTP 원인을 소급 확정하는 결과는 아니다. 검색 결과 부재와 접근 실패를 현재 오류 문구만으로 구분하지 못한다.
+
+```powershell
+# LLM 없이 같은 공개 검색어의 실제 엔진·HTTP 응답·추출 개수를 진단
+python scripts/diagnose_web.py
+```
+
+진단은 해당 프로세스에서만 DDGS 호출을 관찰하고 원본 HTML·쿠키·인증 헤더를 저장하지 않는다. 실제 결과와 내장 웹검색의 비교는 [연구일지012](research/2026-10-17-012-search-diagnosis.md)에 기록한다. 이 진단은 기존 에이전트 trace에 자동 적용되지 않는다.
+
 ```powershell
 python -m unittest discover -s tests -v
 python scripts/evaluate_web.py
