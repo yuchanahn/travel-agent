@@ -1,5 +1,7 @@
 # 웹검색 도구
 
+[DOM·서버 비교026](research/2026-10-18-026-google-dom-server-validation.md)에서 기존 jsdom·화면 보완·확장 프로필로 실제 HTTP 검색을 비교했지만 모두302→/sorry/index, 검색 결과0이었다. `scripts/probe_google_dom.py --node <Node24 실행 파일>`은 별도 클론의 검토한 의존성으로 세 조건을 재현하는 연구 실행기다. 브라우저를 띄우지 않으며 쿠키 생성만으로 성공 처리하지 않는다. 고정 응답의 별도 오프라인 비교에서는 화면 좌표 두 속성 추가로 레코드604→609바이트를 재현했다. 구조 차이와 서버 수용을 구분하며 기존 에이전트의 공급자 동작은 변경하지 않았다.
+
 [레코드 입력 비교025](research/2026-10-18-025-google-record-differential.md)에서는 새 Google 요청 없이 저장 응답을 고정 조건에서 비교했다. `scripts/analyze_google_challenge.py --matrix`로 입력별 변화 구간을 관찰한다. 일부 언어·너비 구간을 확인했지만 오프셋은 해당 캡처에 한정되며 Google 서버 통과 검증은 아니다. Node24 비교기 테스트는 `node --test tests/test_google_record_matrix.cjs`로 별도 실행한다.
 
 [커뮤니티·소스·실행 비교024](research/2026-10-18-024-community-http-research.md)에서 Reddit 추천 HTTP 구현과 SearXNG WML을 재현하고 jsdom도 시험했다. 정상 검색은 확보하지 못했다. `scripts/probe_google_candidates.py`로 후보를 진단하고 `scripts/analyze_google_challenge.py`로 보존한 응답을 오프라인 분석할 수 있다. toolkit 관찰에서 실제로 읽은 document.location·document.URL의 누락을 수정했고 지원 중단 안내는 unsupported_client로 구분한다. 분석 성공은 Google 서버 통과와 별개다.

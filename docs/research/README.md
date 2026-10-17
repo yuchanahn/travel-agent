@@ -32,6 +32,10 @@
 
 ## 인덱스
 
+- [026: DOM 누락을 실제 HTTP 결과와 대조하다](2026-10-18-026-google-dom-server-validation.md) — 실제3조건 모두302→/sorry, 별도 좌표 누락 비교604→609바이트, 검색 미해결, Python88개·Node3개 통과
+
+026 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e8132b362ef5ea924f8f7
+
 - [025: 같은 확인 응답의 입력을 하나씩 바꿔 레코드 구간을 찾다](2026-10-18-025-google-record-differential.md) — 고정 입력14조건·28회 VM 실행, 언어·너비·수치·생성자 의존 구간 확인, Python88개·Node3개 테스트 통과, 서버 검증 전
 
 025 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e81e9a457de8d61a1bc23

@@ -8,6 +8,10 @@ function applyFixture(window, fixture, dom) {
   if (fixture.url) dom.reconfigure({url:fixture.url});
   if (fixture.languages) set(window.navigator,'languages',fixture.languages);
   if (fixture.screenWidth !== undefined) set(window.screen,'width',fixture.screenWidth);
+  if (fixture.screenCoordinates) {
+    set(window.screen,'availLeft',0);
+    set(window.screen,'availTop',0);
+  }
   if (fixture.hardwareConcurrency !== undefined) set(window.navigator,'hardwareConcurrency',fixture.hardwareConcurrency);
   if (fixture.userAgent) set(window.navigator,'userAgent',fixture.userAgent);
   if (fixture.webdriver !== undefined) set(window.navigator,'webdriver',fixture.webdriver);
@@ -58,6 +62,7 @@ async function main() {
     ['screen_width',{screenWidth:1}],
     ['screen_width_256',{screenWidth:256}],
     ['screen_width_257',{screenWidth:257}],
+    ['screen_avail_coordinates',{screenCoordinates:true}],
     ['hardware_concurrency',{hardwareConcurrency:1}],
     ['query_only',{url:'https://www.google.com/search?q=synthetic'}],
     ['user_agent_only',{userAgent:'Synthetic-HTTP-Test/1.0'}],

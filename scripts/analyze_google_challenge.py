@@ -25,7 +25,7 @@ def main():
     parser.add_argument("--toolkit", type=Path, default=ROOT / "artifacts/vendor/google-search-guard-vm-reversing")
     parser.add_argument("--matrix", action="store_true", help="Run frozen one-input record comparisons instead of access probing")
     parser.add_argument("--matrix-case", action="append", choices=["language_first", "language_second", "screen_width", "screen_width_256", "screen_width_257",
-        "hardware_concurrency", "query_only", "user_agent_only", "webdriver_negative_control", "navigator_constructor_stub"])
+        "screen_avail_coordinates", "hardware_concurrency", "query_only", "user_agent_only", "webdriver_negative_control", "navigator_constructor_stub"])
     args = parser.parse_args()
     if args.matrix_case and not args.matrix:
         parser.error("--matrix-case requires --matrix")
