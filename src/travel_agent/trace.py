@@ -4,6 +4,7 @@ import json
 import re
 import time
 import uuid
+from threading import Lock
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -16,8 +17,13 @@ class Trace:
         self.path.touch(exist_ok=False)
         self.started = time.perf_counter()
         self.sequence = 0
+        self.lock = Lock()
 
     def emit(self, kind, **fields):
+        with self.lock:
+            self._emit(kind, **fields)
+
+    def _emit(self, kind, **fields):
         self.sequence += 1
         record = {"request_id": self.request_id, "sequence": self.sequence,
                   "timestamp": datetime.now(timezone.utc).isoformat(),

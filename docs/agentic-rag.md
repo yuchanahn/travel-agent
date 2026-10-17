@@ -55,7 +55,9 @@ travel-agent trace show REQUEST_ID
 
 ## 종료와 예산
 
-기본값은 모델 호출 최대 6회, 도구 호출 최대 8회, 시간 예산 120초다. 인용 수정 호출도 모델 호출 한도에 포함된다. 모델의 동시 도구 요청은 순차 실행한다. 실제 도구 시도 수에는 거부된 인자와 반복 시도도 포함한다.
+기본값은 모델 호출 최대 6회, 도구 호출 최대 8회, 시간 예산 120초다. 인용 수정 호출도 모델 호출 한도에 포함된다. 한 응답의 여러 web_search는 기본 최대3개를 병렬 실행한다. 메모리 도구는 SQLite·로컬 검색 모델을 공유하므로 호출 스레드에서 순차 실행하며 웹 I/O와는 겹칠 수 있다. 도구 호출 수에는 묶음 안의 거부된 인자·반복 시도·기한 초과로 실행되지 않은 요청도 포함한다.
+
+`--tool-workers 1`은 요청 순서대로 모두 순차 실행한다. 허용 범위는1..4다. 병렬에서는 완료 순서가 달라도 결과를 원래 요청 순서와 tool_call_id에 맞춰 묶어 다음 모델 호출에 전달한다. 한 호출의 오류가 다른 호출 결과를 버리지는 않는다. 앞선 검색 결과를 사용해야 하는 후속 검색은 다음 모델 턴에서 요청한다.
 
 ```powershell
 travel-agent memory --user demo --session trip agent "최신 예산은?" --max-steps 4 --max-tool-calls 3 --timeout 90
@@ -64,6 +66,8 @@ travel-agent memory --user demo --session trip agent "최신 예산은?" --max-s
 `--max-input-bytes` 기본 10000은 메시지·도구 스키마 JSON의 UTF-8 크기 제한이다. 정확한 Qwen 토큰 수가 아니므로 num_ctx4096에 항상 맞는다는 보장은 없다. 문맥을 몰래 잘라 계속 진행하지 않고 `context_limit`으로 중단한다. 생성 출력은 최대512토큰이며 길이 종료는 `output_limit`으로 구분한다.
 
 시간 예산은 요청 전·모델 응답 후·도구 단계 경계에서 검사하고 남은 시간을 HTTP timeout에 전달한다. CPU 모델 로딩이나 동기 검색 실행을 강제 중단하는 hard deadline은 아니다. 한 단계가 오래 걸리면 실제 종료가 예산보다 늦을 수 있다.
+
+병렬 작업도 실제 시작 직전에 남은 시간을 검사한다. 이미 실행 중인 스레드는 강제 종료하지 않고 완료를 기다린다. 병렬 실행은 검색 개수·토큰 예산을 늘리지 않으며 여러 결과가 쌓이면 기존 context_limit에 도달할 수 있다.
 
 종료 상태: completed, step_limit, tool_limit, timeout, context_limit, output_limit, model_error, protocol_error, empty_answer. completed는 루프가 최종 답변으로 끝났다는 뜻이며 내용 품질 통과를 뜻하지 않는다. CLI는 completed만 종료 코드0, 나머지는1을 반환한다.
 
@@ -82,6 +86,7 @@ travel-agent memory --user demo --session trip agent "최신 예산은?" --max-s
 - run_start/run_end: 요청 ID, 사용자·세션, 모델 태그, 옵션·제한, 종료 결과.
 - model_start/model_end/model_error: 단계, 입력, 실제 assistant 응답·도구 요청, 지연, 입력·출력 토큰, 오류.
 - tool_start/tool_end/tool_error: 단계·span, 도구 이름·인자, 실제 제공 결과, 지연·오류.
+- tool_batch_start/tool_batch_end: 한 모델 응답의 도구 묶음과 worker 수. 호출별 시작·종료가 겹치는지 확인할 수 있다. 스레드 간 sequence 증가와 파일 쓰기는 Lock으로 보호한다.
 - retrieval_index: 원문 snapshot 해시와 임베딩·청킹 설정.
 - citation_repair: 인용 수정 이유와 실제 피드백.
 
