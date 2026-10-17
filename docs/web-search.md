@@ -40,6 +40,8 @@ DDGS 9.x를 사용하며 기본 엔진은 `duckduckgo,bing`이다. API 키·별�
 
 웹검색 보강을 위해8개 공개 저장소와 공식 문서·논문을 검토했다. 검색 공급자의 우선 비교 후보는 SearXNG와 OpenSERP, 본문 수집 후보는 Crawl4AI다. Firecrawl·Jina의 호스팅 기능과 자체 운영 범위도 구분했다. [조사와 채택 판단](research/2026-10-17-013-web-search-strengthening.md), [실행 전 평가 입력10개](../examples/web-search-evaluation.json)를 참고한다. 후보를 설치하거나 검색 성공률을 비교한 결과는 아직 없으며 현재 런타임은 DDGS다.
 
+관리형 API 조사 후 비교 순서를 보강했다. Ollama Web Search/Fetch, Tavily, Exa, Brave Search API와 구글 결과를 제공하는 제3자 Serper도 후보에 포함한다. 낮은 운영 부담과 무료 사용 조건을 먼저 비교하고 SearXNG·OpenSERP는 자체 운영이 필요한 경우의 후보로 유지한다. Ollama 검색은 로컬11434가 아닌 ollama.com의 외부 서비스이며 무료 계정과 API 키가 필요하다. 새 계정·키 생성이나 공급자 전환은 아직 수행하지 않았다. 현재 조건과 출처는 같은 연구일지013의 추가 조사에 기록했다.
+
 DDGS는 비공식 검색 경로이므로 차단·속도 제한·결과 변동이 가능하다. 기본 도구 timeout은15초, 단독 CLI에서 최대30초다. 라이브러리 내부 재시도·동기 작업 때문에 전체 종료 시각을 강제 보장하지는 않는다. 과거 메모리와 공개 웹을 구분하도록 프롬프트를 제공하지만 완전한 라우팅·프롬프트 인젝션 방어는 검증하지 않았다.
 
 DDGS 9.16.0 진단에서 기본 설정의 bing은 비활성화되어 실제 선택 엔진이 duckduckgo 하나였다. 재현 시 박물관 검색은 DuckDuckGo 202(봇 확인 표식), 대체 엔진은 Brave 429·Google 403을 반환했다. DDGS가 200 이외 응답을 결과 없이 처리해 최종 `No results found.` 예외로 나타났다. 이전 실패의 HTTP 원인을 소급 확정하는 결과는 아니다. 검색 결과 부재와 접근 실패를 현재 오류 문구만으로 구분하지 못한다.

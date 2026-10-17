@@ -316,3 +316,56 @@ DDGS의 단순 HTML 요청과 다른 실행 경로를 비교할 수 있다는 �
 
 	규모·별점과 README의 신뢰성 주장은 채택 근거 중 일부일 뿐이다. 특정 후보의 성능이 더 좋다는 측정 결과는 이번 문서에 없다. 소규모 자기 보고 벤치마크도 한국어 여행 실사용 평가와 분리했다.
 </details>
+
+## 추가 조사 — 에이전트용 관리형 검색 API를 먼저 비교하기
+
+사용자는 “에이전트들 이용하라고 통합검색 관련 API 경로가 이미 많을 것 같다”고 지적했다. 앞선 오픈소스 조사만으로 자체 호스팅을 우선한 것은 범위를 좁게 잡은 판단이었다. 비용과 운영 부담이 목적이라면 무료 할당량이 있는 관리형 API도 먼저 비교할 수 있다.
+
+공식 문서를 확인하니 다음 경로들이 있었다. 이는 API 검색을 실제 실행한 성능 결과가 아니라 2026-10-17의 제공 기능·사용 조건 조사다.
+
+| 서비스 | 제공 기능과 현재 시작 조건 |
+|---|---|
+| [Ollama Web Search/Fetch](https://docs.ollama.com/capabilities/web-search) | 무료 계정·API 키로 외부 검색과 페이지 조회. 공식 블로그에 개인 무료 검색 제공이 명시돼 있으나 정확한 무료 호출 수는 확인하지 못함 |
+| [Tavily](https://docs.tavily.com/documentation/api-credits) | 매월1,000 무료 크레딧, 카드 불필요. basic 검색1회=1크레딧, advanced=2크레딧 |
+| [Exa](https://exa.ai/pricing) | 매월$10 크레딧과 가입 보너스$10, 결제수단 없이 시작. 검색 종류와 추가 기능에 따라 소모량이 달라짐 |
+| [Brave Search API](https://brave.com/search/api/) | 자체 인덱스 검색, 매월$5 크레딧. 현재 Search 가격은1,000요청당$5이며 가입 시 카드 요구 안내가 있음 |
+| [Serper](https://serper.dev/) | Google 검색 결과를 JSON으로 제공하는 제3자 서비스. 2,500회 무료 체험·카드 불필요 안내. Google이 운영하는 공식 API라고 소개하지 않음 |
+
+Ollama의 실제 검색 주소는 POST https://ollama.com/api/web_search, 본문 조회 주소는 POST https://ollama.com/api/web_fetch다. localhost:11434에서 추론하는 현재 로컬 Qwen과 별개다. 모델을 클라우드로 옮기지 않고 검색 도구의 구현만 이 외부 API에 연결할 수 있다. 요청에는 API 키가 필요하며 검색어가 외부로 전송된다. [공식 발표](https://ollama.com/blog/web-search)도 무료 계정의 검색 사용과 상위 사용 한도를 구분한다.
+
+이런 API는 우리가 검색 결과 HTML을 직접 수집하며 CAPTCHA를 처리하는 부담을 줄인다. 인증·할당량·호출 속도 제한은 남으며, 원본 페이지 조회가 항상 성공하는 것도 아니다. 이전에 Brave HTML 검색이429였다는 관찰을 Brave의 공식 API 사용 불가로 일반화해서는 안 된다.
+
+우선순위를 보강한다. Ollama Web Search와 Tavily 또는 Exa의 무료 조건 안에서 기존10개 질문을 비교하는 것이 낮은 운영 부담의 첫 실험 후보이다. Google 결과 자체가 필요하면 Serper를 비교한다. 자체 운영이 필요한 경우 SearXNG·OpenSERP를 유지한다. 이는 잠정 비교 순서이며 키 발급·비용 발생·공급자 교체·실제 API 검색은 수행하지 않았다. 기존 DDGS 실행기는 그대로다.
+
+<details>
+<summary>실제 툴콜 로그 — 관리형 검색 API 공식 문서 조회</summary>
+
+	이번 추가 조사에 모델·검색 공급자 API 호출은 없었다. 내장 웹 도구로 공식 문서를 조회했고 아래는 실제 open 인자다. 문서의 예제 응답을 우리의 실행 결과로 기록하지 않는다.
+
+	```json
+	{
+	  "open": [
+	    {
+	      "ref_id": "https://docs.ollama.com/capabilities/web-search"
+	    },
+	    {
+	      "ref_id": "https://docs.tavily.com/documentation/api-credits"
+	    },
+	    {
+	      "ref_id": "https://exa.ai/pricing"
+	    },
+	    {
+	      "ref_id": "https://brave.com/search/api/"
+	    },
+	    {
+	      "ref_id": "https://serper.dev/"
+	    }
+	  ],
+	  "response_length": "long"
+	}
+	```
+
+	반환된 공식 문서에서 확인한 내용: Ollama의 계정·키와 외부 검색/조회 엔드포인트, Tavily의 월간 크레딧과 basic/advanced 소모량, Exa의 월간·가입 크레딧, Brave의 검색 가격·카드 안내, Serper의 무료 체험 조건이다. Serper 문서 안의 google.serper.dev 문자열 검색에서는 일치 항목을 얻지 못해 이를 확인된 호출 주소로 쓰지 않았다.
+
+	Ollama 무료 제공 여부는 https://ollama.com/blog/web-search 를 추가로 열어 확인했다. 정확한 숫자가 없는 무료 한도는 임의 수치로 채우지 않았다. 원본 조사 도구 응답은 비공개로 보존하고 인증 키는 수집하지 않았다.
+</details>
