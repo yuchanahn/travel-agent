@@ -28,6 +28,8 @@
 
 ## 실행
 
+Google HTTP 후속 검증은023을 따른다. 전송·JS 식별 정보는 google_identity.py에서 함께 관리하고, document.cookie에는 실제 curl의 http_only 표기도 반영해 URL에 맞는 비 HttpOnly 쿠키만 제공한다. Promise·타이머 실험과 --wire 진단은 실제 브라우저 동등성·확인 값 유효성 검증과 구분한다. SG_SS 실제 전송을 확인했지만 Google 검색은 여전히 실패 상태다.
+
 사용자는 webserp 수리를 중단하고 브라우저 실행 없이 Google 웹 요청을 HTTP 클라이언트로 직접 구현하도록 확정했다. 021의 Playwright 접근은 의도 오해로 폐기했으며 브라우저 모듈·테스트·extra를 제거했다. 현재는 google_http.py의 직접 요청·로컬 쿠키 파일과 선택형 google_javascript.py의 제한된 QuickJS 실험을 사용한다(022). Chrome·Playwright·헤드리스로 대체하지 않는다. 실제 검색 성공 확인 전에 에이전트에 연결하거나 다른 엔진으로 대체하지 않는다. webserp 코드는 과거 비교 이력이며 추가 수리하지 않는다.
 
 현재 작업은 Google 실패 자체의 진단·수리를 우선하며 Yahoo 등 다른 엔진을 호출해 대체 성공으로 마무리하지 않는다. 020에 요청·프레임·브라우저 단계의 진단을 기록했다. 사용자 평소 브라우저의 정상 동작 보고와 새 진단 프로필의 실패를 구분하고, 영구 IP 차단이나 로그인 필수로 단정하지 않는다.

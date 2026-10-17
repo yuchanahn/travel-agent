@@ -6,14 +6,25 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
+from urllib.parse import unquote
 
-from travel_agent.google_http import allowed_redirect, load_cookies, parse_page, result_url, save_cookies, search
+from travel_agent.google_http import allowed_redirect, document_cookies, load_cookies, parse_page, result_url, sanitized_wire_headers, save_cookies, search
 
 
 FIXTURE = b'<div class="MjjYud"><a href="https://wrong.invalid/">Unrelated</a><a href="https://python.org/"><h3>Python</h3></a><div class="VwiC3b">Synthetic snippet</div></div>'
 
 
 class ParserTests(unittest.TestCase):
+    def test_wire_diagnostics_exclude_cookie_values_and_query_tokens(self):
+        headers = b'GET /search?sei=private HTTP/2\r\nCookie: SG_SS=secret; NID=private\r\nReferer: https://www.google.com/search?sei=private\r\nSec-Fetch-Site: same-origin\r\n'
+        result = sanitized_wire_headers(headers)
+        self.assertEqual(result["cookie_names"], ["SG_SS", "NID"])
+        self.assertEqual(result["sg_ss_lengths"], [6])
+        self.assertEqual(result["referer_path"], "/search")
+        self.assertNotIn("private", json.dumps(result))
+        self.assertNotIn("secret", json.dumps(result))
+        self.assertIsNone(sanitized_wire_headers(b'CONNECT www.google.com:443 HTTP/1.1\r\n'))
+
     def test_title_and_url_belong_to_same_anchor(self):
         self.assertEqual(parse_page(FIXTURE, "https://www.google.com/search", 200),
                          ("ok", [{"title": "Python", "url": "https://python.org/", "snippet": "Synthetic snippet"}]))
@@ -36,6 +47,22 @@ class ParserTests(unittest.TestCase):
 
 @unittest.skipUnless(importlib.util.find_spec("curl_cffi"), "Optional HTTP dependency missing")
 class SessionTests(unittest.TestCase):
+    def test_script_cookie_view_filters_real_curl_http_only_flags_and_scope(self):
+        from curl_cffi.requests import Cookies
+        cookies = Cookies()
+        for name in ["visible", "hidden", "standard", "wrong_path", "expired"]:
+            cookies.set(name, "fixture", domain="www.google.com", path="/other" if name == "wrong_path" else "/")
+        for cookie in cookies.jar:
+            if cookie.name == "visible":
+                cookie._rest = {"http_only": "False"}
+            elif cookie.name == "hidden":
+                cookie._rest = {"http_only": "True"}
+            elif cookie.name == "standard":
+                cookie._rest = {"HttpOnly": None}
+            elif cookie.name == "expired":
+                cookie.expires = 1
+        self.assertEqual(document_cookies(cookies.jar, "https://www.google.com/search"), {"visible": "fixture"})
+
     def test_cookie_domain_path_secure_expiry_survive_disk_round_trip(self):
         from curl_cffi.requests import Cookies
         cookies = Cookies()
@@ -81,6 +108,7 @@ class SessionTests(unittest.TestCase):
         self.assertNotIn("secret-value", json.dumps(first))
         self.assertEqual(len(requests), 4)
         self.assertTrue(all(not kwargs["allow_redirects"] for _, kwargs in requests))
+        self.assertEqual(requests[1][1]["headers"], {"Referer": "https://www.google.com/", "Sec-Fetch-Site": "same-origin"})
 
     def test_external_redirect_is_rejected_before_request(self):
         from curl_cffi.requests import Cookies
@@ -97,6 +125,37 @@ class SessionTests(unittest.TestCase):
 
 @unittest.skipUnless(importlib.util.find_spec("quickjs"), "Optional JavaScript experiment missing")
 class JavaScriptTests(unittest.TestCase):
+    def test_promises_finish_before_timers_and_navigation_abandons_them(self):
+        from travel_agent.google_javascript import evaluate_challenge
+        state = evaluate_challenge(b'''<script>
+            setTimeout(()=>{document.cookie='SG_SS=wrong';navigator.sendBeacon('/gen_204?cad=sg_trbl')},0);
+            Promise.resolve().then(()=>Promise.resolve()).then(()=>{
+                document.cookie='SG_SS=right';location.replace('/search?q=test');
+            });</script>''', "https://www.google.com/search?q=test")
+        self.assertEqual(state["cookies"]["SG_SS"], "right")
+        self.assertEqual(state["diagnostics"]["timers_executed"], 0)
+        self.assertEqual(state["diagnostics"]["beacon_codes"], [])
+
+    def test_identity_initial_cookies_relative_clock_and_delayed_timer(self):
+        from travel_agent.google_javascript import evaluate_challenge
+        from travel_agent.google_identity import USER_AGENT, PLATFORM, HTTP_HEADERS
+        state = evaluate_challenge(b'''<script>
+            document.cookie='ua='+encodeURIComponent(navigator.userAgent);
+            document.cookie='platform='+navigator.platform;
+            document.cookie='clock='+(performance.now()<1000);
+            if(!document.cookie.includes('visible=fixture'))throw Error('cookie missing');
+            var cancelled=setTimeout(()=>{throw Error('cancelled')},0);clearTimeout(cancelled);
+            setTimeout(()=>{document.cookie='SG_SS=ok';location.replace('/search?q=test')},10);
+            setTimeout(()=>navigator.sendBeacon('/gen_204?cad=sg_trbl'),2000);
+            </script>''', "https://www.google.com/search?q=test", initial_cookies={"visible": "fixture"})
+        self.assertEqual(unquote(state["cookies"]["ua"]), HTTP_HEADERS["User-Agent"])
+        self.assertEqual(unquote(state["cookies"]["ua"]), USER_AGENT)
+        self.assertEqual(state["cookies"]["platform"], PLATFORM)
+        self.assertEqual(state["cookies"]["clock"], "true")
+        self.assertEqual(state["cookies"]["SG_SS"], "ok")
+        self.assertEqual(state["diagnostics"]["errors"], [])
+        self.assertEqual(state["diagnostics"]["timers_executed"], 1)
+
     def test_captures_cookie_and_redirect_without_exposing_host_apis(self):
         from travel_agent.google_javascript import evaluate_challenge
         state = evaluate_challenge(b'''<script>document.cookie='SG_SS=fixture; expires=Wed, 01 Jan 2031 00:00:00 GMT; path=/';

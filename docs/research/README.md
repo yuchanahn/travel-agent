@@ -32,6 +32,10 @@
 
 ## 인덱스
 
+- [023: Google 확인 값과 후속 요청의 불일치를 검증하다](2026-10-18-023-google-followup-consistency.md) — HTTP·JS 식별 정보, 작업 순서와 HttpOnly 수정, SG_SS 실제 전송 확인, 검색 미해결, 87개 테스트 통과
+
+023 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e8138b17ceb2e311d2f74
+
 - [022: 브라우저 없이 Google HTTP 세션과 확인 스크립트를 구현하다](2026-10-18-022-google-http-session.md) — HTTP 직접 요청·파일 쿠키·선택형 QuickJS, 실제 SG_SS 생성 후 재요청429, 검색 미해결, 브라우저 구현 제거, 최종83개 테스트 통과
 
 022 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e818b8abfc10fe60ae3a1

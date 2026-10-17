@@ -9,15 +9,30 @@ import time
 from email.utils import parsedate_to_datetime
 from http.cookies import SimpleCookie, CookieError
 from datetime import datetime, timezone
-from http.cookiejar import LWPCookieJar
+from http.cookiejar import LWPCookieJar, CookieJar
 from pathlib import Path
 from urllib.parse import parse_qs, urljoin, urlsplit, urlunsplit
 from uuid import uuid4
+from urllib.request import Request
+from .google_identity import PROFILE, HTTP_HEADERS
 
 
 PRIVATE = Path(__file__).resolve().parents[2] / "data/private/google-http"
 ORIGIN = "https://www.google.com"
-PROFILE = "chrome133a"
+
+
+def document_cookies(jar, url):
+    """Only unexpired, URL-matching, non-HttpOnly cookies are visible to script."""
+    visible = CookieJar()
+    for cookie in jar:
+        if not any(key.lower().replace("_", "").replace("-", "") == "httponly"
+                   and (value is None or str(value).lower() not in {"false", "0", ""})
+                   for key, value in cookie._rest.items()):
+            visible.set_cookie(cookie)
+    request = Request(url)
+    visible.add_cookie_header(request)
+    parsed = SimpleCookie(request.get_header("Cookie", ""))
+    return {key: morsel.value for key, morsel in parsed.items()}
 
 
 def load_cookies(path):
@@ -68,6 +83,28 @@ def allowed_redirect(url, hosts):
         return False
 
 
+def sanitized_wire_headers(data):
+    """Read libcurl's outgoing header block without retaining cookies or query tokens."""
+    lines = data.decode("utf-8", errors="replace").splitlines()
+    if not lines or not lines[0].startswith("GET "):
+        return None
+    result = {"cookie_names": [], "sg_ss_lengths": []}
+    for line in lines[1:]:
+        name, _, value = line.partition(":")
+        name, value = name.lower(), value.strip()
+        if name == "cookie":
+            for part in value.split(";"):
+                key, _, secret = part.strip().partition("=")
+                result["cookie_names"].append(key)
+                if key == "SG_SS":
+                    result["sg_ss_lengths"].append(len(secret))
+        elif name in {"user-agent", "sec-ch-ua-platform", "sec-fetch-site"}:
+            result[name] = value
+        elif name == "referer":
+            result["referer_path"] = urlsplit(value).path
+    return result
+
+
 def parse_page(body, url, status_code, top_k=5):
     from lxml import html
     u = urlsplit(url)
@@ -116,7 +153,7 @@ def parse_page(body, url, status_code, top_k=5):
     return "no_search_markup", []
 
 
-def search(query, *, cookie_file=None, timeout=15, mode="standard", capture=False, javascript=False):
+def search(query, *, cookie_file=None, timeout=15, mode="standard", capture=False, javascript=False, wire=False):
     from curl_cffi.requests import Session
     from curl_cffi.requests.exceptions import RequestException
 
@@ -131,17 +168,31 @@ def search(query, *, cookie_file=None, timeout=15, mode="standard", capture=Fals
     report = {"run_id": run_id, "provider": "google-http", "query": query.strip(), "mode": mode,
               "started_at": datetime.now(timezone.utc).isoformat(), "transport_profile": PROFILE,
               "cookies_loaded": len(jar), "requests": [], "hits": [], "web_search_performed": False}
-    with Session(cookies=jar, impersonate=PROFILE, headers={
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.9"}) as session:
-        def fetch(url, params=None):
+    options = {}
+    if wire:
+        from curl_cffi import CurlOpt
+        report["wire_requests"] = []
+
+        def observe(kind, data):
+            if kind == 2:  # libcurl HEADER_OUT
+                observed = sanitized_wire_headers(data)
+                if observed is not None:
+                    observed["id"] = f"{run_id}:{len(report['wire_requests'])+1}"
+                    report["wire_requests"].append(observed)
+
+        options["curl_options"] = {CurlOpt.VERBOSE: 1, CurlOpt.DEBUGFUNCTION: observe}
+    with Session(cookies=jar, impersonate=PROFILE, headers=HTTP_HEADERS, **options) as session:
+        def fetch(url, params=None, source=None):
             for hop in range(4):
-                r = session.get(url, params=params, timeout=timeout, allow_redirects=False)
+                headers = {"Referer": source, "Sec-Fetch-Site": "same-origin"} if source and urlsplit(source).netloc == urlsplit(url).netloc else {}
+                r = session.get(url, params=params, headers=headers, timeout=timeout, allow_redirects=False)
                 u = urlsplit(r.url)
                 event = {"id": f"{run_id}:{len(report['requests'])+1}", "method": "GET",
                          "host": u.hostname, "path": u.path, "http_status": r.status_code,
                          "response_bytes": len(r.content), "elapsed_ms": round((time.perf_counter()-started)*1000)}
                 report["requests"].append(event)
+                if headers:
+                    event["request_context"] = {"referer_path": urlsplit(source).path, "fetch_site": "same-origin"}
                 if capture:
                     folder = PRIVATE / "responses" / run_id
                     folder.mkdir(parents=True, exist_ok=True)
@@ -170,12 +221,13 @@ def search(query, *, cookie_file=None, timeout=15, mode="standard", capture=Fals
                     if mode == "basic":
                         params["gbv"] = "1"
                     report["search_params"] = params
-                    response = fetch(ORIGIN + "/search", params)
+                    response = fetch(ORIGIN + "/search", params, source=home.url)
                     if response is not None:
                         report["status"], report["hits"] = parse_page(response.content, response.url, response.status_code)
                         if javascript and report["status"] == "javascript_required":
                             from .google_javascript import evaluate_challenge
-                            state = evaluate_challenge(response.content, response.url)
+                            state = evaluate_challenge(response.content, response.url,
+                                initial_cookies=document_cookies(session.cookies.jar, response.url))
                             report["javascript"] = state["diagnostics"]
                             token = state["cookies"].get("SG_SS")
                             if token and len(token) < 4093:
@@ -194,7 +246,7 @@ def search(query, *, cookie_file=None, timeout=15, mode="standard", capture=Fals
                                 target = urljoin(response.url, state["redirects"][-1])
                                 dest = urlsplit(target)
                                 if allowed_redirect(target, {"www.google.com"}) and dest.path == "/search":
-                                    followup = fetch(target)
+                                    followup = fetch(target, source=response.url)
                                     if followup is not None:
                                         report["status"], report["hits"] = parse_page(followup.content, followup.url, followup.status_code)
                                 else:
@@ -217,9 +269,11 @@ def main():
     parser.add_argument("--timeout", type=float, default=15, help="Per-request seconds, not total deadline")
     parser.add_argument("--capture", action="store_true", help="Save private response bodies for diagnosis")
     parser.add_argument("--javascript", action="store_true", help="Experimental bounded JS runtime; no browser, not guaranteed to pass Google")
+    parser.add_argument("--wire", action="store_true", help="Inspect outgoing header metadata; never print cookie values")
     args = parser.parse_args()
     try:
-        report = search(args.query, mode=args.mode, timeout=args.timeout, capture=args.capture, javascript=args.javascript)
+        report = search(args.query, mode=args.mode, timeout=args.timeout, capture=args.capture,
+                        javascript=args.javascript, wire=args.wire)
     except (ImportError, OSError, ValueError) as exc:
         report = {"status": "setup_error", "error_type": type(exc).__name__, "web_search_performed": False}
     print(json.dumps(report, ensure_ascii=False, indent=2))

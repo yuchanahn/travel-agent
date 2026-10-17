@@ -1,5 +1,7 @@
 # 웹검색 도구
 
+[후속 요청 검증023](research/2026-10-18-023-google-followup-consistency.md)에서 HTTP·JS 식별 정보, Promise·타이머 순서, HttpOnly 가시성, Referer와 fetch-site를 수정했다. `--javascript --wire`로 실행하면 실제 전송 헤더에서 쿠키 값 없이 이름·SG_SS 길이·요청 맥락을 확인할 수 있다. 실제 SG_SS 전송은 관찰했지만 검색은 여전히302→429이며 성공으로 처리하지 않는다.
+
 현재 진행은 [Google HTTP 직접 구현022](research/2026-10-18-022-google-http-session.md)이다. 사용자 요청에 따라021의 브라우저 모듈·extra·테스트를 제거했다. `python -m travel_agent.google_http "Python official website"`는 브라우저 없이 curl_cffi로 요청하고 쿠키를 `data/private/google-http/cookies.txt`에 저장·재사용한다. `--javascript`는 선택형 QuickJS 실험이며 실제 검색 성공을 보장하지 않는다. 일반·basic 요청은 JS 확인 페이지였고 확인 스크립트 재요청은 /sorry의429였다. 아직 에이전트 공급자로 연결하지 않았다. 아래 webserp 설명은 기존 구현과 비교 이력이다.
 
 최신 [Google 전용 진단020](research/2026-10-18-020-google-failure-stages.md)에서는 다른 엔진을 호출하지 않았다. prog 프레임을 바이트 길이로 해석하도록 수정했지만 실제 응답에는 검색 링크가 없었다. `protocol_error`, `no_search_markup`, `/sorry`의 `access_interstitial`을 구분하며, 최종 URL은 호스트·경로만 기록한다. 새 Chrome의 홈페이지 검색창 제출도 302→429였으나 사용자의 평소 브라우저는 정상이라는 보고를 받았다. Google 검색은 여전히 미해결이며 세션·브라우저 실행 방식의 차이는 아직 분리하지 못했다.
