@@ -40,7 +40,7 @@ DDGS 9.x를 사용하며 기본 엔진은 `duckduckgo,bing`이다. API 키·별�
 
 웹검색 보강을 위해8개 공개 저장소와 공식 문서·논문을 검토했다. 검색 공급자의 우선 비교 후보는 SearXNG와 OpenSERP, 본문 수집 후보는 Crawl4AI다. Firecrawl·Jina의 호스팅 기능과 자체 운영 범위도 구분했다. [조사와 채택 판단](research/2026-10-17-013-web-search-strengthening.md), [실행 전 평가 입력10개](../examples/web-search-evaluation.json)를 참고한다. 후보를 설치하거나 검색 성공률을 비교한 결과는 아직 없으며 현재 런타임은 DDGS다.
 
-관리형 API 조사 후 비교 순서를 보강했다. Ollama Web Search/Fetch, Tavily, Exa, Brave Search API와 구글 결과를 제공하는 제3자 Serper도 후보에 포함한다. 낮은 운영 부담과 무료 사용 조건을 먼저 비교하고 SearXNG·OpenSERP는 자체 운영이 필요한 경우의 후보로 유지한다. Ollama 검색은 로컬11434가 아닌 ollama.com의 외부 서비스이며 무료 계정과 API 키가 필요하다. 새 계정·키 생성이나 공급자 전환은 아직 수행하지 않았다. 현재 조건과 출처는 같은 연구일지013의 추가 조사에 기록했다.
+관리형 API 조사에는 Ollama Web Search/Fetch, Tavily, Exa, Brave Search API와 제3자 Serper도 포함했다. 이후 사용자는 종량 요금뿐 아니라 무료 API의 사용량 제한도 강하게 꺼린다고 밝혔다. 현재는 자체 운영을 우선 검토한다. SearXNG·OpenSERP 같은 외부 검색 중계와 YaCy 같은 독립 색인을 구분하며, 현재 결과만으로 한국어 범용 검색 품질을 보장하지 않는다. [로컬 검색과 비용 조사](research/2026-10-17-014-local-search-and-cost.md)를 참고한다. 계정·키 생성이나 공급자 전환은 아직 수행하지 않았고 현재 런타임은 DDGS다.
 
 DDGS는 비공식 검색 경로이므로 차단·속도 제한·결과 변동이 가능하다. 기본 도구 timeout은15초, 단독 CLI에서 최대30초다. 라이브러리 내부 재시도·동기 작업 때문에 전체 종료 시각을 강제 보장하지는 않는다. 과거 메모리와 공개 웹을 구분하도록 프롬프트를 제공하지만 완전한 라우팅·프롬프트 인젝션 방어는 검증하지 않았다.
 

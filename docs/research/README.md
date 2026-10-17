@@ -45,6 +45,9 @@
 - [011: 한 응답의 웹 도구 요청을 병렬로 실행하기](2026-10-17-011-parallel-tools.md) — 실제 검색어·호출 ID·오류 전달 기록 보강
 - [012: 같은 검색어를 찾지 못한 이유: HTTP 응답 진단](2026-10-17-012-search-diagnosis.md)
 - [013: 웹검색 기능 보강: 공개 프로젝트·관리형 API 조사와 비교 계획](2026-10-17-013-web-search-strengthening.md)
+- [014: 검색 비용과 실제 로컬 검색기의 차이](2026-10-17-014-local-search-and-cost.md) — 자체 운영 우선, 설치·검색 품질 실험 전
+
+014 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e8115b3afd982490dd92d
 
 013 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e81d192ecefeaad3c20ab
 
