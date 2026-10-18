@@ -266,7 +266,7 @@ def handler_for(manager):
                     return self._send(400,{'error':'잘못된 조회 위치입니다.'})
                 except KeyError:
                     return self._send(404,{'error':'실행을 찾을 수 없습니다.'})
-            files={'/':('index.html','text/html; charset=utf-8'),'/app.js':('app.js','text/javascript; charset=utf-8'),'/style.css':('style.css','text/css; charset=utf-8')}
+            files={'/':('index.html','text/html; charset=utf-8'),'/app.js':('app.js','text/javascript; charset=utf-8'),'/style.css':('style.css','text/css; charset=utf-8'),'/theme.js':('theme.js','text/javascript; charset=utf-8'),'/theme.css':('theme.css','text/css; charset=utf-8')}
             if path.path in files:
                 name,kind=files[path.path]
                 return self._send(200,(STATIC/name).read_bytes(),kind)

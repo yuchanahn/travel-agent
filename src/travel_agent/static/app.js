@@ -1,4 +1,6 @@
 'use strict';
+updateThemeButton();
+document.getElementById('theme-toggle').addEventListener('click',toggleTheme);
 const $ = id => document.getElementById(id);
 const labels = {queued:'대기 중',running:'실행 중',done:'응답 완료',error:'실행 오류',interrupted:'중단됨'};
 const toolNames = {web_search:'웹 검색',web_read:'출처 본문 읽기',memory_search:'과거 기록 검색',memory_show:'과거 원문 읽기'};

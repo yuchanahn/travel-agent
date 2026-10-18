@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>여행 에이전트</title><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>여행 에이전트</title><script src="/theme.js"></script><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/theme.css"><script src="/app.js" defer></script></head>
 <body>
 <aside id="sidebar" class="sidebar" aria-label="대화 탐색">
   <div class="sidebar-brand"><span class="brand-icon">↗</span><strong>여행 에이전트</strong><button id="close-sidebar" class="icon-button mobile-only" aria-label="목록 닫기">×</button></div>
@@ -11,7 +11,7 @@
 </aside>
 <button id="sidebar-backdrop" class="sidebar-backdrop" aria-label="목록 닫기" hidden></button>
 <main class="chat-shell">
-  <header class="chat-header"><div class="header-left"><button id="toggle-sidebar" class="icon-button mobile-only" aria-label="대화 목록 열기">☰</button><strong id="model-name">여행 에이전트</strong><span class="local-label">로컬</span><span id="model-options" class="sr-only"></span></div><span id="connection" class="connection">연결 확인 중</span></header>
+    <header class="chat-header"><div class="header-left"><button id="toggle-sidebar" class="icon-button mobile-only" aria-label="대화 목록 열기">☰</button><strong id="model-name">여행 에이전트</strong><span class="local-label">로컬</span><span id="model-options" class="sr-only"></span></div><div class="header-actions"><span id="connection" class="connection">연결 확인 중</span><button id="theme-toggle" class="theme-toggle" type="button" aria-label="화면 테마 전환">테마</button></div></header>
   <section id="chat-scroll" class="chat-scroll" aria-label="대화 내용" tabindex="0"><div class="chat-column">
     <div id="empty-state" class="empty-state"><div class="welcome-mark">↗</div><h1>어떤 여행을 떠나볼까요?</h1><p>가고 싶은 곳부터, 아직 정하지 못한 조건까지.<br>함께 이야기하며 여행을 준비해요.</p><div id="presets" class="presets"></div></div>
     <div id="run-content" hidden>
