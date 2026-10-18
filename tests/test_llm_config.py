@@ -58,7 +58,7 @@ class ContextTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp, MemoryStore(Path(tmp)/"memory.sqlite3") as store, \
                 patch.dict(os.environ, {}, clear=True), \
                 patch("travel_agent.agent.chat", return_value={"message": {"role": "assistant", "content": "안녕"}}):
-            result = run_agent(store, "demo", "test", "질문", summary="가" * 5000, trace_dir=Path(tmp)/"traces")
+            result = run_agent(store, "demo", "test", "질문", summary="가" * 5000, trace_dir=Path(tmp)/"traces", completion_protocol="legacy")
             start = read_trace(Path(tmp)/"traces", result["request_id"])[0]
         self.assertEqual(result["status"], "completed")
         self.assertEqual(start["options"]["num_ctx"], 65536)

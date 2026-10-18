@@ -100,7 +100,7 @@ class AgentWebTests(unittest.TestCase):
         self.temp.cleanup()
 
     def run_agent(self, **kwargs):
-        return run_agent(self.store, "demo", "test", "Find official travel information", trace_dir=self.trace_dir, **kwargs)
+        return run_agent(self.store, "demo", "test", "Find official travel information", trace_dir=self.trace_dir, completion_protocol="legacy", **kwargs)
 
     def test_live_flag_sources_and_citation_come_from_executed_tool(self):
         with patch("travel_agent.web._provider_search", return_value=[row()]):

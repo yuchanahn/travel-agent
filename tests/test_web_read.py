@@ -27,7 +27,7 @@ class ReadingTests(unittest.TestCase):
                  {'message':{'role':'assistant','content':'출처를 먼저 검색해야 합니다.'}}]
         with tempfile.TemporaryDirectory() as folder, MemoryStore(folder+'/db.sqlite3') as store:
             with patch('travel_agent.agent.chat',side_effect=replies), patch('travel_agent.agent.web_read') as reader:
-                result=run_agent(store,'u','s','read',trace_dir=folder+'/trace')
+                result=run_agent(store,'u','s','read',trace_dir=folder+'/trace',completion_protocol='legacy')
         reader.assert_not_called()
         self.assertFalse(result['web_search_attempted'])
         self.assertEqual(result['web_sources'],[])
@@ -61,7 +61,7 @@ class ReadingTests(unittest.TestCase):
               'content_kind':'page_excerpt','fetched_at':'test'}
         with tempfile.TemporaryDirectory() as folder, MemoryStore(folder+'/db.sqlite3') as store:
             with patch('travel_agent.agent.chat',side_effect=replies), patch('travel_agent.agent.web_search',return_value=evidence), patch('travel_agent.agent.web_read',return_value=read) as reader:
-                result=run_agent(store,'u','s','museum hours',trace_dir=folder+'/trace',web_tool_format='compact_md')
+                result=run_agent(store,'u','s','museum hours',trace_dir=folder+'/trace',web_tool_format='compact_md',completion_protocol='legacy')
         self.assertEqual(result['status'],'completed')
         self.assertEqual(reader.call_args.args[0]['url'],SOURCE['url'])
         self.assertTrue(result['web_sources'][0]['page_fetched'])

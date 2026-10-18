@@ -4,6 +4,10 @@
 
 노션 허브: https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f
 
+- [052: 종료 판단은 모델에 두고 명시적 최종 신호를 받는다](2026-10-19-052-explicit-final-protocol.md) — 진행 텍스트 재요청·final 태그·한도 상태 분리, 실제 동일3질의6회 비교에서 조회2개는 새 방식 한도 종료,177개 테스트
+
+052 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e81eaa612d527e9273386
+
 - [051: 텍스트 응답과 작업 완료를 분리하는 종료 설계](2026-10-19-051-explicit-completion-design.md) — 실제4회 모델·검색2회·본문0회 진단, 명시적 종료 계약과 하네스 검사 제안, 아직 미구현
 
 051 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e818e8d30dccfe7aec5ca

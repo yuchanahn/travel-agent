@@ -44,6 +44,8 @@ function reset(){renderedConversation='';$('conversation').replaceChildren();$('
 function logCard(title,event){eventCount++;$('event-count').textContent=String(eventCount);const details=node('details',undefined,'log-item'),summary=node('summary'),dot=node('span',undefined,'log-dot'),name=node('span',title),time=node('span',new Date(event.timestamp).toLocaleTimeString('ko-KR',{hour12:false}),'log-time'),body=node('div',undefined,'log-detail');summary.append(dot,name,time);details.append(summary,body);$('events').append(details);return {details,body,dot,name};}
 function showJson(parent,title,value){parent.append(node('h4',title),node('pre',JSON.stringify(value,null,2)));}
 function addEvent(event){
+  if(event.kind==='continuation_requested'){const card=logCard('종료 신호 없음 · 다음 행동 요청',event);card.body.append(node('p',event.feedback));return;}
+  if(event.kind==='completion_signal'){const card=logCard(event.forced_by_budget?'실행 한도에 따른 마무리':'모델이 최종 답변으로 종료',event);showJson(card.body,'종료 상태',{reason:event.stop_reason});return;}
   if(event.kind==='model_start'){$('progress-text').textContent='모델이 다음 행동을 선택하는 중';return;}
   if(event.kind==='model_end'){if(event.content){const card=logCard('모델 응답 · 중간 기록',event);card.dot.classList.add('done');const text=node('div',undefined,'prose');markdown(text,event.content);card.body.append(text);}return;}
   if(event.kind==='model_error'){const card=logCard('모델 호출 오류',event);card.dot.classList.add('error');card.body.append(node('p',event.error||event.error_type||'모델 응답 오류'));return;}

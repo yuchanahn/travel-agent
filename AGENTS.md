@@ -28,6 +28,8 @@
 
 ## 실행
 
+052부터 run_agent의 기본 completion_protocol은explicit이다. 일반 텍스트는 진행 설명이며 다음 행동을 요청하고, 모델이 독립적인 <final>...</final> 응답을 반환하면 종료한다. 의미적 완료 판단은 모델에 있으며 실행기는 태그 형식과 예산만 처리한다. 기존 본문 검토·인용 수정 재요청은legacy 비교 경로에만 남기고 인용 상태 지표는 유지한다. 마지막 강제 정리의 태그는 정상completed로 표시하지 않고 step_limit/tool_limit로 구분한다. 웹 실행 과정에 continuation_requested·completion_signal을 노출한다. legacy는 기존 테스트·통제 비교용이며 현재 실행법은docs/agentic-rag.md와052를 따른다.
+
 044의 사용자 지시로 실제 에이전트 검증을 재개했다. 기존 여행3질의의 초기·중간·보완본9회와 인사·공개 합성 기억·모의429·웹 비활성화4회를 실행했다. 보완본 여행3개는 종료했지만 수동 근거 검토0/3이며, 인사·기억은 통과하고 장애·비활성화 후 추측은 실패다. completed·인용ID·본문읽기로 품질 통과를 주장하지 않는다. 현재 빈 원문 범위에는 메모리 도구를 노출하지 않고 웹 출처만 있는 초안에 근거검토1회를 허용하며 마지막/도구 예산 소진 시 도구 없이 정리한다. 생성 기본상한은 AGENT_MAX_OUTPUT_TOKENS=1024(128~8192), 컨텍스트65536은 유지한다. web_read도043의 경계·한국어 BM25Plus 발췌와 레이아웃 신호를 사용한다. 연구 전체 파이프라인을 web_search에 합친 것은 아니다. 현재 판정·실제 질문/답변/호출 기록은044를 따른다. 이전의 에이전트 평가 보류는034~043 이력이다.
 
 042부터 사용자가 기존 Claude MCP의 Brave 키를 재사용해 검색 공급자를 Brave Search API로 전환하도록 확정했다. 기본 WEB_SEARCH_PROVIDER=brave, WEB_SEARCH_BACKEND=brave다. BRAVE_API_KEY 환경 변수 또는 BRAVE_API_KEY_FILE(기본 data/private/brave-api-key)로 인증하며 키·헤더를 출력하거나 Git에 넣지 않는다. Claude 설정은 런타임에 참조하지 않는다. 기존 web_search는 API 검색 요약, 독립 web research는 API 후보 수집 후 기존 중복·BM25Plus·본문·발췌를 수행한다. 에이전트에 전체 연구 파이프라인을 연결한 것은 아니다. Bing은 --provider http로 명시하는 비교 경로이며 자동 대체하지 않는다. 아래 Bing 단독 지침은032~041의 이력이다. 현재 실행법은 docs/web-search.md의042를 따른다. Brave의 관련 후보 확보와 원사이트 본문 수신·최신성·최종 품질을 구분한다.

@@ -51,7 +51,7 @@ class RoutingTests(unittest.TestCase):
                 patch.dict(os.environ, {"WEB_SEARCH_PROVIDER": "webserp", "WEB_SEARCH_BACKEND": "google"}), \
                 patch("travel_agent.agent.chat", side_effect=replies), \
                 patch("travel_agent.webserp_provider.search_google", side_effect=failure):
-            result = run_agent(store, "demo", "test", "Find public information", trace_dir=Path(tmp)/"traces")
+            result = run_agent(store, "demo", "test", "Find public information", trace_dir=Path(tmp)/"traces", completion_protocol="legacy")
             errors = [r for r in read_trace(Path(tmp)/"traces", result["request_id"]) if r["kind"] == "tool_error"]
         self.assertTrue(result["web_search_attempted"])
         self.assertFalse(result["web_search_performed"])

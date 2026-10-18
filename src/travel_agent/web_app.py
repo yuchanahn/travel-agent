@@ -46,8 +46,10 @@ def visible_event(event):
     elif kind in {'tool_end','tool_error'}:
         view['result']=event.get('result')
         view['elapsed_seconds']=event.get('elapsed_seconds_call')
-    elif kind in {'citation_repair','evidence_review'}:
+    elif kind in {'citation_repair','evidence_review','continuation_requested'}:
         view['feedback']=event.get('feedback')
+    elif kind=='completion_signal':
+        view.update(forced_by_budget=event.get('forced_by_budget'),stop_reason=event.get('stop_reason'))
     elif kind=='tool_budget_finalization':
         view.update(requested=event.get('requested'),remaining=event.get('remaining'))
     else:

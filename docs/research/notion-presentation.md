@@ -122,7 +122,7 @@ flowchart LR
 
 > 검색을 진행하겠습니다.
 
-실제 trace는 **모델1회·툴콜0회·출력478토큰·done_reason=stop**이었다. 출력 한도가 아니라 구조화 호출을 내보내지 않은 모델과 텍스트를 최종 답변으로 받은 실행기의 문제였다. 원인은 진단했고 아직 수정하지 않았다.
+실제 trace는 **모델1회·툴콜0회·출력478토큰·done_reason=stop**이었다. 출력 한도가 아니라 구조화 호출을 내보내지 않은 모델과 텍스트를 최종 답변으로 받은 실행기의 문제였다. [052](https://app.notion.com/p/3fdd058c022e81eaa612d527e9273386)에서 일반 텍스트는 진행 설명으로 두고 명시적인 최종 태그를 받을 때만 정상 종료하도록 바꿨다. 완료 판단은 모델에 둔다. 새 방식의 실제 조회2질의는 한도 종료여서 태그 준수·조사 품질은 아직 남은 과제다.
 [047 · 검색 예고 문장은 구조화한 도구 호출이 아니다](https://app.notion.com/p/3fdd058c022e813c86dcc98e24b562c3)
 
 # 06 · 지금 보여줄 데모와 다음 검증
@@ -133,7 +133,7 @@ flowchart LR
 4. 출처 ID가 존재하는 것과 해당 근거가 주장을 뒷받침하는지 따로 판단한다.
 화면 구성은 [048 · 입력창을 남기고 대화 영역만 스크롤한다](https://app.notion.com/p/3fdd058c022e81d0a95cd3ac653dcffd). [GitHub 저장소](https://github.com/yuchanahn/travel-agent) · 로컬 실행은 저장소의 scripts/start_[web.ps](http://web.ps)1 안내를 따른다.
 **다음 검증 우선순위**
-- 행동 예고만 하고 종료하는 응답을 평가·보완한다.
+- 명시적 종료 태그 준수율과 무진전 재요청을 평가·보완한다.
 - 요금·경로·운영 조건을 근거 없이 만드는 실패를 줄이고 같은 질문으로 비교한다.
 - 검색 도구·대화 문맥·모델의 근거 사용을 분리해 측정한다.
 - 자동 압축·메모리 연결·소수 사용자 실사용은 후속 범위로 둔다.
@@ -219,13 +219,16 @@ flowchart LR
 </details>
 
 <details>
-<summary>7 · 실제 에이전트 평가와 웹 대화 · 5개</summary>
+<summary>7 · 실제 에이전트 평가와 웹 대화 · 8개</summary>
 
 - [044 · 완료 응답과 실제 여행 품질은 다른 결과다](https://app.notion.com/p/3fdd058c022e810db461e02cd63f1e7d)
 - [045 · 사용자가 직접 질문하며 실제 실행을 볼 수 있게 한다](https://app.notion.com/p/3fdd058c022e8134ae5dfa72566d7bc0)
 - [046 · 정정할 때 앞선 조건과 도구 근거를 이어서 전달한다](https://app.notion.com/p/3fdd058c022e8187addffd6af78f7e82)
 - [047 · 검색 예고 문장은 구조화한 도구 호출이 아니다](https://app.notion.com/p/3fdd058c022e813c86dcc98e24b562c3)
 - [048 · 입력창을 남기고 대화 영역만 스크롤한다](https://app.notion.com/p/3fdd058c022e81d0a95cd3ac653dcffd)
+- [050 · 눈부심을 줄이는 다크모드](https://app.notion.com/p/3fdd058c022e814fb7a1f7ee3452c614)
+- [051 · 텍스트 응답과 작업 완료를 분리하는 종료 설계](https://app.notion.com/p/3fdd058c022e818e8d30dccfe7aec5ca)
+- [052 · 모델이 최종을 결정하는 종료 프로토콜 실험](https://app.notion.com/p/3fdd058c022e81eaa612d527e9273386)
 
 </details>
 <details>

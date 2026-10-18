@@ -56,7 +56,7 @@ class AgentTests(unittest.TestCase):
         self.temp.cleanup()
 
     def run_agent(self, **kwargs):
-        return run_agent(self.store, "u", "s", "강릉 제외 이유?", trace_dir=self.traces, **kwargs)
+        return run_agent(self.store, "u", "s", "강릉 제외 이유?", trace_dir=self.traces, completion_protocol="legacy", **kwargs)
 
     def test_direct_answer_has_no_retrieval_and_trace_is_readable(self):
         with patch("travel_agent.agent.chat", return_value=reply("안녕하세요.")), patch("travel_agent.agent.execute_tool") as tool:

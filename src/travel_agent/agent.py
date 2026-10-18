@@ -51,6 +51,19 @@ TOOLS = [
 ]
 
 CITATIONS = re.compile(r"\[(m-[a-f0-9]+|event:[^\]\s]+|web:[a-f0-9]+)\]")
+FINAL = re.compile(r'\s*<final>([\s\S]*?)</final>\s*')
+COMPLETION_CONTRACT = """\n종료 프로토콜: 도구 실행이 필요하면 실제 tool_calls로 요청한다.
+일반 텍스트는 진행 설명이며 실행을 종료하지 않는다. 최종 답변을 전달하기로 판단했을 때만 전체 응답을 <final>최종 답변</final>로 감싼다.
+이 태그는 도구 호출과 함께 쓰지 않으며 태그 밖에 다른 내용을 쓰지 않는다. 최종 답변은 비어 있으면 안 된다.
+더 조사할지, 사용자에게 필요한 질문을 할지, 확인 불가로 마무리할지는 네가 판단한다. 필요한 추가 질문도 <final>질문</final>로 전달한다.
+검색을 계속할 수 있다면 다음 단계를 사용자에게 떠넘기지 말고 도구로 실행할 수 있다. 실행하지 않은 조회를 했다고 말하지 않는다."""
+
+
+def final_answer(content):
+    match = FINAL.fullmatch(content)
+    if not match or not match[1].strip() or '<final>' in match[1] or '</final>' in match[1]:
+        return None
+    return match[1].strip()
 
 SYSTEM = """너는 여행 준비를 돕는 한국어 에이전트다.
 현재 질문과 제공된 요약으로 답할 수 있으면 바로 답한다. 인사·일반 설명에는 기억 검색이 필요 없다.
@@ -222,9 +235,12 @@ def execute_batch(calls, *, store, user, session, mode, rerank, seen, enable_web
 def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=False,
               max_steps=6, max_tool_calls=8, timeout=120, max_input_bytes=None,
               trace_dir="data/private/traces", enable_web=True, tool_workers=3,
-              web_tool_format=None, enable_read=True, history=None, prior_sources=None):
+              web_tool_format=None, enable_read=True, history=None, prior_sources=None,
+              completion_protocol="explicit"):
     if not isinstance(query, str) or not query.strip():
         raise ValueError("Query must be non-empty")
+    if completion_protocol not in {"explicit", "legacy"}:
+        raise ValueError("completion_protocol must be explicit or legacy")
     if not 1 <= max_steps <= 12 or not 1 <= max_tool_calls <= 20 or not 0 < timeout <= 600:
         raise ValueError("Limits: max_steps 1..12, max_tool_calls 1..20, timeout 0..600 seconds")
     max_input_bytes = input_byte_limit() if max_input_bytes is None else max_input_bytes
@@ -242,6 +258,8 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
     tools = [tool for tool in TOOLS if (enable_web or tool["function"]["name"] not in WEB_TOOLS)
              and (enable_read or tool["function"]["name"] != "web_read")]
     system = SYSTEM + "\n오늘 날짜: " + date.today().isoformat()
+    if completion_protocol == 'explicit':
+        system += COMPLETION_CONTRACT
     has_memory = store.db.execute('SELECT 1 FROM events WHERE user_id=? AND session_id=? LIMIT 1',
                                   (user,session)).fetchone() is not None
     if not has_memory:
@@ -261,13 +279,16 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
     web_attempted = web_performed = False
     seen = set()
     force_final = False
+    continuation_requests = 0
+    completion_signal_received = False
+    budget_stop = None
     trace.emit("run_start", user=user, session=session, query=query, summary=summary,
                model=model, base_url=base_url, mode=mode, rerank=rerank, tools=tools, enable_web=enable_web,
                web_provider=os.environ.get("WEB_SEARCH_PROVIDER", "brave"),
                web_tool_format=web_tool_format, web_backend=os.environ.get("WEB_SEARCH_BACKEND", {"webserp":"google","http":"bing"}.get(os.environ.get("WEB_SEARCH_PROVIDER"),"brave")),
                limits={"max_steps": max_steps, "max_tool_calls": max_tool_calls,
                        "timeout": timeout, "max_input_bytes": max_input_bytes, "tool_workers": tool_workers},
-               options={**options, "think": False})
+               options={**options, "think": False}, completion_protocol=completion_protocol)
 
     def finish(status, answer="", **extra):
         citations = CITATIONS.findall(answer)
@@ -281,6 +302,9 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
                   "citation_repair_attempts": citation_repairs,
                   "evidence_review_attempts": evidence_reviews,
                   "finalization_for_budget": force_final,
+                  "completion_protocol": completion_protocol,
+                  "completion_signal_received": completion_signal_received,
+                  "continuation_requests": continuation_requests,
                   "citation_gate_passed": citation_status in {"valid", "no_evidence"},
                   "web_search_attempted": web_attempted, "web_search_performed": web_performed,
                   "web_sources": [{**source, "cited": source["id"] in citations} for source in web_sources.values()],
@@ -292,7 +316,9 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
         remaining = deadline - time.perf_counter()
         if remaining <= 0:
             return finish("timeout")
-        final_turn = force_final or (step == max_steps and tool_calls > 0) or tool_calls >= max_tool_calls
+        final_turn = force_final or (step == max_steps and (tool_calls > 0 or completion_protocol == 'explicit')) or tool_calls >= max_tool_calls
+        if final_turn and budget_stop is None:
+            budget_stop = 'tool_limit' if force_final or tool_calls >= max_tool_calls else 'step_limit'
         force_final = final_turn
         active_tools = [] if final_turn else tools
         if final_turn:
@@ -334,6 +360,23 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
         if reply.get("done_reason") == "length":
             return finish("output_limit", partial_answer=assistant["content"])
         if not calls:
+            if completion_protocol == 'explicit':
+                answer = final_answer(assistant['content'])
+                if answer is not None:
+                    completion_signal_received = True
+                    trace.emit('completion_signal', step=step, forced_by_budget=final_turn,
+                               stop_reason=budget_stop if final_turn else 'model_final')
+                    return finish(budget_stop if final_turn else 'completed', answer)
+                if final_turn:
+                    return finish(budget_stop, partial_answer=assistant['content'])
+                continuation_requests += 1
+                feedback = ('아직 명시적인 종료 신호가 없습니다. 다음 행동을 선택하세요. '
+                            '더 수행할 일이 있으면 실제 도구 호출을 요청하고, 최종 답변이나 사용자에게 할 질문을 '
+                            '전달하기로 판단했다면 전체 답변을 <final>...</final>로 감싸세요. '
+                            '진행 설명만으로는 실행이 종료되지 않습니다.')
+                trace.emit('continuation_requested', step=step, feedback=feedback)
+                messages.extend([assistant, {'role':'user', 'content':feedback}])
+                continue
             if not assistant["content"].strip():
                 return finish("empty_answer")
             if not final_turn and web_sources and not any(s.get('page_fetched') for s in web_sources.values()) and evidence_reviews == 0 and step < max_steps:
