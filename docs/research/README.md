@@ -4,6 +4,10 @@
 
 노션 허브: https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f
 
+- [055: finish 도입 폐기와 다음 개선 순서](2026-10-19-055-drop-finish-and-improvement-plan.md) — 최종 도구 후보·비교 취소, 네이티브 기준선과 근거 확보/활용 실패 분리 제안; 런타임 변경 없음
+
+055 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e81099da8cb8a1d76a1ef
+
 - [054: 모델의 기본 도구 프로토콜과 추가 종료 규칙](2026-10-19-054-native-harness-comparison.md) — Qwen-Agent·Ollama·smolagents 실제 종료 코드, 최종 도구 반복 이슈, 로컬 renderer/parser 확인; 실행 변경·새 추론 없음
 
 054 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e81ddbcd5f24b87227b8a
