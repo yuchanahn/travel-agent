@@ -32,6 +32,10 @@
 
 ## 인덱스
 
+- [041: 기존 Claude MCP의 Brave 키 재사용 확인](2026-10-18-041-brave-existing-key-check.md) — 기존 키로 API1건 HTTP200·여행 후보3개, 프로젝트 연결 전
+
+041 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e81feb71ccbacc7d28171
+
 - [040: 블로그는 읽을 수 있나 — 검색 실패와 본문 읽기 분리 검증](2026-10-18-040-blog-reading-validation.md) — Bing RSS2질의는 무관한 후보, 별도 확보한 티스토리2개·네이버 글1개는 현 수집기로 본문 추출 성공
 
 040 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e81e1964ecdddb7a3f54e
