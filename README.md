@@ -86,6 +86,8 @@ $env:OLLAMA_MODEL = 'qwen3.5:4b-q4_K_M'
 
 ## 연구와 평가
 
+- [MCP 서버 연결·국문 관광정보 후보·현재 검증 범위](docs/mcp.md)
+
 - [검색 툴 단독 수집·재정렬·발췌 실행과 검증](docs/search-pipeline.md) — 현재 우선순위, 에이전트 연결 보류
 
 - [연구일지 인덱스와 기록 규칙](docs/research/README.md)

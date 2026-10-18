@@ -28,6 +28,8 @@
 
 ## 실행
 
+059에서 MCP Python SDK2.3.0 기반 stdio·Streamable HTTP 클라이언트를 추가했다. 호스트 비공개 설정의 allowed_tools만 실제 발견·스키마 검증 후 모델에 노출한다. MCP 호출도 기존 도구8회·병렬3개 제한과 trace·원본 메모리 저장을 공유한다. 실제 관광·예약 서버는 키가 없어 비활성이다. 커뮤니티 국문 후보의21개 도구 발견·정적 목록 조회와 합성 서버의 실제 Ollama 호출을 확인했으나 관광 API 조회 성공은 아니다. 웹은057의 BM25이며 CLI의 SQLite 임베딩 검색과 구분한다. 설정·키·Docker 런타임 범위는 docs/mcp.md와059를 따른다.
+
 058의ngrok 공유는travel-agent-share 컨테이너·travel-agent-share-runs 볼륨을 사용한다. 기존 로컬50729와그 기록을 터널에 직접 노출하지 않는다. ngrok Basic Auth·Host rewrite·inspection=false이며 WEB_PUBLIC_ORIGIN_FILE의정확한HTTPS Origin만 추가 허용한다. 비밀번호·토큰·공유URL은data/private/share/에만 보존하고Git·노션에 공개하지 않는다. 공유 계정은 접속자별 기록 격리가 아니며 공유 공간을 함께 본다. 중지는scripts/stop_share.ps1, 상세는058이다.
 
 057부터 웹은 부모 경로의 사용자·모델·도구 원본을 자동 저장하고 한국어 단어/bigram BM25 색인을 만든다. 매 실행DB에는 조상 경로만 넣어 분기·새 대화를 분리한다. 기본32000 UTF-8바이트 초과 시 최근2사용자 턴을 남기고 오래된 대화를 요약하며, 실패하면 이전 문맥을 유지한다. 요약 후에는 최대3개·6000바이트 원문 검색 결과를2-Step으로 주입하고 추가memory 도구도 허용한다. 원본·요약·최근 문맥은 별도 비공개 보존하며 임베딩 다운로드는 없다. 기존 CLI의Kiwi/E5·하이브리드·리랭킹은 유지한다. 아래045~046의빈DB·요약미구현은 당시 이력이다. 실제 검증·한계는057과docs/web-interface.md를 따른다.

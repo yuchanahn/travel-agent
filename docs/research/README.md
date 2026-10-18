@@ -4,6 +4,10 @@
 
 노션 허브: https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f
 
+- [059: MCP 연결 기반과 국문 관광정보 후보 검증](2026-10-19-059-mcp-client-integration.md) — stdio·HTTP·동적 스키마·trace/메모리 연결,202개 테스트·실제 모델 합성 조회; 관광 API는 키 발급 전
+
+059 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e81f8a4bae8765c759884
+
 - [058: ngrok 외부 공유·기존 기록 분리](2026-10-19-058-ngrok-share.md) — 별도 공유 컨테이너·볼륨·Basic Auth, 정확한Origin 허용, 실제 외부 질문·답변,192개 테스트
 
 058 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e81dd8068fd65c2aea671
