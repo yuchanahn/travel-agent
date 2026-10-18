@@ -18,7 +18,7 @@ def main():
         record = {'id':uuid4().hex,'tool':'web_search','arguments':{'query':query,'top_k':3},
                   'backend':'duckduckgo,bing','started_at':datetime.now(timezone.utc).isoformat()}
         try:
-            record['result'] = web_search(query, top_k=3, timeout=10, provider='ddgs', backend='duckduckgo,bing')
+            record['result'] = web_search(query, top_k=3, timeout=10, provider='http', backend='duckduckgo,bing')
         except WebSearchError as exc:
             record['result'] = {'error':str(exc),'web_search_performed':False,**exc.details}
         record['finished_at'] = datetime.now(timezone.utc).isoformat()

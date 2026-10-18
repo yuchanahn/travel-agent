@@ -1,120 +1,59 @@
 # 웹검색 도구
 
-## 현재 방향: DuckDuckGo·Bing 병렬 수집
+## 현재 방향: DuckDuckGo·Bing 직접 HTTP
 
-029부터 Google 직접 HTTP 연구를 중단하고 DDGS의 두 엔진 결과를 명시적으로 수집·통합한다. `backend="duckduckgo,bing"`를 DDGS에 한 번 넘기는 방식은 같은 provider 분류와 조기 종료 때문에 두 엔진 실행을 보장하지 않는다. 앱이 엔진별로 한 번씩 최대2개 병렬 호출하고, URL을 정규화해 중복을 제거한 뒤 RRF(`sum(1/(60+rank))`)로 합친다. 동점은 요청 엔진 순서·원래 순위를 따른다. 추가 LLM 호출은 없다.
+031부터 기본 공급자는 `http`다. DDGS의 런타임 의존성·엔진 선택·요청 생성·HTML 파서를 제거하고 두 엔진의 공개 검색 페이지를 직접 요청한다. API 키·검색 서버·브라우저 프로세스는 필요 없다. HTML 변경·접근 제한·무관한 결과에 대한 유지보수는 우리가 맡는다.
 
-**현재 Bing은 upstream의 무관한 검색 결과 문제로 비활성화돼 있다.** 앱은 이를 강제로 풀지 않고 `engine_disabled_or_unavailable`로 보고한다. 실제 반환 근거는 현재 DuckDuckGo뿐일 수 있다. 두 엔진 합성 병합 테스트와 실제 두 엔진 성공을 구분한다. `engine_status`에는 엔진별 성공·실패·반환 수·시작 상대 시각·소요 시간이 있고, `engines_returned`는 사용 가능한 후보를 반환한 엔진이다. `search_complete=false`는 요청한 엔진 중 실패가 있었다는 뜻이다. 한쪽만 성공하면 결과를 살리고, 사용 가능한 결과가 하나도 없고 오류가 있으면 WebSearchError를 반환한다.
+DuckDuckGo는 `primp` HTTP 클라이언트로 `https://html.duckduckgo.com/html/`에 GET 요청한다. 기존 동작 경로의 `q`, `b`, `l=kr-kr`와 random impersonation을 유지한다. 이는 브라우저 실행이 아니다. Bing은 표준 `urllib`로 `https://www.bing.com/search`에 `q`만 보낸다. 두 사이트에 같은 HTTP 클라이언트를 강제하지 않는다. 예비 urllib·curl DuckDuckGo는202였고 직접 primp 요청은200이었다. 클라이언트와 인자가 함께 바뀌어 하나만 원인이라고 확정하지 않는다.
 
-DuckDuckGo는 DDGS의 엔진·파서를 재사용하되 요청 메서드를 GET으로 지정한다. 202·접근 확인·파싱되지 않은200은 성공으로 처리하지 않는다. `/l/?uddg=...` 링크는 목적지로 해석한 뒤 기존 URL 검증을 적용한다. 결과별 `engines`·`engine_ranks`는 출처와 원래 순위이며 에이전트의 최종 `web_sources`에도 남는다. 공통 URL의 높은 RRF 점수는 사실 검증이나 독립된 두 색인의 합의를 보장하지 않는다.
+두 엔진 모두 새 익명 클라이언트를 사용한다. 로그인·디스크 쿠키 재사용·재시도·다른 엔진 자동 대체는 없다. urllib는 시스템 프록시 설정을 따를 수 있다. Bing 리다이렉트는 따라가지 않고 오류로 보고한다. UTF-8 HTML을 전제로 한다. 파싱 대상은2MiB 이하다. Bing은 읽기 단계에 한도를 적용하며 primp는 다운로드 후 크기를 검사한다. timeout은 요청별 값이며 전체 작업의 엄격한 마감 시간은 아니다.
 
-```powershell
-travel-agent web search "국립춘천박물관 공식 홈페이지" --backend duckduckgo,bing
-python scripts/evaluate_search_fusion.py
-```
-
-같은 질문의 초기·변경 결과, Bing 비활성화 이유와 실제 한계는 [연구일지029](research/2026-10-18-029-dual-engine-fusion.md)에 기록한다. 아래 Google·webserp 내용은 이전 연구 이력이다.
-
-[iframe·DOM 관찰028](research/2026-10-18-028-google-iframe-dom-observation.md)에서는 원본 getter의 Proxy가 기준 토큰을 유지함을 확인했다. 새 `--mode iframe-mirror`는 부모·iframe navigator 값을 맞추는 연구 조건이며 실제 검색은 여전히 /sorry였다. `--matrix-case dom_prototype_probe`로 DOM 접근을 관찰하고 `dom_capture_setters`로 선택한 DOM 문자열을 비공개 확인할 수 있다. 해당 캡처의 srcdoc·innerHTML 입력은 모두 빈 문자열이었고 레코드는 그대로였다. 공개 요약은 private_ 항목을 제거하며, 관찰 성공을 검색 성공으로 기록하지 않는다.
-
-[전송·실행 환경 비교027](research/2026-10-18-027-google-transport-and-runtime.md)에서는 Chrome150·Firefox147·Safari26.0.1 HTTP 프로필과 HTTP/1.1·HTTP/2, 생성자 표현 보정, 역사적 Opera 요청을 비교했지만 일반 검색은 미해결이었다. `probe_google_dom.py`에 `--transport`, `--http-version`, 선택형 `constructor-text` 연구 조건을 추가했다. 부모 생성자 표현만 바꾼 고정 입력의 레코드는 같았고 iframe 실험은 래퍼 자체의 영향을 확인했다. `probe_google_surfaces.py`의 자동완성·뉴스 RSS 성공은 접근·파싱 대조이며 일반 웹검색 성공으로 처리하거나 에이전트에 대체 연결하지 않는다.
-
-[DOM·서버 비교026](research/2026-10-18-026-google-dom-server-validation.md)에서 기존 jsdom·화면 보완·확장 프로필로 실제 HTTP 검색을 비교했지만 모두302→/sorry/index, 검색 결과0이었다. `scripts/probe_google_dom.py --node <Node24 실행 파일>`은 별도 클론의 검토한 의존성으로 세 조건을 재현하는 연구 실행기다. 브라우저를 띄우지 않으며 쿠키 생성만으로 성공 처리하지 않는다. 고정 응답의 별도 오프라인 비교에서는 화면 좌표 두 속성 추가로 레코드604→609바이트를 재현했다. 구조 차이와 서버 수용을 구분하며 기존 에이전트의 공급자 동작은 변경하지 않았다.
-
-[레코드 입력 비교025](research/2026-10-18-025-google-record-differential.md)에서는 새 Google 요청 없이 저장 응답을 고정 조건에서 비교했다. `scripts/analyze_google_challenge.py --matrix`로 입력별 변화 구간을 관찰한다. 일부 언어·너비 구간을 확인했지만 오프셋은 해당 캡처에 한정되며 Google 서버 통과 검증은 아니다. Node24 비교기 테스트는 `node --test tests/test_google_record_matrix.cjs`로 별도 실행한다.
-
-[커뮤니티·소스·실행 비교024](research/2026-10-18-024-community-http-research.md)에서 Reddit 추천 HTTP 구현과 SearXNG WML을 재현하고 jsdom도 시험했다. 정상 검색은 확보하지 못했다. `scripts/probe_google_candidates.py`로 후보를 진단하고 `scripts/analyze_google_challenge.py`로 보존한 응답을 오프라인 분석할 수 있다. toolkit 관찰에서 실제로 읽은 document.location·document.URL의 누락을 수정했고 지원 중단 안내는 unsupported_client로 구분한다. 분석 성공은 Google 서버 통과와 별개다.
-
-[후속 요청 검증023](research/2026-10-18-023-google-followup-consistency.md)에서 HTTP·JS 식별 정보, Promise·타이머 순서, HttpOnly 가시성, Referer와 fetch-site를 수정했다. `--javascript --wire`로 실행하면 실제 전송 헤더에서 쿠키 값 없이 이름·SG_SS 길이·요청 맥락을 확인할 수 있다. 실제 SG_SS 전송은 관찰했지만 검색은 여전히302→429이며 성공으로 처리하지 않는다.
-
-현재 진행은 [Google HTTP 직접 구현022](research/2026-10-18-022-google-http-session.md)이다. 사용자 요청에 따라021의 브라우저 모듈·extra·테스트를 제거했다. `python -m travel_agent.google_http "Python official website"`는 브라우저 없이 curl_cffi로 요청하고 쿠키를 `data/private/google-http/cookies.txt`에 저장·재사용한다. `--javascript`는 선택형 QuickJS 실험이며 실제 검색 성공을 보장하지 않는다. 일반·basic 요청은 JS 확인 페이지였고 확인 스크립트 재요청은 /sorry의429였다. 아직 에이전트 공급자로 연결하지 않았다. 아래 webserp 설명은 기존 구현과 비교 이력이다.
-
-최신 [Google 전용 진단020](research/2026-10-18-020-google-failure-stages.md)에서는 다른 엔진을 호출하지 않았다. prog 프레임을 바이트 길이로 해석하도록 수정했지만 실제 응답에는 검색 링크가 없었다. `protocol_error`, `no_search_markup`, `/sorry`의 `access_interstitial`을 구분하며, 최종 URL은 호스트·경로만 기록한다. 새 Chrome의 홈페이지 검색창 제출도 302→429였으나 사용자의 평소 브라우저는 정상이라는 보고를 받았다. Google 검색은 여전히 미해결이며 세션·브라우저 실행 방식의 차이는 아직 분리하지 못했다.
-
-공개 후보 조사(015)·클론 검증(016)·Google 어댑터 비교(017) 이후 [이슈·프로토콜·원본 CLI 재검증](research/2026-10-18-019-webserp-deep-validation.md)을 수행했다. Google 요청은 여전히 실패하지만 webserp의 DuckDuckGo·Yahoo 경로는 실제 결과를 반환했다. 현재는 이 경로도 명시적으로 선택할 수 있다. 세 질문을 두 번씩 실행해6회 모두 기대한 공식 도메인을 찾았고, 실제64K 에이전트도 케이블카·박물관 주소와 출처를 반환했다. 반복 실험의 실질적인 결과 제공 엔진은 Yahoo였으며 범용 안정성이 입증된 것은 아니다. 기본 공급자는 DDGS로 유지한다. Google을 다른 엔진으로 조용히 대체하지 않으며, 계정 인증 파일 재사용 기능은 아직 없다.
-
-`memory agent`가 과거 원문용 메모리 도구와 공개 웹검색을 선택한다. 여행 검색어·사이트 순서는 고정하지 않는다. 기존 `memory answer`는 메모리만 사용하는 2-Step RAG로 유지한다.
-
-## 실행
-
-프로젝트 가상환경에서 변경된 의존성을 설치한다. Ollama는 에이전트 실행 때만 필요하다.
+## 실행과 설정 변경
 
 ```powershell
 python -m pip install -e .
-# 검색만 확인: LLM 호출 없음
-travel-agent web search "춘천 삼악산 호수케이블카 공식 홈페이지" --top-k 3
-# 에이전트: 도구 사용 여부·검색어는 모델이 결정
-travel-agent memory --user demo --session trip agent "춘천 삼악산 호수케이블카 공식 홈페이지를 찾아줘"
-# 웹 도구 제외: 모델이 요청해도 실행기가 거부
-travel-agent memory --user demo --session trip agent "강릉을 제외한 이유가 뭐였지?" --no-web
-```
-
-선택형 webserp 설치·검색·에이전트 실행:
-
-```powershell
-python -m pip install -e ".[webserp]"
-travel-agent web search "국립춘천박물관 공식 홈페이지" --provider webserp --backend duckduckgo,yahoo
-# 에이전트의 공급자는 호스트 설정으로 선택한다.
-$env:WEB_SEARCH_PROVIDER = 'webserp'
-$env:WEB_SEARCH_BACKEND = 'duckduckgo,yahoo'
-travel-agent memory --user demo --session trip agent "국립춘천박물관 공식 홈페이지를 찾아줘"
-# 기존 공급자로 복귀
-$env:WEB_SEARCH_PROVIDER = 'ddgs'
+travel-agent web search "국립춘천박물관 공식 홈페이지" --provider http --backend duckduckgo,bing
+python scripts/evaluate_search_fusion.py
+$env:WEB_SEARCH_PROVIDER = 'http'
 $env:WEB_SEARCH_BACKEND = 'duckduckgo,bing'
+travel-agent memory --user demo --session trip agent "국립춘천박물관 공식 홈페이지를 찾아줘"
 ```
 
-`webserp` extra는 검토한 Git 커밋 e13148334995745f104a69ce7127179785ee741e를 고정한다. 원본의 요청 생성·파싱 단계를 재사용하고 세션은 호출마다 소유하고 닫는다. HTML 엔진은 원본의 최종 URL 소문자 중복 제거 전에 결과를 받아 공통 URL 처리로 보낸다. Google은 원본 영어·arc 요청을 유지하며 `--backend google`로 별도 진단할 수 있다. 다른 엔진으로 자동 대체하지 않는다.
+기본값은 `http`·`duckduckgo,bing`이다. 예전 `WEB_SEARCH_PROVIDER=ddgs`는 `http`로 바꾼다. 옛 이름을 조용히 매핑하지 않고 변경 안내 오류를 반환한다. http 지원 엔진은 duckduckgo·bing뿐이다. auto·미지원 엔진은 네트워크 전에 거부한다.
 
-이전에 만든 합성 메모리를 활용하려면 [Agentic RAG 실행 절차](agentic-rag.md)를 따른다. 웹검색 자체에는 메모리 색인이 필요 없다. DB를 여는 현재 CLI 구조는 유지한다.
+## 병렬 실행·실패·출처
 
-## 공급자와 반환 범위
+한 웹 도구는 엔진을 각각 한 번씩 최대2개 병렬 호출한다. 정규화 URL로 중복을 제거하고 RRF(`sum(1/(60+rank))`)로 통합한다. 동점은 엔진 요청 순서·원래 순위를 따른다. 추가 LLM 호출은 없다. 공통 URL의 높은 점수는 사실 검증이나 독립 색인의 합의를 보장하지 않는다.
 
-공급자는 `WEB_SEARCH_PROVIDER` 또는 검색 단독 CLI의 `--provider`로 선택한다. 기본 `ddgs`의 엔진은 `duckduckgo,bing`이다. `webserp`는 `google` 단독, 또는 `duckduckgo`·`yahoo` 단독/조합을 지원한다. 공급자를 바꿀 때 엔진도 명시적으로 맞춘다. webserp의 엔진 설정을 생략하면 기존 호환성상 google이 선택되므로 현재 동작 사례를 재현하려면 반드시 `duckduckgo,yahoo`를 지정한다. `auto`는 허용하지 않는다. DDGS 지원 목록은 duckduckgo,bing,brave,google,yahoo,mojeek,startpage,yandex다. API 키·별도 검색 서버는 필요 없지만 엔진별 가용성은 보장하지 않는다.
+`engine_status`에 엔진별 상태·HTTP 상태·메서드·후보 수·시작 상대 시각·소요 시간이 있다. `engines_returned`는 후보를 반환한 엔진, `search_complete=false`는 요청 엔진 중 실패가 있었다는 뜻이다. 한쪽 실패면 나머지 결과를 살리고 모두 실패하면 WebSearchError다. 202·리다이렉트·접근 확인·해석되지 않은200은 성공으로 처리하지 않는다. 원본 HTML·쿠키·인증 헤더는 앱 trace에 넣지 않는다.
 
-HTML 경로의 각 결과에는 실제 `engine`이 포함되고 `engines_returned`, `empty_or_unparsed_engines`, `engine_errors`가 개별 엔진 상태를 나타낸다. 한 엔진만 결과를 냈을 때 두 엔진 모두 성공했다고 기록하지 않는다. 모든 엔진이 빈 파싱 결과를 내면 정상적인 빈 검색으로 단정하지 않고 오류를 반환한다. 한 도구에서 두 엔진을 선택하면 내부 요청도 두 개이며, 병렬 도구 worker3개와 조합하면 동시에 최대6개 엔진 요청이 생길 수 있다.
+DDG `/l/?uddg=`·Bing `/ck/a?u=a1…`는 목적지로 해석한다. HTTP(S)·호스트·길이를 검사하고 인증 정보·공백 주소·검색엔진 내부 링크를 제외한다. Bing 제목과 링크가 분리된 HTML도 읽는다. 결과별 `engines`·`engine_ranks`는 최종 `web_sources`에도 남는다.
 
-webserp의 HTTP 오류·접근 안내·해석되지 않은 응답은 `WebSearchError`로 전달한다. `provider`, `status`, `http_status`, `response_kind` 등을 CLI JSON과 에이전트 trace의 오류 결과에 보존한다. HTTP 200의 빈 파싱 결과를 검색 성공으로 만들지 않는다. 검색 단독 CLI는 이 오류에 종료 코드1을 반환한다. 응답 HTML·쿠키·인증 헤더는 기록하지 않는다.
+같은 모델 응답의 웹 도구는 기본 최대3개 병렬 실행한다. `--tool-workers 1`이면 순차, 허용 범위는1..4다. 기본적으로 최대6개 엔진 요청이 겹칠 수 있다. 결과를 모두 모아 요청 순서·호출 ID대로 모델에 전달한다. 메모리 도구는 호출 스레드에서 실행한다.
 
-모델 도구 인자는 `query`(1..500자), `top_k`(정수1..5, 기본3)뿐이다. 결과는 제목·URL·검색 요약·출처 ID다. HTTP(S) 주소 정리·중복 제거, 제목200자·요약600자 제한, 전체3500 UTF-8 바이트 한도를 적용한다. 결과가 길면 요약 잘림과 제외 수를 표시하고 URL을 중간에 자르지 않는다.
+## 반환 범위와 에이전트 확인
 
-`content_kind=search_snippet`, `page_fetched=false`는 **검색 결과만 읽었다**는 뜻이다. `searched_at`은 조회 시각이며 페이지 작성·갱신 시각이 아니다. 공식 홈페이지와 블로그가 함께 나올 수 있다. 현재 가격·잔여 객실·정상 운행을 검증하는 도구가 아니다. 본문 수집·검색 결과 자동 저장·메모리 색인 갱신은 없다.
+모델 도구 인자는 `query`(1..500자), `top_k`(정수1..5, 기본3)다. 공급자·엔진은 호스트가 정한다. 제목200자·요약600자·URL·출처 ID, 기본 전체3500 UTF-8 바이트 한도를 적용한다. 요약 잘림·제외 수를 표시하고 URL을 자르지 않는다.
 
-## 실행 여부와 출처 확인
+`content_kind=search_snippet`, `page_fetched=false`는 검색 결과만 읽었다는 뜻이다. `searched_at`은 조회 시각이다. 본문·현재 가격·잔여 객실·운행은 확인하지 않는다. 본문 수집·검색 결과 자동 저장·메모리 갱신은 없다.
 
-같은 모델 응답에 포함된 여러 웹검색은 기본 최대3개를 병렬 실행한다. `--tool-workers 1`로 순차 실행, 1..4 범위로 동시 실행 수를 조정할 수 있다. 결과를 전부 모은 뒤 모델에 넘기며, 각 결과는 요청 순서와 호출 ID를 유지한다. [병렬 도구 실험](research/2026-10-17-011-parallel-tools.md)에 실제 모델 요청·실패와 검증 범위를 기록했다.
+에이전트는 `web_search_attempted`, `web_search_performed`, `web_sources`로 실행 여부를 구분한다. 인용 ID 검사는 제공한 ID인지 확인하며 문장별 근거·인용 누락·사실성을 모두 검증하지 못한다. `--no-web`은 실행을 막지만 모델의 허위 URL 생성을 완전히 막지 못한다. 라우팅·프롬프트 인젝션 방어도 완전히 검증하지 않았다.
 
-에이전트 결과에는 `web_search_attempted`(검증을 통과한 도구 실행 시도), `web_search_performed`(제공자가 정상 결과를 반환), `web_sources`(반환된 URL·제목·조회 시각·인용 여부)가 있다. 성공한 빈 검색도 performed=true지만 근거가 생긴 것은 아니다. `no_results`와 `no_usable_results`를 구분한다. 공급자 실패는 tool_error이며 정보가 존재하지 않는다는 증거가 아니다.
+실제 인자·결과·오류·모델 답변·토큰·시간은 비공개 요청별 trace에 남는다. 검색어는 외부 엔진으로 전송되며 자동 개인정보 마스킹은 아직 없다.
 
-최종 답변의 `[web:...]`는 실제 제공된 ID인지 검사한다. 이 검사는 문장별 뒷받침이나 인용 누락을 모두 찾지 못한다. 메모리 인용만 있어도 citation_status=valid가 될 수 있으며, 실제 복합 테스트에서 웹 인용 누락이 관찰됐다. `--no-web`은 네트워크 도구 실행을 차단하지만 모델의 허위 URL 생성을 막아주지는 않는다. 답변 문구만 보고 검색 성공을 판단하지 않는다.
+## 실제 검증과 한계
 
-실제 도구 인자·결과·오류·모델 답변·토큰·시간은 기존 요청별 trace에 남는다. 원본 추적 기록은 Git에서 제외한다. 사용자가 질문한 내용 중 모델이 만든 검색어는 외부 검색 엔진으로 전송된다. 자동 개인정보 마스킹은 아직 없다.
-
-## 한계와 검증
-
-웹검색 보강을 위해8개 공개 저장소와 공식 문서·논문을 검토했다. 검색 공급자의 우선 비교 후보는 SearXNG와 OpenSERP, 본문 수집 후보는 Crawl4AI다. Firecrawl·Jina의 호스팅 기능과 자체 운영 범위도 구분했다. [조사와 채택 판단](research/2026-10-17-013-web-search-strengthening.md), [실행 전 평가 입력10개](../examples/web-search-evaluation.json)를 참고한다. 후보를 설치하거나 검색 성공률을 비교한 결과는 아직 없으며 현재 런타임은 DDGS다.
-
-관리형 API 조사에는 Ollama Web Search/Fetch, Tavily, Exa, Brave Search API와 제3자 Serper도 포함했다. 이후 사용자는 종량 요금뿐 아니라 무료 API의 사용량 제한도 강하게 꺼린다고 밝혔다. 현재는 자체 운영을 우선 검토한다. SearXNG·OpenSERP 같은 외부 검색 중계와 YaCy 같은 독립 색인을 구분하며, 현재 결과만으로 한국어 범용 검색 품질을 보장하지 않는다. [로컬 검색과 비용 조사](research/2026-10-17-014-local-search-and-cost.md)를 참고한다. 계정·키 생성이나 공급자 전환은 아직 수행하지 않았고 현재 런타임은 DDGS다.
-
-DDGS는 비공식 검색 경로이므로 차단·속도 제한·결과 변동이 가능하다. 기본 도구 timeout은15초, 단독 CLI에서 최대30초다. 라이브러리 내부 재시도·동기 작업 때문에 전체 종료 시각을 강제 보장하지는 않는다. 과거 메모리와 공개 웹을 구분하도록 프롬프트를 제공하지만 완전한 라우팅·프롬프트 인젝션 방어는 검증하지 않았다.
-
-DDGS 9.16.0 진단에서 기본 설정의 bing은 비활성화되어 실제 선택 엔진이 duckduckgo 하나였다. 재현 시 박물관 검색은 DuckDuckGo 202(봇 확인 표식), 대체 엔진은 Brave 429·Google 403을 반환했다. DDGS가 200 이외 응답을 결과 없이 처리해 최종 `No results found.` 예외로 나타났다. 이전 실패의 HTTP 원인을 소급 확정하는 결과는 아니다. 검색 결과 부재와 접근 실패를 현재 오류 문구만으로 구분하지 못한다.
+031 최종 비교에서 Python·박물관은 두 엔진 모두200으로 공식 주소를 찾았다. 케이블카는 DDG202·Bing200으로 Bing 결과만 제공했다. 세 질의 모두 목표 도메인을 찾았지만 두 엔진 성공은2/3이다. 짧은 실행 구간이며 장기 안정성·일반 품질·비용 우위의 증거는 아니다.
 
 ```powershell
-# LLM 없이 같은 공개 검색어의 실제 엔진·HTTP 응답·추출 개수를 진단
-python scripts/diagnose_web.py
+python -m unittest discover -s tests -q
+python scripts/evaluate_search_fusion.py
 ```
 
-진단은 해당 프로세스에서만 DDGS 호출을 관찰하고 원본 HTML·쿠키·인증 헤더를 저장하지 않는다. 실제 결과와 내장 웹검색의 비교는 [연구일지012](research/2026-10-17-012-search-diagnosis.md)에 기록한다. 이 진단은 기존 에이전트 trace에 자동 적용되지 않는다.
+실제 질의·응답·코드·접힌 툴콜 로그는 [031 연구일지](research/2026-10-18-031-direct-http-search.md)를 참고한다.
 
-```powershell
-python -m unittest discover -s tests -v
-python scripts/evaluate_web.py
-# 한 사례만 실행할 수도 있다.
-python scripts/evaluate_web.py --case official --output artifacts/web-official.json
-```
+## 이전 구현·선택형 연구 경로
 
-6개 소규모 개발 사례에 같은 로컬 모델을 사용한다. 웹 비활성화·공식 홈페이지·인사·과거 기억·복합 요청·의도적 공급자 오류를 구분한다. 결과 변동과 실패를 포함한 실제 질문·답변은 [연구일지010](research/2026-10-17-010-web-search.md)에 정리했다. 완료 상태는 품질 통과가 아니다.
+[029 DDGS 통합](research/2026-10-18-029-dual-engine-fusion.md)과 [030 Bing 진단](research/2026-10-18-030-bing-maintenance-and-http-diagnosis.md)은 변경 배경이다. DDGS는 과거 재현용 `search-research` extra에만 남으며 기본 설치·런타임에는 필요 없다. 이미 설치된 연구 패키지를 자동 삭제하지 않는다.
 
-## Bing 유지보수·HTTP 재검증 (2026-10-18)
-
-DDGS 최신 배포는 설치본과 같은9.16.0(2026-08-26)이다. Bing 비활성화는2025-11-29부터 유지된다. 최근 직접 HTTP 진단에서 관련 응답을 받는 조건과 DDGS의 두 HTML 중 한 형태에 대한 파싱 누락을 분리했다. 단순 urllib 요청은3개 공개 질의×2반복에서 기대 도메인을 찾았지만, 언어·국가 파라미터 비교에는 무관한200 응답도 있었다. 앱의 Bing은 여전히 비활성 상태이며 이 연구용 파서를 런타임에 연결하지 않았다. [실험·한계·실행법](research/2026-10-18-030-bing-maintenance-and-http-diagnosis.md)을 참고한다. `python scripts/diagnose_bing.py --variant ddgs --variant plain --include-travel --repeat 2`로 브라우저·LLM 없이 비교할 수 있다.
+기존 webserp extra는 검토한 Git 커밋을 고정한 연구 경로다. `--provider webserp --backend duckduckgo,yahoo` 또는 `--backend google`을 명시한다. Google 실패와 Yahoo의 제한된 성공은 [019](research/2026-10-18-019-webserp-deep-validation.md)에 기록했다. Google 직접 HTTP 연구는 중단했으며022~028은 과거 기록이다. 관리형 API와 자체 운영의 차이는 [014](research/2026-10-17-014-local-search-and-cost.md)를 참고한다.

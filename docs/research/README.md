@@ -32,6 +32,10 @@
 
 ## 인덱스
 
+- [031: DDGS 런타임을 제거하고 덕덕고·Bing을 직접 요청하다](2026-10-18-031-direct-http-search.md) — 직접 요청·자체 파서·기본http 전환, 두 엔진 성공2/3·Bing 공식 도메인3/3, 실제 모델 부분 실패 설명, Python115개·pip check 통과
+
+031 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e81a9b66dcba0bfc96a08
+
 - [030: Bing 장애를 DDGS 유지보수·요청 방식·HTML 파싱으로 나눠 조사하다](2026-10-18-030-bing-maintenance-and-http-diagnosis.md) — 최신 배포·이슈 조사, HTTP20회 비교, 원본 파서 누락2건 복원, 런타임 활성화 보류, Python106개 통과
 
 030 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e817c8d34f9024a2ab0ea

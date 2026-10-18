@@ -21,7 +21,7 @@ from travel_agent.web import _clean_url
 
 
 def parse_results(text):
-    from ddgs.engines.bing import unwrap_bing_url
+    from travel_agent.web import _unwrap_search_url
     root = html.fromstring(text)
     results = []
     for item in root.xpath('//li[contains(concat(" ", normalize-space(@class), " "), " b_algo ")]'):
@@ -35,7 +35,7 @@ def parse_results(text):
             candidate = anchor.get('href')
             if candidate.startswith('https://www.bing.com/ck/a?'):
                 try:
-                    candidate = unwrap_bing_url(candidate)
+                    candidate = _unwrap_search_url(candidate, "bing")
                 except (ValueError, UnicodeError):
                     continue
             clean = _clean_url(candidate) if candidate else None
