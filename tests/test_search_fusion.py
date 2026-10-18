@@ -1,5 +1,6 @@
 """Bing-only dispatch, duplicate URLs, and explicit errors; no network."""
 import unittest
+import os
 from unittest.mock import patch
 
 from travel_agent.web import WebSearchError, _provider_search, web_search
@@ -10,7 +11,11 @@ def row(url='https://example.invalid/', title='Example', body='Synthetic snippet
 
 
 class BingDispatchTests(unittest.TestCase):
-    def test_default_calls_bing_once_and_reports_only_bing(self):
+    def setUp(self):
+        self.addCleanup(patch.stopall)
+        patch.dict(os.environ, {'WEB_SEARCH_PROVIDER':'http','WEB_SEARCH_BACKEND':'bing'}).start()
+
+    def test_explicit_bing_calls_once_and_reports_only_bing(self):
         with patch('travel_agent.web._provider_search', return_value=[row()]) as provider:
             result = web_search('query')
         provider.assert_called_once_with('query', 3, 15, 'bing')

@@ -1,5 +1,27 @@
 # 웹검색 도구
 
+## 현재 기본 공급자: Brave Search API (042)
+
+Brave Web Search API에서 제목·URL·요약을 받아 기존 출처 ID·출력 제한·추적 형식으로 반환한다. Claude MCP에서 사용하던 키를 재사용하되 Python에서 API를 직접 호출한다. Node MCP 프로세스를 띄우거나 Claude를 호출하지 않는다. 기존 에이전트 web_search와 독립 web research의 검색 공급자가 모두 기본 brave로 바뀌었다. 연구 파이프라인의 전체 수집·발췌 구조를 에이전트 도구로 교체한 것은 아니다.
+
+프로젝트 루트에서 BRAVE_API_KEY 환경 변수를 주거나, Git 제외 파일 data/private/brave-api-key에 키 한 줄을 둔다. 다른 위치는 BRAVE_API_KEY_FILE 환경 변수로 지정한다. 환경 변수가 파일보다 우선한다. Claude 설정을 런타임마다 읽지 않는다. .env.example은 참고용이며 .env를 자동 로딩하지 않는다. 로컬 키는 저장소에 포함되지 않으므로 새 환경에서는 별도로 설정해야 한다.
+
+```powershell
+python -m travel_agent web search "강릉 여행 후기 블로그"
+python -m travel_agent web research "강릉 여행 후기 블로그" --pages 2 --keep-dir data/private/search-pipeline/manual
+# 이전 Bing 경로를 명시적으로 비교할 때
+python -m travel_agent web search "강릉 여행 후기 블로그" --provider http --backend bing
+python -m travel_agent web research "강릉 여행 후기 블로그" --provider http --serp-format rss
+```
+
+기본 WEB_SEARCH_PROVIDER=brave, WEB_SEARCH_BACKEND=brave다. 기존 프로세스 환경에 http/bing을 설정했다면 해당 값을 변경해야 한다. BRAVE_SEARCH_COUNTRY=KR, BRAVE_SEARCH_LANG=ko가 기본이며 다국어 연구에서는 명시적으로 바꿀 수 있다. web search는 top_k만큼 한 번 요청하고, web research는 페이지당 최대20개를 받은 뒤 후처리한다. 페이지당 API 요청1건이며 기본 최대3페이지다. offset은0부터 시작하고 최대9다. 다음 페이지는 more_results_available=true일 때만 조회하며, 반복 URL·오류에서도 중단한다. 실제 반환 개수나 검색 공간 전체를 보장하지 않는다. 연구의 --serp-format/--locale은 Bing 전용으로 Brave에서 비기본 값을 주면 오류로 알린다.
+
+인증 실패·429·네트워크·JSON 오류는 명시적으로 기록하며 자동 재시도·다른 엔진 대체는 없다. 키·인증 헤더·오류 응답 본문은 로그에 넣지 않는다. 검색 요약과 실제로 받은 본문은 계속 구분한다. Brave가 관련 후보를 반환해도 원사이트의403·429·동적 렌더링·오래된 글·광고성 글 문제는 남는다.
+
+실제 042의 두 질문은 각각40개·20개 후보를 받았고 네이버·티스토리 여행 본문 및 명소 설명을 확보했다. 일부 출처 읽기는 실패해 검색 요약만 전달했고 광고성 호텔 글도 포함됐다. 이 결과는 일반 품질이나 최신 정보 검증 통과가 아니다. 요금·플랜·잔액은 계정에서 별도로 확인해야 한다. 검색 데이터 공급: [Brave Search API](https://brave.com/search/api/).
+
+## 이전 Bing 구현과 조사 이력 (010~041)
+
 034의 최신 작업은 에이전트 연결을 보류하고 검색 툴을 독립 검증하는 [수집·재정렬·발췌 경로](search-pipeline.md)다. `web research`는 임시 원문 저장과 페이지 수집 이후 top_k를 적용한다. 아래 `web search`와 기존 에이전트의 즉시 검색 요약 경로는 그대로 구분한다.
 
 기본 공급자는 `http`, 엔진은 `bing`이다.032부터 DuckDuckGo의 요청·파서·URL 해석 경로와 기본 primp 의존성을 제거했다. webserp 연구 공급자에서도 DuckDuckGo를 거부한다. 과거 연구일지는 보존한다.

@@ -105,7 +105,7 @@ class DirectSearchTests(unittest.TestCase):
         self.assertEqual(result['hits'][0]['engines'], ['bing'])
 
     def test_old_provider_configuration_gets_migration_error(self):
-        with self.assertRaisesRegex(ValueError, 'ddgs was replaced by http'):
+        with self.assertRaisesRegex(ValueError, 'WEB_SEARCH_PROVIDER'):
             web_search('query', provider='ddgs')
 
 

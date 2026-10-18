@@ -1,6 +1,7 @@
 """Search parsing and agent contracts; fixtures never masquerade as live search."""
 
 import tempfile
+import os
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -27,6 +28,10 @@ def web_call(query="public travel information"):
 
 
 class WebTests(unittest.TestCase):
+    def setUp(self):
+        self.addCleanup(patch.stopall)
+        patch.dict(os.environ, {'WEB_SEARCH_PROVIDER':'http','WEB_SEARCH_BACKEND':'bing'}).start()
+
     def test_normalizes_url_deduplicates_and_marks_snippet_scope(self):
         rows = [row("https://EXAMPLE.invalid/page#one", title="A &amp; B"), row("https://example.invalid/page#two"),
                 row("javascript:alert(1)"), row("https://user:password@example.invalid/"), row("https://example.invalid/a b")]
@@ -84,6 +89,8 @@ class WebTests(unittest.TestCase):
 
 class AgentWebTests(unittest.TestCase):
     def setUp(self):
+        self.addCleanup(patch.stopall)
+        patch.dict(os.environ, {'WEB_SEARCH_PROVIDER':'http','WEB_SEARCH_BACKEND':'bing'}).start()
         self.temp = tempfile.TemporaryDirectory()
         self.store = MemoryStore(Path(self.temp.name) / "memory.sqlite3")
         self.trace_dir = Path(self.temp.name) / "traces"

@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
@@ -17,6 +18,10 @@ def serp(start, next_first=None):
 
 
 class PipelineTests(unittest.TestCase):
+    def setUp(self):
+        self.addCleanup(patch.stopall)
+        patch.dict(os.environ, {'WEB_SEARCH_PROVIDER':'http'}).start()
+
     def test_short_korean_query_matches_the_same_term_in_a_compound(self):
         self.assertIn('ko:관광',set(tokens('관광'))&set(tokens('한국관광공사')))
         rows=[{'title':'한국 일반 정보','href':'https://example.org/general','body':'한국 문화 소개','page':1,'rank':1},

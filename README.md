@@ -14,8 +14,8 @@
 - Qwen3.5 4B Q4_K_M 한국어 응답과 가상 도구 호출 왕복 검증
 - 대화 원문 저장·BM25/dense/hybrid 검색·검색 근거 기반 답변 CLI
 - LLM이 메모리 검색·원문 조회를 선택하는 Agentic RAG와 요청별 실행 추적
-- API 키 없는 Bing 검색과 선택적 web_read: 검색 후보·출처, 본문 추출·제한된 발췌, 간결한 모델 입력과 실행 추적
-- Bing 단독 직접 HTTP 검색: DuckDuckGo 제거, URL 중복 제거·원래 순위·출처·오류 표시. 여러 검색어의 병렬 툴 호출은 유지한다. 공개3질의에서 공식 주소 확인. [현재 구현과 검증](docs/research/2026-10-18-032-bing-only-search.md)
+- Brave Search API 기본 연결과 선택적 web_read: 검색 후보·출처, 본문 추출·제한된 발췌, 간결한 모델 입력과 실행 추적. 키는 환경 변수 또는 Git 제외 로컬 파일에 둔다.
+- 독립 검색 파이프라인: 후보 수집 → 중복 제거·BM25Plus 재정렬 → 본문 읽기 → 제한된 발췌. Bing 직접 HTTP는 명시적 비교 경로로 남기며 자동 대체하지 않는다. [현재 실행법](docs/web-search.md)
 - 선택형 webserp Google·Yahoo 연구 경로: Google은 미해결, DuckDuckGo/Yahoo 조합에서 공식 주소 조회와 실제 에이전트 답변 확인 (연구일지019)
 - Google HTTP 직접 구현: `python -m travel_agent.google_http "Python official website"`. 쿠키 파일 저장·재사용, HTML 결과 파서, 선택형 QuickJS 확인 스크립트 실험. 브라우저 방식은 폐기했다. 실제 검색은 아직 실패하며 에이전트 연결 전이다. [HTTP 구현 기록](docs/research/2026-10-18-022-google-http-session.md)
 - 한 응답의 여러 웹검색을 병렬 실행하고 호출별 결과·오류를 모델에 전달

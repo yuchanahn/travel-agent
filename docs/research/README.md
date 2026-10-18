@@ -32,6 +32,10 @@
 
 ## 인덱스
 
+- [042: Brave를 기본 검색 공급자로 연결하다](2026-10-18-042-brave-integration.md) — API 공급자 전환·기존 후처리 유지, 실제 두 질문 후보40개/20개·본문 각3개, Python148개 통과
+
+042 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e819293a2d417952f5c7d
+
 - [041: 기존 Claude MCP의 Brave 키 재사용 확인](2026-10-18-041-brave-existing-key-check.md) — 기존 키로 API1건 HTTP200·여행 후보3개, 프로젝트 연결 전
 
 041 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e81feb71ccbacc7d28171

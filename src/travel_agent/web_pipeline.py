@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from difflib import SequenceMatcher
 from hashlib import sha256
 import json
+import os
 from pathlib import Path
 import re
 from tempfile import TemporaryDirectory
@@ -172,7 +173,7 @@ def pack_digest(query, sources, max_bytes, summary):
 
 
 def search_evidence(query, *, pages=3, top_k=5, read_pages=5, max_bytes=6000, keep_dir=None, timeout=12,
-                    min_coverage=.25,serp_format='html',locale='none'):
+                    min_coverage=.25,serp_format='html',locale='none',provider=None):
     if not isinstance(query,str) or not 0 < len(query.strip()) <= 500:
         raise ValueError('Query must contain 1..500 characters')
     if type(pages) is not int or not 1 <= pages <= 10 or type(top_k) is not int or not 1 <= top_k <= 10:
@@ -184,6 +185,11 @@ def search_evidence(query, *, pages=3, top_k=5, read_pages=5, max_bytes=6000, ke
     if serp_format not in {'html','rss'}:
         raise ValueError('serp_format must be html or rss')
     _bing_locale_params(locale)
+    provider = provider or os.environ.get('WEB_SEARCH_PROVIDER','brave')
+    if provider not in {'brave','http'}:
+        raise ValueError('Research provider must be brave or http')
+    if provider == 'brave' and (serp_format != 'html' or locale != 'none'):
+        raise ValueError('serp-format and locale are Bing options; use BRAVE_SEARCH_COUNTRY/LANG for Brave')
     query = query.strip()
     request_id = uuid4().hex
     with TemporaryDirectory(prefix='travel-search-') as temp:
@@ -191,26 +197,33 @@ def search_evidence(query, *, pages=3, top_k=5, read_pages=5, max_bytes=6000, ke
         directory.mkdir(parents=True, exist_ok=True)
         started = perf_counter()
         report = {'id':request_id, 'query':query, 'started_at':datetime.now(timezone.utc).isoformat(),
-                  'events':[], 'raw_rows':[], 'stop_reason':'page_limit', 'model_invoked':False}
+                  'events':[], 'raw_rows':[], 'stop_reason':'page_limit', 'model_invoked':False, 'provider':provider}
         def save():
             (directory/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
         offset, seen, page_params = 1, set(), {}
         for page in range(1,pages+1):
-            event = {'id':uuid4().hex,'tool':'bing_search_http', 'query':query,'page':page,'first':offset,
-                     'response_format':serp_format,'locale':locale,
+            event = {'id':uuid4().hex,'tool':'brave_search_api' if provider=='brave' else 'bing_search_http', 'query':query,'page':page,
+                     'response_format':'json' if provider=='brave' else serp_format,'locale':locale,
                      'started_at':datetime.now(timezone.utc).isoformat()}
             try:
-                raw, info = _request_html('bing',query,timeout,search_format=serp_format,locale=locale,
-                                          **({'first':offset,'page_params':page_params} if page > 1 else {}))
+                if provider == 'brave':
+                    from .brave_provider import request_search
+                    raw, rows, info = request_search(query,20,timeout,offset=page-1)
+                else:
+                    event['first'] = offset
+                    raw, info = _request_html('bing',query,timeout,search_format=serp_format,locale=locale,
+                                              **({'first':offset,'page_params':page_params} if page > 1 else {}))
                 event.update(info)
                 event['pagination_param_names'] = sorted(page_params)
-                (directory/f'serp-{page}.{ "xml" if serp_format=="rss" else "html" }').write_text(raw,encoding='utf-8')
+                extension = 'json' if provider=='brave' else 'xml' if serp_format=='rss' else 'html'
+                (directory/f'serp-{page}.{extension}').write_text(raw,encoding='utf-8')
                 if any(s in raw.lower() for s in ('id="b_captcha"','verify you are human')):
                     raise WebSearchError('Access challenge',details={'reason':'access_challenge'})
-                rows = _parse_search_rss(raw,'bing') if serp_format=='rss' else _parse_search_html(raw,'bing')
+                if provider != 'brave':
+                    rows = _parse_search_rss(raw,'bing') if serp_format=='rss' else _parse_search_html(raw,'bing')
                 event.update(rows.details)
                 if not rows:
-                    report['stop_reason'] = 'empty_or_unparsed'
+                    report['stop_reason'] = 'no_results' if provider=='brave' else 'empty_or_unparsed'
                     break
                 urls = {canonical_url(r['href']) for r in rows}
                 new = urls-seen
@@ -220,6 +233,11 @@ def search_evidence(query, *, pages=3, top_k=5, read_pages=5, max_bytes=6000, ke
                     report['stop_reason'] = 'repeated_page'
                     break
                 seen.update(urls)
+                if provider == 'brave':
+                    if info.get('more_results_available') is not True:
+                        report['stop_reason']='provider_no_more_results' if info.get('more_results_available') is False else 'provider_pagination_unknown'
+                        break
+                    continue
                 if serp_format=='rss':
                     report['stop_reason']='feed_limit'
                     break
@@ -290,7 +308,7 @@ def search_evidence(query, *, pages=3, top_k=5, read_pages=5, max_bytes=6000, ke
                 evidence['content_kind'] = 'search_snippet'
             sources.append({**item, **evidence, 'id':'web:'+sha256(item['url'].encode()).hexdigest()[:16]})
         summary = {'collected':len(report['raw_rows']),'groups':len(groups), 'shortlisted':len(shortlist),
-                   'response_format':serp_format,'locale':locale,
+                   'provider':provider,'response_format':'json' if provider=='brave' else serp_format,'locale':locale,
                    'stop_reason':report['stop_reason'],'retrieval_complete':False,
                    'ranking':'lexical_bm25plus','min_query_coverage':min_coverage,
                    'evidence_status':'unverified_candidates' if shortlist else 'insufficient_candidates',

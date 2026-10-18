@@ -1,4 +1,4 @@
-"""Key-free web search snippets. Does not fetch the linked pages."""
+"""Web search snippets. Does not fetch the linked pages."""
 
 import json
 import os
@@ -19,7 +19,7 @@ from urllib.parse import parse_qs, urlsplit, urlunsplit
 from .memory import canonical
 
 
-BACKENDS = {"bing", "google", "yahoo"}
+BACKENDS = {"bing", "google", "yahoo", "brave"}
 
 
 class WebSearchError(RuntimeError):
@@ -279,10 +279,10 @@ def web_search(query, *, top_k=3, timeout=15, max_bytes=3500, backend=None, prov
         raise ValueError("top_k must be an integer 1..5")
     if not 0 < timeout <= 30 or not 1000 <= max_bytes <= 10000:
         raise ValueError("Web timeout must be 0..30 seconds and output budget 1000..10000 bytes")
-    provider = provider if provider is not None else os.environ.get("WEB_SEARCH_PROVIDER", "http")
-    if provider not in {"http", "webserp"}:
-        raise ValueError("WEB_SEARCH_PROVIDER must be http or webserp; ddgs was replaced by http")
-    default_backend = "google" if provider == "webserp" else "bing"
+    provider = provider if provider is not None else os.environ.get("WEB_SEARCH_PROVIDER", "brave")
+    if provider not in {"http", "webserp", "brave"}:
+        raise ValueError("WEB_SEARCH_PROVIDER must be brave, http or webserp")
+    default_backend = {"webserp":"google", "http":"bing", "brave":"brave"}[provider]
     backend = backend if backend is not None else os.environ.get("WEB_SEARCH_BACKEND", default_backend)
     engines = list(dict.fromkeys(item.strip().lower() for item in backend.split(",")))
     if not engines or any(item not in BACKENDS for item in engines):
@@ -291,7 +291,12 @@ def web_search(query, *, top_k=3, timeout=15, max_bytes=3500, backend=None, prov
         raise ValueError("HTTP search supports bing only; DuckDuckGo was removed")
     backend = ",".join(engines)
     metadata = {}
-    if provider == "webserp":
+    if provider == "brave":
+        if backend != 'brave':
+            raise ValueError('Brave provider requires backend=brave')
+        from .brave_provider import search
+        rows, metadata = search(query.strip(), top_k, timeout)
+    elif provider == "webserp":
         if backend == "google":
             from .webserp_provider import search_google
             rows, metadata = search_google(query.strip(), top_k, timeout)
@@ -350,7 +355,7 @@ def add_parser(subparsers):
     search.add_argument("--top-k", type=int, default=3)
     search.add_argument("--timeout", type=float, default=15)
     search.add_argument("--backend", help="Override WEB_SEARCH_BACKEND for this invocation")
-    search.add_argument("--provider", choices=["http", "webserp"], help="Override WEB_SEARCH_PROVIDER")
+    search.add_argument("--provider", choices=["brave", "http", "webserp"], help="Override WEB_SEARCH_PROVIDER")
     research = actions.add_parser("research", help="Collect, rank and extract search evidence without an LLM")
     research.add_argument("query")
     research.add_argument("--pages", type=int, default=3)
@@ -360,6 +365,7 @@ def add_parser(subparsers):
     research.add_argument("--keep-dir", help="Keep raw responses in a private directory; otherwise delete temporary files")
     research.add_argument("--serp-format",choices=['html','rss'],default='html',help='Explicit Bing response format; RSS depth is limited')
     research.add_argument("--locale",default='none',help='Explicit locale, e.g. ko-KR or en; no mkt parameter')
+    research.add_argument("--provider", choices=['brave','http'], help='Override WEB_SEARCH_PROVIDER; default brave')
 
 
 def run(args):
@@ -367,7 +373,7 @@ def run(args):
         from .web_pipeline import search_evidence
         result = search_evidence(args.query, pages=args.pages, top_k=args.top_k,
                                  read_pages=args.read_pages, max_bytes=args.max_bytes,
-                                 keep_dir=args.keep_dir,serp_format=args.serp_format,locale=args.locale)
+                                 keep_dir=args.keep_dir,serp_format=args.serp_format,locale=args.locale,provider=args.provider)
         print(result['digest'])
         return 0 if result['sources'] else 1
     try:
