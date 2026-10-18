@@ -223,7 +223,7 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
     trace.emit("run_start", user=user, session=session, query=query, summary=summary,
                model=model, base_url=base_url, mode=mode, rerank=rerank, tools=tools, enable_web=enable_web,
                web_provider=os.environ.get("WEB_SEARCH_PROVIDER", "http"),
-               web_backend=os.environ.get("WEB_SEARCH_BACKEND", "google" if os.environ.get("WEB_SEARCH_PROVIDER") == "webserp" else "duckduckgo,bing"),
+               web_backend=os.environ.get("WEB_SEARCH_BACKEND", "google" if os.environ.get("WEB_SEARCH_PROVIDER") == "webserp" else "bing"),
                limits={"max_steps": max_steps, "max_tool_calls": max_tool_calls,
                        "timeout": timeout, "max_input_bytes": max_input_bytes, "tool_workers": tool_workers},
                options={**options, "think": False})

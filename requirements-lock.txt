@@ -24,7 +24,6 @@ narwhals==2.27.1
 networkx==3.7
 numpy==2.5.4
 packaging==26.3
-primp==2.0.1
 Pygments==2.21.0
 PyYAML==6.0.3
 rank-bm25==0.2.2

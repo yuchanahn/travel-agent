@@ -28,7 +28,7 @@
 
 ## 실행
 
-현재 검색 방향은031부터 DDGS 런타임을 제거한 DuckDuckGo·Bing 직접 HTTP 요청이다. 기본 공급자는http, 엔진은duckduckgo,bing이다. DuckDuckGo는primp HTTP 클라이언트, Bing은urllib를 직접 쓰고 HTML 파서는 앱이 소유한다. 브라우저 실행·유료 API·다른 엔진 자동 대체는 없다. 엔진별 병렬 요청·URL 중복 제거·RRF·출처·부분 실패를 보존한다. DDGS의 Bing 비활성화 정책은 이전 구현의 이력이며 독립 HTTP 어댑터의 실행을 막는 현재 정책이 아니다. 031 실제 검증에서 Python·박물관은 두 엔진 성공, 케이블카는DDG202·Bing성공이었다. HTTP200·기능 성공·일반 품질을 구분한다. Google 직접 HTTP 연구는 중단했다.
+현재 검색 방향은032부터 Bing 단독 직접 HTTP 요청이다. 기본 공급자는http, 엔진은bing이다. DuckDuckGo 요청·파서와 기본primp 의존성을 제거했으며 webserp에서도DuckDuckGo를 거부한다. 이전duckduckgo,bing 설정은bing으로 바꾼다. urllib 직접 요청·자체 HTML 파서·출처·중복 제거·오류 상태를 유지한다. 여러 검색어의 병렬 툴 호출은 유지하고 Bing 실패 시 다른 엔진으로 대체하지 않는다. 실제032 검증의 공개3질의는Bing200·공식 주소를 확인했다. 일반 품질·장기 안정성은 미검증이다. Google 직접 HTTP 연구는 중단했다.
 
 025의 고정 입력 행렬은 jsdom 환경에서 언어·너비·hardwareConcurrency와 대조군의 레코드 의존 구간을 측정했다. 오프셋은 VM빌드·캡처에 한정한다. JS UA·query가 이번 레코드를 바꾸지 않았다는 관찰을 HTTP 서버 판정의 무관함으로 일반화하지 않는다. 기준 반복과 관찰 전후 토큰 동일성 확인 뒤에만 차이를 해석한다. --matrix 전체 프로세스 제한과 호스트 JS 타이머를 구분한다.
 
@@ -48,7 +48,7 @@ Python 3.12 이상, Ollama 호스트 실행을 기준으로 한다. 모델 태�
 
 웹 도구는 한 모델 응답의 묶음 안에서 기본 최대3개 병렬 실행한다(--tool-workers 1이면 순차). SQLite·로컬 검색 모델을 사용하는 메모리 도구는 호출 스레드에 유지한다. 병렬 요청 처리 성공과 외부 검색·답변 품질 성공은 구분한다.
 
-Google 요청 재현·webserp 후보 조사는015~028의 이력이다. 현재 우선순위는031의 직접 HTTP 검색기다. 공급자는WEB_SEARCH_PROVIDER=http, 엔진은WEB_SEARCH_BACKEND=duckduckgo,bing이며 이전ddgs 설정은http로 바꾼다. webserp는 별도 명시적 연구 경로로 유지하고 DDGS 자체는 과거 재현용search-research extra에만 남는다. DDGS를 런타임에서 다시 가져오거나 실패 시 조용히 다른 공급자로 바꾸지 않는다. 사용자는 인증·세션의 로컬 파일 재사용을 선호하지만 현재 직접 검색기는 익명 요청이며 파일 세션 저장을 구현하지 않았다. HTTP200의 해석 실패와 접근 제한을 검색 성공으로 기록하지 않는다.
+Google·webserp·DDGS·두 엔진 직접 HTTP 비교는015~031의 이력이다. 현재 실행 절차는docs/web-search.md의Bing 단독 검색을 따른다. 공급자는WEB_SEARCH_PROVIDER=http, 엔진은WEB_SEARCH_BACKEND=bing이다. webserp는google·yahoo 단독 연구 경로로 유지한다. DDGS는 과거 재현용search-research extra에만 남기며 런타임에서 쓰지 않는다. 사용자 선호인 파일 세션 재사용은 현재 미구현이고 직접 검색기는 익명 요청이다. HTTP200의 해석 실패를 검색 성공으로 기록하지 않는다.
 
 ## Git 작업
 

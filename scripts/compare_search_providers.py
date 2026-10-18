@@ -24,11 +24,11 @@ def main():
         return compare_agents(args.output)
     cases = json.loads(Path("examples/web-search-evaluation.json").read_text(encoding="utf-8"))["cases"]
     report = {"recorded_at": datetime.now(timezone.utc).isoformat(), "top_k": 5, "max_bytes": 10000,
-              "timeout_per_call": 15, "versions": {p: version(p) for p in ("primp", "lxml", "curl_cffi")},
+              "timeout_per_call": 15, "versions": {p: version(p) for p in ("lxml", "curl_cffi")},
               "limits": "One sequential pass, different search engines, no automatic fallback or LLM. Domain hits only for two known domains; other relevance needs review.",
               "runs": []}
     for case in cases:
-        for provider, backend in [("http", "duckduckgo,bing"), ("webserp", "google")]:
+        for provider, backend in [("http", "bing"), ("webserp", "google")]:
             started = time.perf_counter()
             try:
                 result = web_search(case["query"], top_k=5, max_bytes=10000, timeout=15,
@@ -57,7 +57,7 @@ def compare_agents(output):
              "반환된 주소와 출처를 간결하게 알려줘. 본문을 읽었다고 말하지 마.")
     report = {"query": query, "runs": [], "limits": "One real model run per provider, no memory fixture. Cold/warm model and live search vary; not a latency or cost superiority benchmark."}
     with MemoryStore("data/private/provider-comparison.sqlite3") as store:
-        for provider, backend in [("http", "duckduckgo,bing"), ("webserp", "google")]:
+        for provider, backend in [("http", "bing"), ("webserp", "google")]:
             print(json.dumps({"starting_agent_provider": provider}, ensure_ascii=False), flush=True)
             with patch.dict(os.environ, {"WEB_SEARCH_PROVIDER": provider, "WEB_SEARCH_BACKEND": backend}):
                 result = run_agent(store, "demo", "provider-comparison", query, max_steps=4, max_tool_calls=4)

@@ -32,6 +32,10 @@
 
 ## 인덱스
 
+- [032: 덕덕고를 제거하고 Bing 단독 검색으로 정리하다](2026-10-18-032-bing-only-search.md) — DDG 요청·파서·기본primp 의존성 제거, Bing3질의 공식 주소 확인, 병렬 툴 호출 유지, Python110개·pip check 통과
+
+032 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e81288307e20940fc717a
+
 - [031: DDGS 런타임을 제거하고 덕덕고·Bing을 직접 요청하다](2026-10-18-031-direct-http-search.md) — 직접 요청·자체 파서·기본http 전환, 두 엔진 성공2/3·Bing 공식 도메인3/3, 실제 모델 부분 실패 설명, Python115개·pip check 통과
 
 031 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e81a9b66dcba0bfc96a08

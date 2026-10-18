@@ -124,18 +124,9 @@ class AdapterTests(unittest.TestCase):
         self.assertNotIn("secret", str(context.exception))
         self.assertEqual(context.exception.details["status"], "transport_error")
 
-    def test_html_empty_engine_is_visible_when_another_engine_returns_hits(self):
-        from webserp.engines.base import Result
-
-        async def fetch(engine, *args):
-            if engine.name == "duckduckgo":
-                return engine.name, [], None
-            return engine.name, [Result("Fixture", "https://example.invalid/A", "text", engine.name)], None
-
-        with patch("webserp.search._fetch_engine", side_effect=fetch):
-            rows, metadata = search_html("q", 3, 15, ["duckduckgo", "yahoo"])
-        self.assertEqual(rows[0]["engine"], "yahoo")
-        self.assertEqual(metadata["empty_or_unparsed_engines"], ["duckduckgo"])
+    def test_removed_duckduckgo_is_rejected(self):
+        with self.assertRaises(ValueError):
+            search_html("q", 3, 15, ["duckduckgo"])
 
     def test_html_zero_results_is_not_silent_success(self):
         async def fetch(engine, *args):

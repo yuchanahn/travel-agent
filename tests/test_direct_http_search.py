@@ -19,13 +19,6 @@ class Response(BytesIO):
 
 
 class DirectSearchTests(unittest.TestCase):
-    def test_duckduckgo_uses_http_client_directly_and_preserves_payload(self):
-        with patch('travel_agent.web.primp.Client') as client:
-            client.return_value.get.return_value = SimpleNamespace(status_code=200, content=b'<html>response</html>')
-            _request_html('duckduckgo', 'public query', 7)
-        self.assertEqual(client.return_value.get.call_args.kwargs['params'], {'q':'public query', 'b':'', 'l':'kr-kr'})
-        self.assertEqual(client.return_value.get.call_args.args[0], 'https://html.duckduckgo.com/html/')
-
     def test_get_preserves_unicode_query_and_fixed_engine_endpoint(self):
         with patch('travel_agent.web.build_opener') as opener:
             opener.return_value.open.return_value = Response(b'<html>body</html>')
@@ -82,12 +75,12 @@ class DirectSearchTests(unittest.TestCase):
             return original(name, *args, **kwargs)
         def response(engine, query, timeout):
             card = '<h2><a href="https://example.invalid/">Official</a></h2><p>Snippet</p>'
-            text = '<div class="result__body">'+card+'</div>' if engine == 'duckduckgo' else '<li class="b_algo">'+card+'</li>'
+            text = '<li class="b_algo">'+card+'</li>'
             return text, {'method':'GET','http_status':200}
         with patch('builtins.__import__', side_effect=reject), patch('travel_agent.web._request_html', side_effect=response):
             result = web_search('query', provider='http')
         self.assertTrue(result['search_complete'])
-        self.assertEqual(result['hits'][0]['engines'], ['duckduckgo','bing'])
+        self.assertEqual(result['hits'][0]['engines'], ['bing'])
 
     def test_old_provider_configuration_gets_migration_error(self):
         with self.assertRaisesRegex(ValueError, 'ddgs was replaced by http'):

@@ -10,7 +10,6 @@ from urllib.error import HTTPError
 from urllib.request import Request, build_opener, HTTPRedirectHandler
 from urllib.parse import urlencode
 from lxml import html
-import primp
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from hashlib import sha256
@@ -20,7 +19,7 @@ from urllib.parse import parse_qs, urlsplit, urlunsplit
 from .memory import canonical
 
 
-BACKENDS = {"duckduckgo", "bing", "google", "yahoo"}
+BACKENDS = {"bing", "google", "yahoo"}
 
 
 class WebSearchError(RuntimeError):
@@ -37,7 +36,7 @@ class _EngineRows(list):
         self.details = details
 
 
-SEARCH_URLS = {"duckduckgo": "https://html.duckduckgo.com/html/", "bing": "https://www.bing.com/search"}
+SEARCH_URLS = {"bing": "https://www.bing.com/search"}
 MAX_RESPONSE_BYTES = 2 * 1024 * 1024
 
 
@@ -53,17 +52,6 @@ def _request_html(engine, query, timeout):
                       headers={"Accept-Language": "en-US,en;q=0.9"})
     info = {"method": "GET"}
     try:
-        if engine == "duckduckgo":
-            # An HTTP client, not the DDGS search implementation or a browser.
-            # Preserve the request shape of the earlier working DDG path.
-            client = primp.Client(timeout=timeout, impersonate="random", impersonate_os="random")
-            response = client.get(SEARCH_URLS[engine], params={"q": query, "b": "", "l": "kr-kr"})
-            info["http_status"] = response.status_code
-            if response.status_code != 200:
-                raise WebSearchError("Search engine HTTP failure", details={"reason": "http_error", **info})
-            if len(response.content) > MAX_RESPONSE_BYTES:
-                raise WebSearchError("Search response too large", details={"reason": "response_too_large", **info})
-            return response.content.decode("utf-8", errors="replace"), info
         try:
             incoming = build_opener(_NoRedirect()).open(request, timeout=timeout)
         except HTTPError as exc:
@@ -87,9 +75,7 @@ def _unwrap_search_url(raw, engine):
         raw = "https:" + raw
     try:
         parsed = urlsplit(raw)
-        if engine == "duckduckgo" and parsed.hostname in {"duckduckgo.com", "www.duckduckgo.com"} and parsed.path == "/l/":
-            raw = parse_qs(parsed.query).get("uddg", [""])[0]
-        elif engine == "bing" and parsed.hostname in {"bing.com", "www.bing.com"} and parsed.path == "/ck/a":
+        if engine == "bing" and parsed.hostname in {"bing.com", "www.bing.com"} and parsed.path == "/ck/a":
             value = parse_qs(parsed.query).get("u", [""])[0]
             if not value.startswith("a1"):
                 return None
@@ -99,7 +85,7 @@ def _unwrap_search_url(raw, engine):
         if not clean:
             return None
         host = urlsplit(clean).hostname
-        if host in {"bing.com", "www.bing.com", "duckduckgo.com", "www.duckduckgo.com"}:
+        if host in {"bing.com", "www.bing.com"}:
             return None
         return clean
     except (ValueError, UnicodeError, binascii.Error):
@@ -113,7 +99,7 @@ def _class_xpath(tag, name):
 def _parse_search_html(text, engine):
     """Extract organic titles, target URLs and snippets, including linkless Bing h2."""
     tree = html.fromstring(text)
-    selector = _class_xpath("div", "result__body") if engine == "duckduckgo" else _class_xpath("li", "b_algo")
+    selector = _class_xpath("li", "b_algo")
     rows = []
     for card in tree.xpath(selector):
         headings = card.xpath('.//h2')
@@ -122,7 +108,7 @@ def _parse_search_html(text, engine):
         title = " ".join(headings[0].text_content().split())
         anchors = headings[0].xpath('.//a[@href]') or card.xpath('.//a[@href]')
         target = next((url for anchor in anchors if (url := _unwrap_search_url(anchor.get('href'), engine))), None)
-        snippets = card.xpath('.//a[contains(concat(" ", normalize-space(@class), " "), " result__snippet ")]') if engine == "duckduckgo" else card.xpath('.//p')
+        snippets = card.xpath('.//p')
         snippet = " ".join(" ".join(node.text_content().split()) for node in snippets)
         if title and target:
             rows.append({"title": title, "href": target, "body": snippet})
@@ -143,13 +129,9 @@ def _direct_search(query, top_k, timeout, engine):
     return _EngineRows(rows[:top_k], info)
 
 
-def _duckduckgo_search(query, top_k, timeout):
-    return _direct_search(query, top_k, timeout, "duckduckgo")
-
-
 def _provider_search(query, top_k, timeout, backend):
     if backend not in SEARCH_URLS:
-        raise ValueError("HTTP search supports duckduckgo and bing only")
+        raise ValueError("HTTP search supports bing only; DuckDuckGo was removed")
     return _direct_search(query, top_k, timeout, backend)
 
 
@@ -231,24 +213,24 @@ def web_search(query, *, top_k=3, timeout=15, max_bytes=3500, backend=None, prov
     provider = provider if provider is not None else os.environ.get("WEB_SEARCH_PROVIDER", "http")
     if provider not in {"http", "webserp"}:
         raise ValueError("WEB_SEARCH_PROVIDER must be http or webserp; ddgs was replaced by http")
-    default_backend = "google" if provider == "webserp" else "duckduckgo,bing"
+    default_backend = "google" if provider == "webserp" else "bing"
     backend = backend if backend is not None else os.environ.get("WEB_SEARCH_BACKEND", default_backend)
     engines = list(dict.fromkeys(item.strip().lower() for item in backend.split(",")))
     if not engines or any(item not in BACKENDS for item in engines):
         raise ValueError("Unsupported WEB_SEARCH_BACKEND; choose explicit supported engines")
     if provider == "http" and any(engine not in SEARCH_URLS for engine in engines):
-        raise ValueError("HTTP search supports duckduckgo and bing only")
+        raise ValueError("HTTP search supports bing only; DuckDuckGo was removed")
     backend = ",".join(engines)
     metadata = {}
     if provider == "webserp":
         if backend == "google":
             from .webserp_provider import search_google
             rows, metadata = search_google(query.strip(), top_k, timeout)
-        elif all(engine in {"duckduckgo", "yahoo"} for engine in engines):
+        elif backend == "yahoo":
             from .webserp_provider import search_html
             rows, metadata = search_html(query.strip(), top_k, timeout, engines)
         else:
-            raise ValueError("webserp supports google alone, or duckduckgo and/or yahoo; no implicit Google fallback")
+            raise ValueError("webserp supports google or yahoo alone; no implicit fallback")
     else:
         rows, metadata = _combined_search(query.strip(), top_k, timeout, engines)
     if not isinstance(rows, list):

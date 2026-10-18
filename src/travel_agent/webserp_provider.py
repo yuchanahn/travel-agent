@@ -16,8 +16,8 @@ def search_html(query, top_k, timeout, engines):
     import asyncio
     import re
 
-    if not engines or any(name not in {"duckduckgo", "yahoo"} for name in engines):
-        raise ValueError("webserp HTML engines must be duckduckgo and/or yahoo")
+    if not engines or any(name not in {"yahoo"} for name in engines):
+        raise ValueError("webserp HTML supports yahoo only; DuckDuckGo was removed")
     engines = list(dict.fromkeys(engines))
     try:
         from curl_cffi.requests import AsyncSession

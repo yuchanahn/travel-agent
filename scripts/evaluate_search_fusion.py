@@ -1,4 +1,4 @@
-"""Run public queries through the configured two-engine tool, without an LLM."""
+"""Run public queries through the configured Bing search tool, without an LLM."""
 import argparse
 from datetime import datetime, timezone
 import json
@@ -16,9 +16,9 @@ def main():
     records = []
     for query in args.query or ['Python official website','국립춘천박물관 공식 홈페이지','춘천 삼악산 호수케이블카 공식 홈페이지']:
         record = {'id':uuid4().hex,'tool':'web_search','arguments':{'query':query,'top_k':3},
-                  'backend':'duckduckgo,bing','started_at':datetime.now(timezone.utc).isoformat()}
+                  'backend':'bing','started_at':datetime.now(timezone.utc).isoformat()}
         try:
-            record['result'] = web_search(query, top_k=3, timeout=10, provider='http', backend='duckduckgo,bing')
+            record['result'] = web_search(query, top_k=3, timeout=10, provider='http', backend='bing')
         except WebSearchError as exc:
             record['result'] = {'error':str(exc),'web_search_performed':False,**exc.details}
         record['finished_at'] = datetime.now(timezone.utc).isoformat()
