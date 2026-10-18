@@ -26,9 +26,14 @@ def tokens(text):
     """Words plus Korean character bigrams: transparent lexical, not semantic."""
     result = []
     for word in re.findall(r'[a-z0-9]+|[가-힣]+', text.lower()):
-        result.append(word)
-        if re.fullmatch('[가-힣]{3,}', word):
+        if re.fullmatch('[가-힣]{2,}', word):
+            # A two-character word is already its complete bigram. Keeping
+            # both would double-weight standalone words versus compounds.
+            if len(word)>2:
+                result.append(word)
             result.extend('ko:'+word[i:i+2] for i in range(len(word)-1))
+        else:
+            result.append(word)
     return result
 
 

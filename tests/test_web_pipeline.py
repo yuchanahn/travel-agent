@@ -6,7 +6,7 @@ from unittest.mock import patch
 from types import SimpleNamespace
 
 from travel_agent.web_pipeline import (canonical_url, next_offset, group_candidates,
-                                       rank_candidates, pack_digest, search_evidence, passages)
+                                       rank_candidates, pack_digest, search_evidence, passages, tokens)
 from travel_agent.web import _parse_search_rss, _bing_locale_params, _request_html
 
 
@@ -17,6 +17,14 @@ def serp(start, next_first=None):
 
 
 class PipelineTests(unittest.TestCase):
+    def test_short_korean_query_matches_the_same_term_in_a_compound(self):
+        self.assertIn('ko:관광',set(tokens('관광'))&set(tokens('한국관광공사')))
+        rows=[{'title':'한국 일반 정보','href':'https://example.org/general','body':'한국 문화 소개','page':1,'rank':1},
+              {'title':'대한민국 구석구석','href':'https://example.org/travel','body':'한국관광공사 지역관광 여행소식','page':1,'rank':2}]
+        ranked=rank_candidates('한국 관광 명소',group_candidates(rows))
+        self.assertEqual(ranked[0]['url'],'https://example.org/travel')
+        self.assertIn('ko:관광',ranked[0]['matched_terms'])
+
     def test_rss_preserves_sources_and_rejects_dtd_or_wrong_format(self):
         feed='<rss><channel><item><title>TaskGroup</title><link>https://docs.python.org/3/library/asyncio-task.html</link><description>&lt;b&gt;Cancellation&lt;/b&gt; semantics</description></item><item><title>Unsafe</title><link>file:///secret</link></item></channel></rss>'
         rows=_parse_search_rss(feed)
