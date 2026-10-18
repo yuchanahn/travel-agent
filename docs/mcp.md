@@ -4,6 +4,8 @@
 
 ## 현재 범위
 
+060 결정: TourAPI 도입을 중단했다. 사용자가 신청 과정에서 신고 안내를 확인하고 도입하지 않기로 했다. 해당 안내의 법적 적용 여부를 이번에 조사·판단한 것은 아니다. 키 발급·기관 API 연동을 다음 작업의 전제 조건으로 두지 않는다. 아래 관광·예약 후보 조사는059의 이력이며 현재 도입 계획이 아니다. 기존 Brave 검색은 유지한다.
+
 - MCP Python SDK 2.3.0을 고정했다. stdio와 Streamable HTTP를 지원한다.
 - 설정은 호스트의 비공개 JSON에서만 읽는다. 브라우저·모델이 주소·실행파일·인증파일을 고르지 않는다.
 - 서버별 allowed_tools에 명시한 도구만 노출한다. 실제 서버 스키마로 인자를 검사하고 이름 충돌은 네임스페이스로 분리한다.
@@ -15,7 +17,7 @@
 
 ## 호스트 설정
 
-examples/mcp-servers.example.json을 data/private/mcp-servers.json으로 복사해 설정한다. 예시는 모두 enabled=false다. 서버ID·실행위치·도구 이름·키 파일을 확인한 뒤 활성화한다. MCP_CONFIG_FILE로 다른 경로를 명시할 수 있다. 기본 설정 파일이 없으면 기존 에이전트로 동작하고, 명시한 파일이 없으면 오류다.
+examples/mcp-servers.example.json은 빈 서버 목록으로 시작한다. data/private/mcp-servers.json에 검토한 서버만 추가한다. 서버ID·전송 방식·실행위치 또는 URL·allowed_tools를 지정하고, 인증이 필요한 경우에만 env_files·header_files를 추가한다. MCP_CONFIG_FILE로 다른 경로를 명시할 수 있다. 기본 설정 파일이 없으면 기존 에이전트로 동작하고, 명시한 파일이 없으면 오류다.
 
 인증은 env_files·header_files의 파일에서 읽는다. 상대 경로는 설정 파일의 폴더 기준이다. 키·인증 헤더를 모델 스키마에 넣지 않으며, 반환에 동일한 값이나 URL 인코딩 값이 있으면 가린다. stdio 자식은 SDK의 최소 환경과 명시한 env_files만 받는다. stderr와 상세 연결 오류는 data/private/mcp-logs에만 남긴다.
 
@@ -27,7 +29,7 @@ stdio는 검토한 로컬 프로그램을 실행한다. 원격 HTTP는 HTTPS를 
 
 국문 후보는 [Atrani-Labs/visitkorea-tour-mcp](https://github.com/Atrani-Labs/visitkorea-tour-mcp)다. 공식 기관 운영 MCP가 아닌 커뮤니티 래퍼이며, 실제 소스에서 ko→KorService2를 확인했다. 우선 검토한 조회 도구는 area_code·search_by_keyword·search_stay·detail_common·detail_intro다. 숙박 목록은 실시간 객실 가격·예약 가능 여부가 아니다.
 
-키는 [한국관광공사 국문 관광정보 서비스](https://www.data.go.kr/data/15101578/openapi.do)의 활용신청으로 준비한다. 채팅이나 Git에 키를 올리지 않고 data/private/ 아래 파일에 보관한다. 승인 범위·할당량·실제 오퍼레이션은 발급 후 검증한다. 하나의 키로 모든26개 서비스가 허용된다고 가정하지 않는다.
+059에서 [한국관광공사 국문 관광정보 서비스](https://www.data.go.kr/data/15101578/openapi.do) 활용신청을 후속으로 제시했으나060에서 취소했다. 키 발급이나 실제 관광 API 검증을 진행하지 않는다.
 
 Node23.1.0으로 이 후보를 실행하면 현재 환경에서 종료코드3221225477로 중단됐다. 번들 Node24.19.0에서는 stdio 연결·21개 도구 발견·정적 서비스 목록 조회가 됐다. 전역 Node를 바꾸거나 서버 코드를 수리하지 않았다. 실제 데이터 검증 전의 잠정 후보이며, 메타데이터 시험에는 식별용 가짜 키를 사용하고 외부 API는 호출하지 않았다.
 
@@ -35,7 +37,7 @@ Node23.1.0으로 이 후보를 실행하면 현재 환경에서 종료코드3221
 
 ## 숙소·예약 후보
 
-[Booking.com 공식 MCP 안내](https://developers.booking.com/mcp-server/docs/implementation-guide)는 Streamable HTTP 엔드포인트를 제공한다. Affiliate ID와 Demand API 키가 필요하고 계정별 도구가 다르다. 현재 계정·키를 확인하지 않았으며 접속·가격·재고·예약 성공은 미검증이다. 예시의 도구 이름 자리표시는 실제 계정에서 발견한 이름으로 바꿔야 한다.
+[Booking.com 공식 MCP 안내](https://developers.booking.com/mcp-server/docs/implementation-guide)는 Streamable HTTP 엔드포인트를 제공한다. Affiliate ID와 Demand API 키가 필요하고 계정별 도구가 다르다. 현재 계정·키를 확인하지 않았으며 접속·가격·재고·예약 성공은 미검증이다. 060에서 설정 예시에서 제거했으며 현재 도입 계획이 아니다.
 
 ## Docker
 

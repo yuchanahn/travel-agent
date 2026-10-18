@@ -4,6 +4,10 @@
 
 노션 허브: https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f
 
+- [060: TourAPI 도입 취소와 MCP 범위 정리](2026-10-19-060-drop-tourapi.md) — 키 발급 후속 취소·빈 서버 설정 확인, 기존 검색과 MCP 기반 유지
+
+060 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e8158b232d4ead08071bd
+
 - [059: MCP 연결 기반과 국문 관광정보 후보 검증](2026-10-19-059-mcp-client-integration.md) — stdio·HTTP·동적 스키마·trace/메모리 연결,202개 테스트·실제 모델 합성 조회; 관광 API는 키 발급 전
 
 059 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e81f8a4bae8765c759884

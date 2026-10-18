@@ -1,25 +1,3 @@
 {
-  "servers": [
-    {
-      "id": "tourism",
-      "enabled": false,
-      "transport": "stdio",
-      "command": "node",
-      "args": ["/absolute/path/to/visitkorea-tour-mcp/src/index.js"],
-      "cwd": "/absolute/path/to/visitkorea-tour-mcp",
-      "env_files": {"TOUR_API_KEY": "tour-api-key"},
-      "allowed_tools": ["area_code", "search_by_keyword", "search_stay", "detail_common", "detail_intro"]
-    },
-    {
-      "id": "booking",
-      "enabled": false,
-      "transport": "streamable_http",
-      "url": "https://demandapi-mcp.booking.com/v1/sp/mcp/",
-      "header_files": {
-        "x-booking-affiliate-id": "booking-affiliate-id",
-        "x-booking-authorization": "booking-api-key"
-      },
-      "allowed_tools": ["REPLACE_WITH_REVIEWED_ACCOUNT_TOOL_NAME"]
-    }
-  ]
+  "servers": []
 }
