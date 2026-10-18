@@ -32,6 +32,10 @@
 
 ## 인덱스
 
+- [029: 덕덕고·Bing을 명시적으로 병렬 수집하고 결과를 통합하다](2026-10-18-029-dual-engine-fusion.md) — 엔진별 실행·중복 제거·RRF·부분 실패 구현, Bing 비활성 유지, DuckDuckGo GET·실제 모델 답변 확인, Python102개 통과
+
+029 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e81ec8d63e6889ee105a4
+
 - [028: iframe 불일치를 검증하고 확인 데이터를 바꾸지 않는 DOM 관찰을 만들다](2026-10-18-028-google-iframe-dom-observation.md) — 영향 없는 getter·DOM 관찰 검증, iframe 보정 후에도 검색 실패, 실제 srcdoc·innerHTML 입력은 빈 문자열, Python92개·Node8개 통과
 
 028 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e8176bdcdd4be88047d90

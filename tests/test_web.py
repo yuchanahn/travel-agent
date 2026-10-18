@@ -107,6 +107,7 @@ class AgentWebTests(unittest.TestCase):
         self.assertTrue(result["citation_ids_valid"])
         self.assertEqual(result["web_sources"][0]["url"], "https://example.invalid/official")
         self.assertTrue(result["web_sources"][0]["cited"])
+        self.assertEqual(result["web_sources"][0]["engines"], evidence["hits"][0]["engines"])
         records = read_trace(self.trace_dir, result["request_id"])
         tool_end = next(record for record in records if record["kind"] == "tool_end")
         self.assertFalse(tool_end["result"]["page_fetched"])

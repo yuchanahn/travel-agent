@@ -1,5 +1,20 @@
 # 웹검색 도구
 
+## 현재 방향: DuckDuckGo·Bing 병렬 수집
+
+029부터 Google 직접 HTTP 연구를 중단하고 DDGS의 두 엔진 결과를 명시적으로 수집·통합한다. `backend="duckduckgo,bing"`를 DDGS에 한 번 넘기는 방식은 같은 provider 분류와 조기 종료 때문에 두 엔진 실행을 보장하지 않는다. 앱이 엔진별로 한 번씩 최대2개 병렬 호출하고, URL을 정규화해 중복을 제거한 뒤 RRF(`sum(1/(60+rank))`)로 합친다. 동점은 요청 엔진 순서·원래 순위를 따른다. 추가 LLM 호출은 없다.
+
+**현재 Bing은 upstream의 무관한 검색 결과 문제로 비활성화돼 있다.** 앱은 이를 강제로 풀지 않고 `engine_disabled_or_unavailable`로 보고한다. 실제 반환 근거는 현재 DuckDuckGo뿐일 수 있다. 두 엔진 합성 병합 테스트와 실제 두 엔진 성공을 구분한다. `engine_status`에는 엔진별 성공·실패·반환 수·시작 상대 시각·소요 시간이 있고, `engines_returned`는 사용 가능한 후보를 반환한 엔진이다. `search_complete=false`는 요청한 엔진 중 실패가 있었다는 뜻이다. 한쪽만 성공하면 결과를 살리고, 사용 가능한 결과가 하나도 없고 오류가 있으면 WebSearchError를 반환한다.
+
+DuckDuckGo는 DDGS의 엔진·파서를 재사용하되 요청 메서드를 GET으로 지정한다. 202·접근 확인·파싱되지 않은200은 성공으로 처리하지 않는다. `/l/?uddg=...` 링크는 목적지로 해석한 뒤 기존 URL 검증을 적용한다. 결과별 `engines`·`engine_ranks`는 출처와 원래 순위이며 에이전트의 최종 `web_sources`에도 남는다. 공통 URL의 높은 RRF 점수는 사실 검증이나 독립된 두 색인의 합의를 보장하지 않는다.
+
+```powershell
+travel-agent web search "국립춘천박물관 공식 홈페이지" --backend duckduckgo,bing
+python scripts/evaluate_search_fusion.py
+```
+
+같은 질문의 초기·변경 결과, Bing 비활성화 이유와 실제 한계는 [연구일지029](research/2026-10-18-029-dual-engine-fusion.md)에 기록한다. 아래 Google·webserp 내용은 이전 연구 이력이다.
+
 [iframe·DOM 관찰028](research/2026-10-18-028-google-iframe-dom-observation.md)에서는 원본 getter의 Proxy가 기준 토큰을 유지함을 확인했다. 새 `--mode iframe-mirror`는 부모·iframe navigator 값을 맞추는 연구 조건이며 실제 검색은 여전히 /sorry였다. `--matrix-case dom_prototype_probe`로 DOM 접근을 관찰하고 `dom_capture_setters`로 선택한 DOM 문자열을 비공개 확인할 수 있다. 해당 캡처의 srcdoc·innerHTML 입력은 모두 빈 문자열이었고 레코드는 그대로였다. 공개 요약은 private_ 항목을 제거하며, 관찰 성공을 검색 성공으로 기록하지 않는다.
 
 [전송·실행 환경 비교027](research/2026-10-18-027-google-transport-and-runtime.md)에서는 Chrome150·Firefox147·Safari26.0.1 HTTP 프로필과 HTTP/1.1·HTTP/2, 생성자 표현 보정, 역사적 Opera 요청을 비교했지만 일반 검색은 미해결이었다. `probe_google_dom.py`에 `--transport`, `--http-version`, 선택형 `constructor-text` 연구 조건을 추가했다. 부모 생성자 표현만 바꾼 고정 입력의 레코드는 같았고 iframe 실험은 래퍼 자체의 영향을 확인했다. `probe_google_surfaces.py`의 자동완성·뉴스 RSS 성공은 접근·파싱 대조이며 일반 웹검색 성공으로 처리하거나 에이전트에 대체 연결하지 않는다.
