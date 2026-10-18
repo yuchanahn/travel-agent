@@ -32,6 +32,10 @@
 
 ## 인덱스
 
+- [043: 같은 본문으로 발췌 검증 — 문장 경계와 메뉴 의심 표시](2026-10-18-043-evidence-boundaries.md) — 기존 추출문10개·패킷3개 고정 비교, 문장/줄 경계 우선·메뉴 레이아웃 경고, 새 API0건·Python154개 통과
+
+043 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e81d6a15ef0babb15c59f
+
 - [042: Brave를 기본 검색 공급자로 연결하다](2026-10-18-042-brave-integration.md) — API 공급자 전환·기존 후처리 유지, 실제 두 질문 후보40개/20개·본문 각3개, Python148개 통과
 
 042 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e819293a2d417952f5c7d

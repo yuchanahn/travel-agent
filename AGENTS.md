@@ -30,6 +30,8 @@
 
 042부터 사용자가 기존 Claude MCP의 Brave 키를 재사용해 검색 공급자를 Brave Search API로 전환하도록 확정했다. 기본 WEB_SEARCH_PROVIDER=brave, WEB_SEARCH_BACKEND=brave다. BRAVE_API_KEY 환경 변수 또는 BRAVE_API_KEY_FILE(기본 data/private/brave-api-key)로 인증하며 키·헤더를 출력하거나 Git에 넣지 않는다. Claude 설정은 런타임에 참조하지 않는다. 기존 web_search는 API 검색 요약, 독립 web research는 API 후보 수집 후 기존 중복·BM25Plus·본문·발췌를 수행한다. 에이전트에 전체 연구 파이프라인을 연결한 것은 아니다. Bing은 --provider http로 명시하는 비교 경로이며 자동 대체하지 않는다. 아래 Bing 단독 지침은032~041의 이력이다. 현재 실행법은 docs/web-search.md의042를 따른다. Brave의 관련 후보 확보와 원사이트 본문 수신·최신성·최종 품질을 구분한다.
 
+043은 독립 web research 발췌에서 글자 위치 대신 문단·문장·줄 경계를 우선한다. 예산에 못 넣고 경계도 없는 긴 문장은 제외하므로 모든 사실 보존을 보장하지 않는다. body_signal=navigation_heavy는 짧은 줄/글자 비중에 따른 레이아웃 경고이며 자동 삭제·광고 탐지·의미적 품질 판정이 아니다. 기존 에이전트 web_read는 이번에 바꾸지 않았다. scripts/repack_search_boundaries.py는 기존에 전달된 출처의 저장 추출문만6000바이트로 재구성하며 네트워크·모델을 호출하지 않는다. 새 검색과 섞지 않으며043의 고정 비교를 따른다.
+
 현재 검색 방향은032부터 Bing 단독 직접 HTTP 요청이다. 기본 공급자는http, 엔진은bing이다. DuckDuckGo 요청·파서와 기본primp 의존성을 제거했으며 webserp에서도DuckDuckGo를 거부한다. 이전duckduckgo,bing 설정은bing으로 바꾼다. curl_cffi 기본 HTTP 요청·자체 HTML 파서·출처·중복 제거·오류 상태를 유지한다. 여러 검색어의 병렬 툴 호출은 유지하고 Bing 실패 시 다른 엔진으로 대체하지 않는다. 실제032 검증의 공개3질의는Bing200·공식 주소를 확인했다. 일반 품질·장기 안정성은 미검증이다. Google 직접 HTTP 연구는 중단했다.
 
 025의 고정 입력 행렬은 jsdom 환경에서 언어·너비·hardwareConcurrency와 대조군의 레코드 의존 구간을 측정했다. 오프셋은 VM빌드·캡처에 한정한다. JS UA·query가 이번 레코드를 바꾸지 않았다는 관찰을 HTTP 서버 판정의 무관함으로 일반화하지 않는다. 기준 반복과 관찰 전후 토큰 동일성 확인 뒤에만 차이를 해석한다. --matrix 전체 프로세스 제한과 호스트 JS 타이머를 구분한다.

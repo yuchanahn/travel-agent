@@ -21,6 +21,7 @@ from rank_bm25 import BM25Plus
 
 from .web import _request_html, _parse_search_html, _parse_search_rss, _bing_locale_params, _clean_url, WebSearchError
 from .web_read import fetch_public_page, extract_page
+from .evidence_text import bounded_blocks, bounded_prefix, body_signal
 
 
 def tokens(text):
@@ -106,25 +107,8 @@ def rank_candidates(query, groups):
 
 
 def passages(text, query, limit=1000, *, max_bytes=None):
-    """Rank bounded, verbatim passage slices; no generated claims."""
-    # Keep adjacent headings with their prose. Isolated short menu headings
-    # otherwise outrank the actual explanation merely by repeating the query.
-    blocks, current = [], ''
-    chunk_size = min(600,max(20,max_bytes//4)) if max_bytes is not None else 600
-    for paragraph in re.split(r'\n\s*\n',text):
-        for i in range(0,len(paragraph),chunk_size):
-            piece = paragraph[i:i+chunk_size].strip()
-            if not piece:
-                continue
-            if current and len(current)+len(piece)+2 > chunk_size:
-                blocks.append(current)
-                current = ''
-            current += ('\n\n' if current else '')+piece
-            if len(current) >= min(350,chunk_size):
-                blocks.append(current)
-                current = ''
-    if current:
-        blocks.append(current)
+    """Rank intact bounded paragraphs/sentences; no generated claims."""
+    blocks = bounded_blocks(text, min(600,limit), max_bytes)
     if not blocks:
         return '', []
     docs = [tokens(b) or ['__empty__'] for b in blocks]
@@ -150,7 +134,8 @@ def pack_digest(query, sources, max_bytes, summary):
     digest, included = header, []
     for source in sources:
         base = (f"\n[{source['id']}] {source['title'][:180]}\n{source['url']}\n"
-                f"kind={source['content_kind']}; page_fetched={source['page_fetched']}; excerpt_only=true\n")
+                f"kind={source['content_kind']}; page_fetched={source['page_fetched']}; excerpt_only=true"
+                + ('; body_signal=navigation_heavy (layout warning, not semantic judgment)' if source.get('body_signal')=='navigation_heavy' else '')+'\n')
         fair_share = (max_bytes-len(header.encode()))//max(1,len(sources))
         available = min(max_bytes-len((digest+base).encode())-len('\n[excerpt shortened]\n'.encode()),
                         fair_share-len(base.encode())-len('\n[excerpt shortened]\n'.encode()))
@@ -165,7 +150,9 @@ def pack_digest(query, sources, max_bytes, summary):
             shortened = text != source['_page_text']
         else:
             shortened = len(body.encode()) > available
-            text = body.encode()[:available].decode('utf-8',errors='ignore') if shortened else body
+            text = bounded_prefix(body,available) if shortened else body
+            if not text:
+                continue
         digest += base+text+('\n[excerpt shortened]' if shortened else '')+'\n'
         included.append({**{k:v for k,v in source.items() if k != '_page_text'},
                          'delivered_text':text, 'delivered_blocks':selected_blocks,'output_shortened':shortened})
@@ -281,12 +268,15 @@ def search_evidence(query, *, pages=3, top_k=5, read_pages=5, max_bytes=6000, ke
                 key = sha256(item['url'].encode()).hexdigest()[:16]
                 (directory/f'page-{key}.html').write_bytes(body)
                 text = extract_page(body,item['url'])
+                signal = body_signal(text)
                 (directory/f'page-{key}.md').write_text(text,encoding='utf-8')
                 excerpt, selected = passages(text,query)
                 ev.update(info,download_bytes=len(body),extracted_bytes=len(text.encode()),selected_blocks=selected,
-                          excerpt_bytes=len(excerpt.encode()),selection_status='ok' if excerpt else 'no_matching_passage')
+                          excerpt_bytes=len(excerpt.encode()),body_signal=signal,
+                          selection_status='ok' if excerpt else 'no_matching_passage')
                 return {'text':excerpt,'_page_text':text if excerpt else '',
-                        'page_fetched':True,'content_kind':'page_excerpt' if excerpt else 'search_snippet'},ev
+                        'page_fetched':True,'body_signal':signal,
+                        'content_kind':'page_excerpt' if excerpt else 'search_snippet'},ev
             except WebSearchError as exc:
                 ev['error'] = exc.details
                 return {'text':'','page_fetched':downloaded,'content_kind':'search_snippet'},ev
