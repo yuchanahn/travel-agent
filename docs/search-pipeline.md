@@ -2,6 +2,8 @@
 
 034부터 에이전트 답변 평가를 보류하고 검색 도구 자체를 검증한다. 새 경로는 독립 CLI다. 기존 에이전트의 `web_search`를 아직 대체하지 않는다.
 
+현재 실행 순서는 **검색 결과 먼저 수집·임시 보관 → 제목·요약 후보의 중복 묶기·BM25Plus 재정렬 → top_k 선택 → 선택 URL의 본문 수집 → 예산 안의 관련 문단 선택 → 출처별 Markdown 발췌 패킷**이다. 모든 후보 사이트의 본문을 먼저 내려받는 것은 아니다. 수집 루프가 끝난 뒤 후처리하며, 모델용 패킷은 digest이고 현재 CLI stdout으로만 확인한다. Python 반환 보고서는 디버깅용 전체 자료도 포함한다. 임베딩 검색·LLM 문장 생성 요약·출처 간 사실 합성은 미구현이다.
+
 ```powershell
 python -m travel_agent web research "국립춘천박물관 관람시간 휴관일 교통"
 python -m travel_agent web research "국립춘천박물관 관람시간 휴관일 교통" --pages 3 --top-k 5 --read-pages 5 --max-bytes 6000 --keep-dir data/private/search-pipeline/manual
