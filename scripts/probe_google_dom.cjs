@@ -3,8 +3,8 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-function applyEnvironment(w, mode, envSource) {
-  if (!['baseline', 'screen', 'profile'].includes(mode)) throw Error('unknown_mode');
+function applyEnvironment(w, mode, envSource, identity = {}) {
+  if (!['baseline', 'screen', 'profile', 'constructor-text'].includes(mode)) throw Error('unknown_mode');
   if (mode === 'baseline') return;
   const screen = {width:1920,height:1080,availWidth:1920,availHeight:1040,
     availLeft:0,availTop:0,colorDepth:24,pixelDepth:24};
@@ -15,11 +15,70 @@ function applyEnvironment(w, mode, envSource) {
     return;
   }
   // Explicit synthetic fixture, not a fingerprint collected from the user's browser.
-  w.eval(envSource({screen,platform:'MacIntel',vendor:'Google Inc.',productSub:'20030107',
+  w.eval(envSource({screen,platform:identity.platform||'MacIntel',vendor:identity.vendor??'Google Inc.',productSub:'20030107',
     languages:['en-US','en'],hardwareConcurrency:8,deviceMemory:8,maxTouchPoints:0,
     pdfViewerEnabled:true,devicePixelRatio:1,innerWidth:1920,innerHeight:969,
     outerWidth:1920,outerHeight:1080,isSecureContext:true,
-    chromeKeys:['app','csi','loadTimes']}));
+    chromeKeys:identity.chrome===false?[]:['app','csi','loadTimes']}));
+  if (mode === 'constructor-text') applyConstructorText(w);
+}
+
+function applyConstructorText(w) {
+  // Narrow research fixture: change serialization of TWO parent constructors.
+  // Preserve their identity/prototypes/call behavior. Does not emulate a browser.
+  w.eval(`(function(){
+    const original = Function.prototype.toString;
+    const sources = new Map([[Navigator,'function Navigator() { [native code] }'],
+      [HTMLMediaElement,'function HTMLMediaElement() { [native code] }']]);
+    Object.defineProperty(Function.prototype,'toString',{configurable:true,writable:true,
+      value:function toString(){return sources.has(this)?sources.get(this):original.call(this);}});
+  })()`);
+}
+
+function wrapIframeSource(w, changeText) {
+  const original = w.document.createElement;
+  const seen = new WeakSet();
+  const stats = {created:0,window_reads:0,patched:0};
+  w.document.createElement = function(...args) {
+    const element = Reflect.apply(original,this,args);
+    if (element.tagName !== 'IFRAME') return element;
+    stats.created++;
+    let prototype = Object.getPrototypeOf(element), descriptor;
+    while (prototype && !descriptor) {
+      descriptor = Object.getOwnPropertyDescriptor(prototype,'contentWindow');
+      prototype = Object.getPrototypeOf(prototype);
+    }
+    if (!descriptor?.get) throw Error('iframe_window_getter_missing');
+    Object.defineProperty(element,'contentWindow',{configurable:true,get(){
+      stats.window_reads++;
+      const inner = descriptor.get.call(this);
+      if (changeText && inner && !seen.has(inner)) {
+        applyConstructorText(inner);
+        seen.add(inner);
+        stats.patched++;
+      }
+      return inner;
+    }});
+    return element;
+  };
+  return stats;
+}
+
+function auditRuntime(w) {
+  // Run only AFTER the challenge completed and its cookies were read.
+  const native = fn=>/\{\s*\[native code\]\s*\}/.test(w.Function.prototype.toString.call(fn));
+  const frame = w.document.createElement('iframe');
+  const detached = frame.contentWindow;
+  w.document.body.appendChild(frame);
+  const inner = frame.contentWindow;
+  const result = {navigator_source_looks_native:native(w.Navigator),
+    media_source_looks_native:native(w.HTMLMediaElement),
+    detached_iframe_window:detached===null?'null':typeof detached,
+    attached_iframe_window:typeof inner,
+    distinct_iframe_function:!!inner && inner.Function!==w.Function,
+    iframe_navigator_source_looks_native:inner?native(inner.Navigator):null};
+  frame.remove();
+  return result;
 }
 
 async function main() {
@@ -39,8 +98,9 @@ async function main() {
   try {
     w.navigator.sendBeacon = url=>{beacons.push(String(url));return true;};
     Object.defineProperty(w.navigator,'userAgent',{value:input.ua,configurable:true});
-    Object.defineProperty(w.navigator,'platform',{value:'MacIntel',configurable:true});
-    applyEnvironment(w,mode,envSource);
+    Object.defineProperty(w.navigator,'platform',{value:input.identity?.platform||'MacIntel',configurable:true});
+    if (input.identity) Object.defineProperty(w.navigator,'vendor',{value:input.identity.vendor,configurable:true});
+    applyEnvironment(w,mode,envSource,input.identity);
     for (const [key,value] of Object.entries(input.cookies)) {
       w.document.cookie = key+'='+value+'; path=/; secure';
     }
@@ -55,13 +115,14 @@ async function main() {
     clearTimeout(timer);
     const cookies = Object.fromEntries(w.document.cookie.split(';').filter(x=>x.includes('='))
       .map(x=>{const i=x.indexOf('=');return [x.slice(0,i).trim(),x.slice(i+1)];}));
+    const runtime = auditRuntime(w);
     fs.writeFileSync(outputFile,JSON.stringify({cookies,redirects,errors,beacons}));
     console.log(JSON.stringify({mode,cookie_names:Object.keys(cookies),
-      sg_ss_length:(cookies.SG_SS||'').length,redirect_count:redirects.length,errors}));
+      sg_ss_length:(cookies.SG_SS||'').length,redirect_count:redirects.length,errors,runtime}));
   } finally { w.close(); }
 }
 
-module.exports = {applyEnvironment};
+module.exports = {applyEnvironment,applyConstructorText,wrapIframeSource,auditRuntime};
 if (require.main === module) main().catch(e=>{
   console.log(JSON.stringify({status:'dom_probe_failed',error_type:e.name}));process.exitCode=1;
 });

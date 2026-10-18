@@ -16,8 +16,8 @@ from uuid import uuid4
 
 from curl_cffi.requests import Session
 from curl_cffi.requests.errors import RequestsError
+from curl_cffi import CurlOpt, CurlHttpVersion
 from travel_agent.google_http import PRIVATE, PROFILE, HTTP_HEADERS, document_cookies, parse_page, allowed_redirect
-from travel_agent.google_identity import USER_AGENT
 
 ROOT = Path(__file__).resolve().parents[1]
 TOOLKIT_COMMIT = 'c617f4406ce1c373d5e071ae0f969de101ec4505'
@@ -27,23 +27,38 @@ def now():
     return datetime.now(timezone.utc).isoformat()
 
 
-def run_case(node, toolkit, folder, query, mode):
+def run_case(node, toolkit, folder, query, mode, transport=PROFILE, http_version=None):
     folder.mkdir()
-    report = {'mode': mode, 'query': query, 'started_at': now(), 'steps': [], 'success': False}
+    report = {'mode': mode, 'transport': transport, 'http_version_requested': http_version,
+              'query': query, 'started_at': now(), 'steps': [], 'success': False}
     started = time.monotonic()
     def request(session, phase, url, **kwargs):
         stamp = now()
         response = session.get(url, timeout=15, allow_redirects=False, **kwargs)
         (folder / (phase + '.body')).write_bytes(response.content)
         classification, hits = parse_page(response.content, response.url, response.status_code)
-        report['steps'].append({'id': mode + '-' + phase, 'started_at': stamp,
+        report['steps'].append({'id': folder.parent.name + ':' + transport + ':' + mode + ':' + phase, 'started_at': stamp,
             'finished_at': now(), 'phase': phase, 'status': response.status_code,
             'bytes': len(response.content), 'classification': classification,
+            'http_version': response.http_version,
+            'http_version_name': CurlHttpVersion(response.http_version).name,
             'redirect_path': urlsplit(response.headers.get('location', '')).path,
             'hits': hits})
         return response, hits
     try:
-        with Session(impersonate=PROFILE, headers=HTTP_HEADERS) as session:
+        wire_identity = {}
+        def observe(kind, data):
+            if kind == 2:
+                # Retain only the actual outgoing UA, never Cookie/Authorization.
+                for line in data.decode('latin-1').splitlines():
+                    if line.lower().startswith('user-agent:'):
+                        wire_identity['ua'] = line.split(':', 1)[1].strip()
+        options = {'curl_options': {CurlOpt.VERBOSE: 1, CurlOpt.DEBUGFUNCTION: observe}}
+        if http_version:
+            options['http_version'] = {'h1': CurlHttpVersion.V1_1, 'h2': CurlHttpVersion.V2_0}[http_version]
+        headers = {key: value for key, value in HTTP_HEADERS.items()
+                   if key.lower() not in {'user-agent', 'sec-ch-ua-platform'}}
+        with Session(impersonate=transport, headers=headers, **options) as session:
             home, _ = request(session, 'home', 'https://www.google.com/?hl=en')
             response, hits = request(session, 'search', 'https://www.google.com/search',
                 params={'q': query, 'num': 5, 'hl': 'en'},
@@ -55,8 +70,16 @@ def run_case(node, toolkit, folder, query, mode):
                 report['stopped'] = 'not_javascript_challenge'
                 return report
             input_file, output_file = folder / 'input.json', folder / 'state.json'
+            ua = wire_identity.get('ua')
+            if not ua:
+                report['stopped'] = 'no_observed_wire_identity'
+                return report
+            identity = {'platform': 'Win32' if 'Windows' in ua else 'MacIntel' if 'Macintosh' in ua else 'Linux x86_64',
+                        'vendor': 'Google Inc.' if 'Chrome/' in ua else 'Apple Computer, Inc.' if 'Safari/' in ua else '',
+                        'chrome': 'Chrome/' in ua}
+            report['wire_identity'] = {'ua': ua, **identity}
             input_file.write_text(json.dumps({'html': response.text, 'url': response.url,
-                'cookies': document_cookies(session.cookies.jar, response.url), 'ua': USER_AGENT}), encoding='utf-8')
+                'cookies': document_cookies(session.cookies.jar, response.url), 'ua': ua, 'identity': identity}), encoding='utf-8')
             helper = ROOT / 'scripts/probe_google_dom.cjs'
             command = [str(node), '--permission', '--allow-fs-read='+str(toolkit),
                 '--allow-fs-read='+str(helper), '--allow-fs-read='+str(folder),
@@ -92,7 +115,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--node', required=True, type=Path)
     parser.add_argument('--toolkit', type=Path, default=ROOT/'artifacts/vendor/google-search-guard-vm-reversing')
-    parser.add_argument('--mode', action='append', choices=['baseline', 'screen', 'profile'])
+    parser.add_argument('--mode', action='append', choices=['baseline', 'screen', 'profile', 'constructor-text'])
+    parser.add_argument('--transport', action='append', choices=['chrome133a','chrome150','firefox147','safari2601'])
+    parser.add_argument('--http-version', choices=['h1','h2'])
     parser.add_argument('--query', default='Python official website')
     args = parser.parse_args()
     node, toolkit = args.node.resolve(), args.toolkit.resolve()
@@ -105,10 +130,11 @@ def main():
     folder = PRIVATE/'dom-comparison'/uuid4().hex
     folder.mkdir(parents=True)
     results = []
-    for mode in dict.fromkeys(args.mode or ['baseline', 'screen', 'profile']):
-        result = run_case(node, toolkit, folder/mode, args.query, mode)
-        results.append(result)
-        print(json.dumps(result, ensure_ascii=False), flush=True)
+    for transport in dict.fromkeys(args.transport or [PROFILE]):
+        for mode in dict.fromkeys(args.mode or ['baseline', 'screen', 'profile']):
+            result = run_case(node, toolkit, folder/(transport+'-'+mode), args.query, mode, transport, args.http_version)
+            results.append(result)
+            print(json.dumps(result, ensure_ascii=False), flush=True)
     (folder/'summary.json').write_text(json.dumps(results, indent=2), encoding='utf-8')
     return 0 if any(result['success'] for result in results) else 1
 

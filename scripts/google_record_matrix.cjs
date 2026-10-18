@@ -16,6 +16,8 @@ function applyFixture(window, fixture, dom) {
   if (fixture.userAgent) set(window.navigator,'userAgent',fixture.userAgent);
   if (fixture.webdriver !== undefined) set(window.navigator,'webdriver',fixture.webdriver);
   if (fixture.navigatorStub) window.Navigator=function Navigator(){};
+  if (fixture.constructorText) require('./probe_google_dom.cjs').applyConstructorText(window);
+  if (fixture.iframeWrapper !== undefined) fixture.iframeAudit = require('./probe_google_dom.cjs').wrapIframeSource(window,fixture.iframeWrapper);
 }
 
 function compareRecords(left, right) {
@@ -68,6 +70,9 @@ async function main() {
     ['user_agent_only',{userAgent:'Synthetic-HTTP-Test/1.0'}],
     ['webdriver_negative_control',{webdriver:true}],
     ['navigator_constructor_stub',{navigatorStub:true}],
+    ['constructor_text_only',{constructorText:true}],
+    ['iframe_wrapper_control',{iframeWrapper:false}],
+    ['iframe_constructor_text',{iframeWrapper:true}],
   ];
   const selected=requested.length?requested:['language_first','language_second','screen_width'];
   if(selected.some(name=>!allVariants.some(([key])=>key===name)))throw Error('unknown_case');

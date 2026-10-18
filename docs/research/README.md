@@ -32,6 +32,10 @@
 
 ## 인덱스
 
+- [027: HTTP 계열·프로토콜·생성자와 Google 대조 경로를 나누어 검증하다](2026-10-18-027-google-transport-and-runtime.md) — 일반 검색8조건 실패, 자동완성·RSS 대조 성공, iframe 래퍼의 영향 확인, Python92개·Node4개 통과
+
+027 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e81628e0fdf1509337dc2
+
 - [026: DOM 누락을 실제 HTTP 결과와 대조하다](2026-10-18-026-google-dom-server-validation.md) — 실제3조건 모두302→/sorry, 별도 좌표 누락 비교604→609바이트, 검색 미해결, Python88개·Node3개 통과
 
 026 노션 동기화 완료: https://app.notion.com/p/3fcd058c022e8132b362ef5ea924f8f7
