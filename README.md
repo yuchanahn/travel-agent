@@ -82,6 +82,8 @@ $env:OLLAMA_MODEL = 'qwen3.5:4b-q4_K_M'
 
 ## 연구와 평가
 
+- [검색 툴 단독 수집·재정렬·발췌 실행과 검증](docs/search-pipeline.md) — 현재 우선순위, 에이전트 연결 보류
+
 - [연구일지 인덱스와 기록 규칙](docs/research/README.md)
 - [첫 실험: 로컬 모델 공급과 실패 발견](docs/research/2026-10-17-001-local-llm.md)
 - [개발 단계](docs/roadmap.md)

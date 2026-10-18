@@ -32,6 +32,10 @@
 
 ## 인덱스
 
+- [034: 에이전트보다 검색 툴부터 — 후보 수집·재정렬·발췌와 실제 품질 격차](2026-10-18-034-search-evidence-pipeline.md) — 독립 수집·임시 저장·BM25Plus·중복 묶음·본문 발췌·출력 예산, 내장 검색과3질의 비교, 품질 미달 보존, Python132개 통과
+
+034 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e8144bc48ef3a28233b76
+
 - [033: 여행 검색의 범위·본문·토큰 평가 — 기능 통과와 답변 불합격](2026-10-18-033-travel-search-evaluation.md) — 합성3사례·top3/top5/병렬 탐색, 동일 근거 토큰 비교·본문 발췌·web_read 구현, 실제 답변 실패 보존, 실제 검색 결과·원본 HTML 대조 보강, Python125개 통과
 
 033 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e8103bda5fe1cc0f73788

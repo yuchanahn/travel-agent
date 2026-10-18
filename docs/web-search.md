@@ -1,5 +1,7 @@
 # 웹검색 도구
 
+034의 최신 작업은 에이전트 연결을 보류하고 검색 툴을 독립 검증하는 [수집·재정렬·발췌 경로](search-pipeline.md)다. `web research`는 임시 원문 저장과 페이지 수집 이후 top_k를 적용한다. 아래 `web search`와 기존 에이전트의 즉시 검색 요약 경로는 그대로 구분한다.
+
 기본 공급자는 `http`, 엔진은 `bing`이다.032부터 DuckDuckGo의 요청·파서·URL 해석 경로와 기본 primp 의존성을 제거했다. webserp 연구 공급자에서도 DuckDuckGo를 거부한다. 과거 연구일지는 보존한다.
 
 ```powershell

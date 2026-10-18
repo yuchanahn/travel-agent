@@ -45,9 +45,15 @@ class _NoRedirect(HTTPRedirectHandler):
         return None
 
 
-def _request_html(engine, query, timeout):
+def _request_html(engine, query, timeout, *, first=None, page_params=None):
     """One anonymous HTTPS request to a fixed search endpoint; no browser or retry."""
     params = {"q": query}
+    if first is not None:
+        params['first'] = first
+    if page_params:
+        if any(k not in {'FORM','FPIG'} or not isinstance(v,str) or len(v)>100 for k,v in page_params.items()):
+            raise ValueError('Invalid pagination parameters')
+        params.update(page_params)
     request = Request(SEARCH_URLS[engine] + "?" + urlencode(params),
                       headers={"Accept-Language": "en-US,en;q=0.9"})
     transport = os.environ.get('WEB_HTTP_TRANSPORT', 'curl')
@@ -302,9 +308,23 @@ def add_parser(subparsers):
     search.add_argument("--timeout", type=float, default=15)
     search.add_argument("--backend", help="Override WEB_SEARCH_BACKEND for this invocation")
     search.add_argument("--provider", choices=["http", "webserp"], help="Override WEB_SEARCH_PROVIDER")
+    research = actions.add_parser("research", help="Collect, rank and extract search evidence without an LLM")
+    research.add_argument("query")
+    research.add_argument("--pages", type=int, default=3)
+    research.add_argument("--top-k", type=int, default=5)
+    research.add_argument("--read-pages", type=int, default=5)
+    research.add_argument("--max-bytes", type=int, default=6000)
+    research.add_argument("--keep-dir", help="Keep raw responses in a private directory; otherwise delete temporary files")
 
 
 def run(args):
+    if args.web_action == 'research':
+        from .web_pipeline import search_evidence
+        result = search_evidence(args.query, pages=args.pages, top_k=args.top_k,
+                                 read_pages=args.read_pages, max_bytes=args.max_bytes,
+                                 keep_dir=args.keep_dir)
+        print(result['digest'])
+        return 0 if result['sources'] else 1
     try:
         result = web_search(args.query, top_k=args.top_k, timeout=args.timeout, backend=args.backend,
                             provider=args.provider)
