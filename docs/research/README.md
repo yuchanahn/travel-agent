@@ -32,6 +32,10 @@
 
 ## 인덱스
 
+- [037: 검색어에서 모델에 넘길 데이터까지 — 실제 수집·후처리 내용을 펼쳐 보기](2026-10-18-037-search-data-walkthrough.md) — 한국 관광 명소 실제 검색, 페이지별 HTML 발췌·20→10 중복 처리·순위·선택 본문·실제4807바이트 패킷의 출처별 발췌를 한 흐름으로 연결
+
+037 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e81fd915cd4c5e85f01bc
+
 - [036: 같은 검색어가 달라지는 이유 — Bing 언어·지역 실패 재현과 RSS 대조](2026-10-18-036-bing-context-and-rss-diagnosis.md) — 공개 이슈·수정 코드 조사,42회 조건 대조·RSS12회 반복, 특정 locale 실패 재현, 선택형 RSS·명시 locale 구현, 과거 기본 요청 원인 미확인, Python137개 통과
 
 036 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e81c3b082e31aa74d0443
