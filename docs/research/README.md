@@ -4,6 +4,10 @@
 
 노션 허브: https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f
 
+- [054: 모델의 기본 도구 프로토콜과 추가 종료 규칙](2026-10-19-054-native-harness-comparison.md) — Qwen-Agent·Ollama·smolagents 실제 종료 코드, 최종 도구 반복 이슈, 로컬 renderer/parser 확인; 실행 변경·새 추론 없음
+
+054 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e81ddbcd5f24b87227b8a
+
 - [053: 모델 호출 기본 한도를6회에서12회로 늘리다](2026-10-19-053-model-call-budget-twelve.md) — Python·CLI·웹 기본값 통일,7회째 완료·12회 상한 검증,178개 테스트
 
 053 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e8178a7bbd1c9bc96457b
