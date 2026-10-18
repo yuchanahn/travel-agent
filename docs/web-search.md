@@ -1,5 +1,7 @@
 # 웹검색 도구
 
+[iframe·DOM 관찰028](research/2026-10-18-028-google-iframe-dom-observation.md)에서는 원본 getter의 Proxy가 기준 토큰을 유지함을 확인했다. 새 `--mode iframe-mirror`는 부모·iframe navigator 값을 맞추는 연구 조건이며 실제 검색은 여전히 /sorry였다. `--matrix-case dom_prototype_probe`로 DOM 접근을 관찰하고 `dom_capture_setters`로 선택한 DOM 문자열을 비공개 확인할 수 있다. 해당 캡처의 srcdoc·innerHTML 입력은 모두 빈 문자열이었고 레코드는 그대로였다. 공개 요약은 private_ 항목을 제거하며, 관찰 성공을 검색 성공으로 기록하지 않는다.
+
 [전송·실행 환경 비교027](research/2026-10-18-027-google-transport-and-runtime.md)에서는 Chrome150·Firefox147·Safari26.0.1 HTTP 프로필과 HTTP/1.1·HTTP/2, 생성자 표현 보정, 역사적 Opera 요청을 비교했지만 일반 검색은 미해결이었다. `probe_google_dom.py`에 `--transport`, `--http-version`, 선택형 `constructor-text` 연구 조건을 추가했다. 부모 생성자 표현만 바꾼 고정 입력의 레코드는 같았고 iframe 실험은 래퍼 자체의 영향을 확인했다. `probe_google_surfaces.py`의 자동완성·뉴스 RSS 성공은 접근·파싱 대조이며 일반 웹검색 성공으로 처리하거나 에이전트에 대체 연결하지 않는다.
 
 [DOM·서버 비교026](research/2026-10-18-026-google-dom-server-validation.md)에서 기존 jsdom·화면 보완·확장 프로필로 실제 HTTP 검색을 비교했지만 모두302→/sorry/index, 검색 결과0이었다. `scripts/probe_google_dom.py --node <Node24 실행 파일>`은 별도 클론의 검토한 의존성으로 세 조건을 재현하는 연구 실행기다. 브라우저를 띄우지 않으며 쿠키 생성만으로 성공 처리하지 않는다. 고정 응답의 별도 오프라인 비교에서는 화면 좌표 두 속성 추가로 레코드604→609바이트를 재현했다. 구조 차이와 서버 수용을 구분하며 기존 에이전트의 공급자 동작은 변경하지 않았다.

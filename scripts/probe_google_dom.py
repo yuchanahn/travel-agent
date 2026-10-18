@@ -115,7 +115,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--node', required=True, type=Path)
     parser.add_argument('--toolkit', type=Path, default=ROOT/'artifacts/vendor/google-search-guard-vm-reversing')
-    parser.add_argument('--mode', action='append', choices=['baseline', 'screen', 'profile', 'constructor-text'])
+    parser.add_argument('--mode', action='append', choices=['baseline', 'screen', 'profile', 'constructor-text', 'iframe-mirror'])
     parser.add_argument('--transport', action='append', choices=['chrome133a','chrome150','firefox147','safari2601'])
     parser.add_argument('--http-version', choices=['h1','h2'])
     parser.add_argument('--query', default='Python official website')

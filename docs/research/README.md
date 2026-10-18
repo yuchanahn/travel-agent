@@ -32,6 +32,10 @@
 
 ## 인덱스
 
+- [028: iframe 불일치를 검증하고 확인 데이터를 바꾸지 않는 DOM 관찰을 만들다](2026-10-18-028-google-iframe-dom-observation.md) — 영향 없는 getter·DOM 관찰 검증, iframe 보정 후에도 검색 실패, 실제 srcdoc·innerHTML 입력은 빈 문자열, Python92개·Node8개 통과
+
+028 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e8176bdcdd4be88047d90
+
 - [027: HTTP 계열·프로토콜·생성자와 Google 대조 경로를 나누어 검증하다](2026-10-18-027-google-transport-and-runtime.md) — 일반 검색8조건 실패, 자동완성·RSS 대조 성공, iframe 래퍼의 영향 확인, Python92개·Node4개 통과
 
 027 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e81628e0fdf1509337dc2

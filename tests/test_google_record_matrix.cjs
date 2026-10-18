@@ -1,6 +1,6 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
-const {compareRecords}=require('../scripts/google_record_matrix.cjs');
+const {compareRecords,publicFixture}=require('../scripts/google_record_matrix.cjs');
 
 test('an identical record has no changed ranges',()=>{
   const result=compareRecords([1,2,3],[1,2,3]);
@@ -22,4 +22,10 @@ test('an insertion preserves an aligned suffix despite positional differences',(
   assert.equal(result.common_prefix_bytes,1);
   assert.equal(result.common_suffix_bytes,2);
   assert.equal(result.positional_difference_count,3);
+});
+
+test('public fixture summaries omit private DOM content recursively',()=>{
+  const source={domAudit:{wrapped:3,private_setter_values:[{text:'PRIVATE CONTENT'}]}};
+  assert.deepEqual(publicFixture(source),{domAudit:{wrapped:3}});
+  assert.equal(source.domAudit.private_setter_values[0].text,'PRIVATE CONTENT');
 });

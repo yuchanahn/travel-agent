@@ -18,6 +18,17 @@ function applyFixture(window, fixture, dom) {
   if (fixture.navigatorStub) window.Navigator=function Navigator(){};
   if (fixture.constructorText) require('./probe_google_dom.cjs').applyConstructorText(window);
   if (fixture.iframeWrapper !== undefined) fixture.iframeAudit = require('./probe_google_dom.cjs').wrapIframeSource(window,fixture.iframeWrapper);
+  if (fixture.parentIdentity) {
+    set(window.navigator,'userAgent','Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36');
+    set(window.navigator,'platform','MacIntel');
+    set(window.navigator,'vendor','Google Inc.');
+  }
+  if (fixture.iframeMirror !== undefined) fixture.iframeAudit = require('./probe_google_dom.cjs').mirrorIframeNavigator(window,fixture.iframeMirror);
+  if (fixture.domProbe) fixture.domAudit = require('./probe_google_dom.cjs').observeDomAccess(window,!!fixture.domCapture);
+}
+
+function publicFixture(fixture) {
+  return JSON.parse(JSON.stringify(fixture,(key,value)=>key.startsWith('private_')?undefined:value));
 }
 
 function compareRecords(left, right) {
@@ -73,6 +84,11 @@ async function main() {
     ['constructor_text_only',{constructorText:true}],
     ['iframe_wrapper_control',{iframeWrapper:false}],
     ['iframe_constructor_text',{iframeWrapper:true}],
+    ['iframe_identity_baseline',{parentIdentity:true}],
+    ['iframe_identity_proxy_control',{parentIdentity:true,iframeMirror:false}],
+    ['iframe_identity_mirror',{parentIdentity:true,iframeMirror:true}],
+    ['dom_prototype_probe',{domProbe:true}],
+    ['dom_capture_setters',{domProbe:true,domCapture:true}],
   ];
   const selected=requested.length?requested:['language_first','language_second','screen_width'];
   if(selected.some(name=>!allVariants.some(([key])=>key===name)))throw Error('unknown_case');
@@ -89,7 +105,7 @@ async function main() {
     const caseStarted=Date.now();
     const control=await run(html,false,fixture),tapped=await run(html,true,fixture);
     if(control.err||tapped.err){
-      summary.push({name,fixture,status:'execution_failed',control_error:control.err||null,tapped_error:tapped.err||null,
+      summary.push({name,fixture:publicFixture(fixture),status:'execution_failed',control_error:control.err||null,tapped_error:tapped.err||null,
                     elapsed_ms:Date.now()-caseStarted});checkpoint();
       if(name.startsWith('baseline'))throw Error('baseline_failed');
       continue;
@@ -98,7 +114,7 @@ async function main() {
     const equal=control.token===tapped.token;
     const first=records[0]?.record||plain;
     records.push({name,fixture,token:tapped.token,record:plain});
-    summary.push({name,fixture,instrumentation_equal:equal,elapsed_ms:Date.now()-caseStarted,token_length:tapped.token.length,
+    summary.push({name,fixture:publicFixture(fixture),instrumentation_equal:equal,elapsed_ms:Date.now()-caseStarted,token_length:tapped.token.length,
                   record_bytes:plain.length,...compareRecords(first,plain)});
     checkpoint();
     if(!equal)throw Error('instrumentation_changed_output');
@@ -107,5 +123,5 @@ async function main() {
   const result=checkpoint();
   console.log(JSON.stringify(result,null,2));
 }
-module.exports={applyFixture,compareRecords,makeRunner};
+module.exports={applyFixture,compareRecords,makeRunner,publicFixture};
 if(require.main===module)main().catch(()=>{console.log(JSON.stringify({status:'matrix_failed',server_acceptance_tested:false}));process.exitCode=1});
