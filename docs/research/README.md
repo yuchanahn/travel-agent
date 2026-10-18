@@ -32,6 +32,10 @@
 
 ## 인덱스
 
+- [035: 검색 응답 변동을 확인하고 출력 예산 안에서 문단을 다시 고르다](2026-10-18-035-search-variance-and-budgeted-passages.md) — Bing12요청 행렬·같은 코드 반복 실행·동일 본문 오프라인 발췌 비교, Python133개 통과, 검색 안정성·여행 조건 품질 미달 보존
+
+035 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e81c3a9f8c74dd7e3bc9f
+
 - [034: 에이전트보다 검색 툴부터 — 후보 수집·재정렬·발췌와 실제 품질 격차](2026-10-18-034-search-evidence-pipeline.md) — 독립 수집·임시 저장·BM25Plus·중복 묶음·본문 발췌·출력 예산, 내장 검색과3질의 비교, 품질 미달 보존, Python132개 통과
 
 034 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e8144bc48ef3a28233b76

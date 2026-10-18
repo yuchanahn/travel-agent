@@ -99,21 +99,22 @@ def rank_candidates(query, groups):
     return sorted(ranked, key=lambda g:(-g['score'],g['original_rank']))
 
 
-def passages(text, query, limit=1000):
+def passages(text, query, limit=1000, *, max_bytes=None):
     """Rank bounded, verbatim passage slices; no generated claims."""
     # Keep adjacent headings with their prose. Isolated short menu headings
     # otherwise outrank the actual explanation merely by repeating the query.
     blocks, current = [], ''
+    chunk_size = min(600,max(20,max_bytes//4)) if max_bytes is not None else 600
     for paragraph in re.split(r'\n\s*\n',text):
-        for i in range(0,len(paragraph),600):
-            piece = paragraph[i:i+600].strip()
+        for i in range(0,len(paragraph),chunk_size):
+            piece = paragraph[i:i+chunk_size].strip()
             if not piece:
                 continue
-            if current and len(current)+len(piece)+2 > 600:
+            if current and len(current)+len(piece)+2 > chunk_size:
                 blocks.append(current)
                 current = ''
             current += ('\n\n' if current else '')+piece
-            if len(current) >= 350:
+            if len(current) >= min(350,chunk_size):
                 blocks.append(current)
                 current = ''
     if current:
@@ -130,7 +131,8 @@ def passages(text, query, limit=1000):
             break
         if not set(q)&set(docs[i]):
             continue
-        if sum(len(blocks[j]) for j in selected)+len(blocks[i])+2*len(selected) <= limit:
+        trial = '\n\n'.join(blocks[j] for j in sorted([*selected,i]))
+        if len(trial) <= limit and (max_bytes is None or len(trial.encode()) <= max_bytes):
             selected.append(i)
     return '\n\n'.join(blocks[i] for i in sorted(selected)), sorted(selected)
 
@@ -149,10 +151,18 @@ def pack_digest(query, sources, max_bytes, summary):
         if available < 60:
             continue
         body = source['text']
-        shortened = len(body.encode()) > available
-        text = body.encode()[:available].decode('utf-8',errors='ignore') if shortened else body
+        selected_blocks = None
+        if source.get('_page_text'):
+            text, selected_blocks = passages(source['_page_text'],query,max_bytes=available)
+            if not text:
+                continue
+            shortened = text != source['_page_text']
+        else:
+            shortened = len(body.encode()) > available
+            text = body.encode()[:available].decode('utf-8',errors='ignore') if shortened else body
         digest += base+text+('\n[excerpt shortened]' if shortened else '')+'\n'
-        included.append({**source, 'delivered_text':text, 'output_shortened':shortened})
+        included.append({**{k:v for k,v in source.items() if k != '_page_text'},
+                         'delivered_text':text, 'delivered_blocks':selected_blocks,'output_shortened':shortened})
     return digest, included
 
 
@@ -244,7 +254,8 @@ def search_evidence(query, *, pages=3, top_k=5, read_pages=5, max_bytes=6000, ke
                 excerpt, selected = passages(text,query)
                 ev.update(info,download_bytes=len(body),extracted_bytes=len(text.encode()),selected_blocks=selected,
                           excerpt_bytes=len(excerpt.encode()),selection_status='ok' if excerpt else 'no_matching_passage')
-                return {'text':excerpt,'page_fetched':True,'content_kind':'page_excerpt' if excerpt else 'search_snippet'},ev
+                return {'text':excerpt,'_page_text':text if excerpt else '',
+                        'page_fetched':True,'content_kind':'page_excerpt' if excerpt else 'search_snippet'},ev
             except WebSearchError as exc:
                 ev['error'] = exc.details
                 return {'text':'','page_fetched':downloaded,'content_kind':'search_snippet'},ev

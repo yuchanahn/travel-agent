@@ -72,6 +72,17 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(result['evidence_status'],'insufficient_candidates')
         fetch.assert_not_called()
 
+    def test_budget_is_applied_before_selecting_important_late_passage(self):
+        raw=('Welcome to our museum and our introductory visitor story. '*30
+             +'\n\nOpening hours 09:00-18:00. Holiday closure Monday. Transit bus 10.')
+        source={'id':'web:test','title':'Museum','url':'https://example.org/',
+                'content_kind':'page_excerpt','page_fetched':True,'text':raw[:1000],'_page_text':raw}
+        digest,included=pack_digest('opening hours holiday transit',[source],1500,{})
+        self.assertIn('09:00-18:00',digest)
+        self.assertIn('closure Monday',digest)
+        self.assertNotIn('_page_text',included[0])
+        self.assertLessEqual(len(digest.encode()),1500)
+
 
 if __name__=='__main__':
     unittest.main()
