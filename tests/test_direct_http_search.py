@@ -21,6 +21,17 @@ class Response(BytesIO):
 
 @patch.dict(os.environ, {'WEB_HTTP_TRANSPORT':'urllib'})
 class DirectSearchTests(unittest.TestCase):
+    def test_counts_distinguish_html_cards_parsed_rows_and_top_k(self):
+        cards=''.join('<li class="b_algo"><h2><a href="https://example.invalid/'+str(i)+'">Result</a></h2><p>Snippet</p></li>' for i in range(4))
+        cards+='<li class="b_algo"><h2>No usable URL</h2></li>'
+        with patch('travel_agent.web._request_html',return_value=(cards,{'http_status':200})):
+            rows=_direct_search('query',2,7,'bing')
+        self.assertEqual(rows.details['result_cards'],5)
+        self.assertEqual(rows.details['parsed_results'],4)
+        self.assertEqual(rows.details['selected_results'],2)
+        self.assertEqual(rows.details['not_selected_results'],2)
+        self.assertEqual(len(rows),2)
+
     def test_curl_transport_preserves_query_and_never_follows_redirects(self):
         with patch.dict(os.environ, {'WEB_HTTP_TRANSPORT':'curl'}), patch('curl_cffi.requests.Session') as session:
             session.return_value.__enter__.return_value.get.return_value = SimpleNamespace(status_code=200,content=b'<html>body</html>')

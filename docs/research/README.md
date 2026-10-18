@@ -32,7 +32,7 @@
 
 ## 인덱스
 
-- [033: 여행 검색의 범위·본문·토큰 평가 — 기능 통과와 답변 불합격](2026-10-18-033-travel-search-evaluation.md) — 합성3사례·top3/top5/병렬 탐색, 동일 근거 토큰 비교·본문 발췌·web_read 구현, 실제 답변 실패 보존, Python124개·pip check 통과
+- [033: 여행 검색의 범위·본문·토큰 평가 — 기능 통과와 답변 불합격](2026-10-18-033-travel-search-evaluation.md) — 합성3사례·top3/top5/병렬 탐색, 동일 근거 토큰 비교·본문 발췌·web_read 구현, 실제 답변 실패 보존, 실제 검색 결과·원본 HTML 대조 보강, Python125개 통과
 
 033 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e8103bda5fe1cc0f73788
 

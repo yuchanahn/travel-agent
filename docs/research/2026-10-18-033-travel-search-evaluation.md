@@ -13,6 +13,173 @@
 
 이번 결론은 **검색·병렬 처리·입력 표현·선택적 본문 읽기의 기능 검사는 통과했지만, 자율 여행 답변은 불합격**이다. 아래의 잘못된 요금·제한을 포함한 모델 출력은 실패 기록이며 실제 여행 안내로 사용하지 않는다.
 
+## 보강: 실제로 어떤 검색 데이터를 받았는가
+
+앞선 기록은 관련성 판정만 보여줘 원인을 판단하기 어려웠다. 이번에는 당시 저장된 결과를 먼저 펼쳐 놓고, 같은 검색어를 새로 조회해 원본 HTML과 대조했다. 아래 요약은 연결된 사이트 본문이 아니라 Bing 검색 결과 카드의 요약이다. 인용 길이를 줄이기 위해 요약 앞부분을 그대로 발췌했으며 … 뒤는 생략했다.
+
+### 당시 실패한 검색과 실제 반환값
+
+<callout icon="🔎" color="blue_bg">
+
+	**실제로 전송한 검색어**
+
+	강릉 비오는날 부모님 실내 여행 걷기 적은 곳
+
+</callout>
+
+HTTP 200, top_k=5, 실제 반환 5개. 당시 원본 HTML과 top_k 적용 전 개수는 저장하지 않아 알 수 없다. 이 검색 단독 평가에는 LLM 호출이 없었다.
+
+| 순위 | 받은 제목·URL | 받은 검색 요약 발췌 |
+|---|---|---|
+| 1 | [Store Finder - Lidl US](https://www.lidl.com/c/store-finder/s10089075) | Store Finder & Opening Hours Search by your Zip Code or City to find … |
+| 2 | [Store Finder - Lidl GB](https://www.lidl.co.uk/c/store-finder/s10023098) | Pop your postcode into the box and click your nearest store to see opening … |
+| 3 | [Google Maps](https://maps.google.co.kr/mapfiles/home3.html) | Sep 17, 2024 · Explore and navigate the world with Google Maps, offering detailed maps and directions … |
+| 4 | [Lidl stores in the US](https://www.lidl.com/s/en-US/stores/) | Find your Lidl store quickly and easily with the store finder or by city. … |
+| 5 | [Shopping \| Resident \| Uijeongbu](https://www.ui4u.go.kr/en/contents.do?mId=0405000000) | Address : 44 Cheonbo-ro, Uijeongbu-si, Gyeonggi-do (Minrak-dong) Operating hours weekdays : 11:00 - 21:00 … |
+
+<callout icon="🔎" color="blue_bg">
+
+	**실제로 전송한 검색어**
+
+	국립춘천박물관 관람시간 휴관일 교통
+
+</callout>
+
+HTTP 200, top_k=3, 실제 반환 3개. 당시 원본 HTML과 top_k 적용 전 개수는 저장하지 않아 알 수 없다. 이 검색 단독 평가에는 LLM 호출이 없었다.
+
+| 순위 | 받은 제목·URL | 받은 검색 요약 발췌 |
+|---|---|---|
+| 1 | [국립국어원 표준국어대사전](https://stdict.korean.go.kr/main/main.do) | Jul 13, 2026 · 2026년 3분기 표준국어대사전 정보 공개 주요 내용 2026-10-16 09:37:06 국립국어원 국어사전 통합 회원 … |
+| 2 | [국립중앙도서관](https://www.nl.go.kr/) | 국립중앙도서관에 오신 것을 환영합니다 적용안함 2층 문학실 2층 문학실 (근대문학) 3층 연속간행물실 3층 연속간행물실 ... … |
+| 3 | [문화체육관광부 국립국어원](https://www.korean.go.kr/) | 국립국어원은 한글 맞춤법, 표준어 검색, 표준국어대사전 등 한국어 관련 자료와 연구 보고서를 제공합니다. … |
+
+강릉·부모님·우천·걷기 제한이라는 조건에 대해 미국·영국 마트 위치와 의정부 쇼핑 정보가 반환됐다. 박물관 검색도 다른 국립 기관으로 어긋났다. HTTP 성공과 검색 관련성 성공을 같은 것으로 기록하면 안 되는 구체적인 사례다.
+
+### 새 조회: 한 페이지에 몇 개가 들어 있었나
+
+현재 구현은 Bing에 q만 보내 검색 HTML 한 페이지를 받는다. 서버에 결과 3개나 10개를 달라고 지정하지 않는다. 이번 4회에서는 각각 검색 카드 10개를 받았고 10개 모두 파싱했으며 top_k=3으로 3개를 골라 반환했다. 10개는 이번 관찰값이며 항상 보장되는 개수가 아니다. 추가 페이지는 가져오지 않았다.
+
+| 검색어 | 요청 방식 | HTTP | HTML 카드 | 파싱 | 선택 | 반환 | HTML 응답 바이트 |
+|---|---|---|---|---|---|---|---|
+| 강릉 비오는날 부모님 실내 여행 걷기 적은 곳 | urllib | 200 | 10 | 10 | 3 | 3 | 110540 |
+| 강릉 비오는날 부모님 실내 여행 걷기 적은 곳 | curl | 200 | 10 | 10 | 3 | 3 | 514280 |
+| 국립춘천박물관 관람시간 휴관일 교통 | urllib | 200 | 10 | 10 | 3 | 3 | 111262 |
+| 국립춘천박물관 관람시간 휴관일 교통 | curl | 200 | 10 | 10 | 3 | 3 | 121142 |
+
+응답 바이트는 HTTP 라이브러리가 돌려준 HTML 본문 크기이며 네트워크 전송량 측정값은 아니다. 새 조회는 HTTP 4회와 같은 응답의 도구 출력 재구성만 수행했다. 실제 모델에 입력하거나 최종 여행 답변을 생성하지 않았다.
+
+강릉 검색은 이번에는 두 방식 모두 관련 여행 결과가 나왔다. 과거 실패를 지우거나 당시에도 성공한 것으로 바꾸지 않았다. 클라이언트 종류 하나로 과거 실패 전체를 설명할 수 없다.
+
+<callout icon="🔎" color="blue_bg">
+
+	**새 조회에서도 실패한 검색어**
+
+	국립춘천박물관 관람시간 휴관일 교통
+
+</callout>
+
+다음은 새 urllib 응답에서 추출한 전체 10개다. curl 응답도 같은 순서였다. 앞의 세 항목은 위에 요약을 제시한 것과 같은 페이지다.
+
+| 순위 | 새 HTML에 실제로 들어 있던 제목·URL |
+|---|---|
+| 1 | [국립국어원 표준국어대사전](https://stdict.korean.go.kr/main/main.do) |
+| 2 | [국립중앙도서관](https://www.nl.go.kr/) |
+| 3 | [문화체육관광부 국립국어원](https://www.korean.go.kr/) |
+| 4 | [국립 - 나무위키](https://namu.wiki/w/%EA%B5%AD%EB%A6%BD) |
+| 5 | [국립공원공단](https://search.knps.or.kr/) |
+| 6 | [인사말 - 국립국어원](https://www.korean.go.kr/front/page/pageView.do?page_id=P000024) |
+| 7 | [국립중앙박물관](https://www.museum.go.kr/) |
+| 8 | [국립대학 - 나무위키](https://namu.wiki/w/%EA%B5%AD%EB%A6%BD%EB%8C%80%ED%95%99) |
+| 9 | [국립중앙의료원](https://www.nmc.or.kr/nmc/main/) |
+| 10 | [국립생태원 - NIE](https://www.nie.re.kr/nie/main/main.do) |
+
+이 10개는 모두 본 검색 결과 영역 `ol#b_results` 안의 `li.b_algo` 카드였다. 첫 카드의 h2 텍스트도 위 첫 제목과 일치했다. 검색 페이지 제목과 검색창 q에는 요청한 전체 검색어가 남아 있었다. 따라서 이 재현 사례는 엉뚱한 검색어를 보내거나, 관련 검색 위젯을 읽거나, top_k가 관련 결과를 버려서 생긴 문제로 설명되지 않는다. 원본 검색 HTML부터 춘천박물관과 무관한 목록을 담고 있었다. 추가 7개에도 해당 박물관은 없었다.
+
+정확히 왜 Bing이 이 목록을 반환했는지는 아직 확인하지 못했다. 세션·지역·요청 특성·서버 처리 중 어느 요인인지 이 4회만으로 단정할 수 없다. 검색창에 올바른 쿼리가 있다는 것도 서버가 그 모든 조건을 반영했다는 증거는 아니다.
+
+### 원인 관찰을 위해 바꾼 코드
+
+기준 코드는 1a274e2이며 이번 보강은 `src/travel_agent/web.py`의 `_parse_search_html`, `_direct_search`, `web_search`에 개수 메타데이터를 추가했다. 동작 재현은 `scripts/inspect_search_response.py`가 담당한다. 실제 구현의 선택 부분은 다음과 같다.
+
+```python
+    if not rows:
+        raise WebSearchError("Search returned no parsed results", details={"reason": "empty_or_unparsed", **info})
+    selected = rows[:top_k]
+    return _EngineRows(selected, {**info, 'selected_results':len(selected),
+                                 'not_selected_results':len(rows)-len(selected)})
+```
+
+`result_cards`는 HTML 카드 수, `parsed_results`는 사용 가능한 제목·URL을 추출한 수, `selected_results`는 top_k 선택 수, `not_selected_results`는 top_k 때문에 고르지 않은 수다. 최종 패킷의 `returned_results`와 `omitted_results`는 그 이후 중복 제거·출력 크기 제한의 결과다. 이전 omitted_results=0만으로 전체 HTML에서 버린 결과가 없다고 해석하면 안 된다.
+
+```mermaid
+flowchart LR
+ Q[검색어 q] --> H[Bing HTML 한 페이지]
+ H --> C[카드 수 기록]
+ C --> P[제목 URL 요약 파싱]
+ P --> K[top_k 선택]
+ K --> B[중복 제거와 바이트 제한]
+ B --> O[도구 반환]
+ O --> M[에이전트 실행 시 모델 입력]
+```
+
+진단 스크립트는 원본 HTML과 모든 파싱 결과를 비공개로 남기고 같은 응답에서 도구 패킷을 재구성한다. 두 번째 검색으로 결과를 바꿔 끼우지 않는다. 이 보강은 관찰 기능이며 검색 품질 개선을 달성했다는 뜻은 아니다.
+
+<details>
+
+<summary>이번에 대조한 실제 도구·HTTP 호출 기록</summary>
+
+	```json
+
+	{"id": "21ebae6d1f194c4d8625becea3cda328", "tool": "web_search", "arguments": {"query": "강릉 비오는날 부모님 실내 여행 걷기 적은 곳", "top_k": 5}, "started_at": "2026-10-18T07:18:05.053114+00:00", "finished_at": "2026-10-18T07:18:05.395819+00:00"}
+
+	{"http_status": 200, "returned_results": 5, "html_card_count": "당시 미기록", "model_invoked": false}
+
+	```
+
+	```json
+
+	{"id": "86b4219e212943e28717f6acf80e4cc1", "tool": "web_search", "arguments": {"query": "국립춘천박물관 관람시간 휴관일 교통", "top_k": 3}, "started_at": "2026-10-18T07:17:06.381942+00:00", "finished_at": "2026-10-18T07:17:06.685257+00:00"}
+
+	{"http_status": 200, "returned_results": 3, "html_card_count": "당시 미기록", "model_invoked": false}
+
+	```
+
+	```json
+
+	{"id": "acdec81d11f7482c93c637f8ae6cb74e", "tool": "direct_bing_http_diagnostic", "query": "강릉 비오는날 부모님 실내 여행 걷기 적은 곳", "transport": "urllib", "http_params": {"q": "강릉 비오는날 부모님 실내 여행 걷기 적은 곳"}, "top_k": 3, "started_at": "2026-10-18T07:44:57.364877+00:00", "finished_at": "2026-10-18T07:44:57.705389+00:00", "http_status": 200, "response_bytes": 110540, "result_cards": 10, "parsed_results": 10, "page_title": "강릉 비오는날 부모님 실내 여행 걷기 적은 곳 - Search", "query_inputs": ["강릉 비오는날 부모님 실내 여행 걷기 적은 곳"]}
+
+	{"selected_results": 3, "returned_results": 3, "main_result_cards": 10, "model_invoked": false}
+
+	```
+
+	```json
+
+	{"id": "6387a246d74146849ea43e69e6bb6138", "tool": "direct_bing_http_diagnostic", "query": "강릉 비오는날 부모님 실내 여행 걷기 적은 곳", "transport": "curl", "http_params": {"q": "강릉 비오는날 부모님 실내 여행 걷기 적은 곳"}, "top_k": 3, "started_at": "2026-10-18T07:44:57.706450+00:00", "finished_at": "2026-10-18T07:44:58.577745+00:00", "http_status": 200, "response_bytes": 514280, "result_cards": 10, "parsed_results": 10, "page_title": "강릉 비오는날 부모님 실내 여행 걷기 적은 곳 - Search", "query_inputs": []}
+
+	{"selected_results": 3, "returned_results": 3, "main_result_cards": 10, "model_invoked": false}
+
+	```
+
+	```json
+
+	{"id": "1454b422345641eb9b12d32ffde20bac", "tool": "direct_bing_http_diagnostic", "query": "국립춘천박물관 관람시간 휴관일 교통", "transport": "urllib", "http_params": {"q": "국립춘천박물관 관람시간 휴관일 교통"}, "top_k": 3, "started_at": "2026-10-18T07:44:58.578777+00:00", "finished_at": "2026-10-18T07:44:58.791510+00:00", "http_status": 200, "response_bytes": 111262, "result_cards": 10, "parsed_results": 10, "page_title": "국립춘천박물관 관람시간 휴관일 교통 - Search", "query_inputs": ["국립춘천박물관 관람시간 휴관일 교통"]}
+
+	{"selected_results": 3, "returned_results": 3, "main_result_cards": 10, "model_invoked": false}
+
+	```
+
+	```json
+
+	{"id": "f604e7a09d504eb7ba77633fbfe885a3", "tool": "direct_bing_http_diagnostic", "query": "국립춘천박물관 관람시간 휴관일 교통", "transport": "curl", "http_params": {"q": "국립춘천박물관 관람시간 휴관일 교통"}, "top_k": 3, "started_at": "2026-10-18T07:44:58.792526+00:00", "finished_at": "2026-10-18T07:44:59.118549+00:00", "http_status": 200, "response_bytes": 121142, "result_cards": 10, "parsed_results": 10, "page_title": "국립춘천박물관 관람시간 휴관일 교통 - Search", "query_inputs": ["국립춘천박물관 관람시간 휴관일 교통"]}
+
+	{"selected_results": 3, "returned_results": 3, "main_result_cards": 10, "model_invoked": false}
+
+	```
+
+	실행 시각 순서: 과거 박물관 검색 → 과거 강릉 검색 → 새 강릉 urllib → 새 강릉 curl → 새 박물관 urllib → 새 박물관 curl. JSON 시각은 UTC다. 실제 에이전트의 다음 모델 입력 로그는 기존 실행 기록과 구분한다. 여기의 새 진단은 도구 출력 재구성까지다. 쿠키·인증 헤더는 공개하지 않았다.
+
+</details>
+
 ## 현재 무엇을 모델이 읽는가
 
 기존 web_search는 Bing 검색 HTML을 프로그램이 받고 제목·URL·검색 요약을 파싱했다. 모델은 그 결과의 JSON 문자열을 받았고 링크된 페이지 본문은 읽지 않았다. top_k 기본3·최대5, 도구 결과 기본3500바이트 한도였다. 따라서 검색 요청 수와 반환 후보 수, 바이트 잘림이 서로 다른 제한이다.

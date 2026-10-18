@@ -64,6 +64,7 @@ def _request_html(engine, query, timeout):
                 raise WebSearchError('Search engine HTTP failure', details={'reason':'http_error', **info})
             if len(response.content) > MAX_RESPONSE_BYTES:
                 raise WebSearchError('Search response too large', details={'reason':'response_too_large', **info})
+            info['response_bytes'] = len(response.content)
             return response.content.decode('utf-8', errors='replace'), info
         try:
             incoming = build_opener(_NoRedirect()).open(request, timeout=timeout)
@@ -76,6 +77,7 @@ def _request_html(engine, query, timeout):
             body = incoming.read(MAX_RESPONSE_BYTES + 1)
             if len(body) > MAX_RESPONSE_BYTES:
                 raise WebSearchError("Search response too large", details={"reason": "response_too_large", **info})
+            info['response_bytes'] = len(body)
             return body.decode("utf-8", errors="replace"), info
     except WebSearchError:
         raise
@@ -114,7 +116,8 @@ def _parse_search_html(text, engine):
     tree = html.fromstring(text)
     selector = _class_xpath("li", "b_algo")
     rows = []
-    for card in tree.xpath(selector):
+    cards = tree.xpath(selector)
+    for card in cards:
         headings = card.xpath('.//h2')
         if not headings:
             continue
@@ -125,7 +128,7 @@ def _parse_search_html(text, engine):
         snippet = " ".join(" ".join(node.text_content().split()) for node in snippets)
         if title and target:
             rows.append({"title": title, "href": target, "body": snippet})
-    return rows
+    return _EngineRows(rows, {'result_cards':len(cards), 'parsed_results':len(rows)})
 
 
 def _direct_search(query, top_k, timeout, engine):
@@ -137,9 +140,12 @@ def _direct_search(query, top_k, timeout, engine):
         rows = _parse_search_html(text, engine)
     except (ValueError, html.etree.ParserError) as exc:
         raise WebSearchError("Search response could not be parsed", details={"reason": "empty_or_unparsed", **info}) from exc
+    info.update(rows.details)
     if not rows:
         raise WebSearchError("Search returned no parsed results", details={"reason": "empty_or_unparsed", **info})
-    return _EngineRows(rows[:top_k], info)
+    selected = rows[:top_k]
+    return _EngineRows(selected, {**info, 'selected_results':len(selected),
+                                 'not_selected_results':len(rows)-len(selected)})
 
 
 def _provider_search(query, top_k, timeout, backend):
@@ -184,7 +190,8 @@ def _combined_search(query, top_k, timeout, engines):
                            "start_ms": offset, "elapsed_ms": round((time.perf_counter() - tick) * 1000)}
         except WebSearchError as exc:
             return [], {"status": "error", "reason": exc.details.get("reason", "provider_failed"),
-                        **{key: exc.details[key] for key in ("http_status", "method", "http_transport") if key in exc.details},
+                        **{key: exc.details[key] for key in ("http_status", "method", "http_transport", "response_bytes",
+                                                           "result_cards", "parsed_results") if key in exc.details},
                         "start_ms": offset, "elapsed_ms": round((time.perf_counter() - tick) * 1000)}
         except Exception as exc:
             # Isolate an unexpected engine/library failure from its sibling.
@@ -251,7 +258,8 @@ def web_search(query, *, top_k=3, timeout=15, max_bytes=3500, backend=None, prov
     result = {"provider": provider, "backend_requested": backend, **metadata,
               "searched_at": datetime.now(timezone.utc).isoformat(),
               "content_kind": "search_snippet", "page_fetched": False,
-              "web_search_performed": True, "status": "no_usable_results", "omitted_results": 0, "hits": []}
+              "web_search_performed": True, "status": "no_usable_results", "omitted_results": 0,
+              "returned_results": 0, "hits": []}
     if len(canonical(result).encode("utf-8")) > max_bytes:
         raise WebSearchError("Search metadata exceeds output budget", details={"reason": "output_budget_too_small"})
     seen = set()
@@ -274,11 +282,14 @@ def web_search(query, *, top_k=3, timeout=15, max_bytes=3500, backend=None, prov
         if provider == "http" and isinstance(row.get("engine_ranks"), dict):
             hit["engines"] = list(row["engine_ranks"])
             hit["engine_ranks"] = row["engine_ranks"]
-        trial = {**result, "status": "ok", "omitted_results": len(rows), "hits": [*result["hits"], hit]}
+        trial = {**result, "status": "ok", "omitted_results": len(rows),
+                 "returned_results":len(result['hits'])+1, "hits": [*result["hits"], hit]}
         if len(canonical(trial).encode("utf-8")) <= max_bytes and len(result["hits"]) < top_k:
             result["hits"].append(hit)
     result["omitted_results"] = len(rows) - len(result["hits"])
     result["status"] = "ok" if result["hits"] else "no_usable_results" if rows else "no_results"
+    # This is an output count, distinct from cards on the downloaded SERP.
+    result['returned_results'] = len(result['hits'])
     return result
 
 
