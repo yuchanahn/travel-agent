@@ -22,21 +22,7 @@ from rank_bm25 import BM25Plus
 from .web import _request_html, _parse_search_html, _parse_search_rss, _bing_locale_params, _clean_url, WebSearchError
 from .web_read import fetch_public_page, extract_page
 from .evidence_text import bounded_blocks, bounded_prefix, body_signal
-
-
-def tokens(text):
-    """Words plus Korean character bigrams: transparent lexical, not semantic."""
-    result = []
-    for word in re.findall(r'[a-z0-9]+|[가-힣]+', text.lower()):
-        if re.fullmatch('[가-힣]{2,}', word):
-            # A two-character word is already its complete bigram. Keeping
-            # both would double-weight standalone words versus compounds.
-            if len(word)>2:
-                result.append(word)
-            result.extend('ko:'+word[i:i+2] for i in range(len(word)-1))
-        else:
-            result.append(word)
-    return result
+from .lexical import tokens
 
 
 def canonical_url(url):

@@ -61,7 +61,7 @@ class WebAppTests(unittest.TestCase):
                   {'role':'tool','tool_call_id':'old-call','content':'retrieved evidence'}]
         (folder/'trace.jsonl').write_text(json.dumps({'kind':'model_start','messages':messages})+'\n',encoding='utf-8')
         source={'id':'web:1234567890abcdef','url':'https://example.org','title':'fixture'}
-        parent={'id':parent_id,'query':'two people, budget 250000','state':'done','created_at':'test',
+        parent={'id':parent_id,'query':'two people, budget 250000','state':'done','created_at':'2026-10-19T01:00:00+00:00',
                 'result':{'status':'completed','answer':'previous answer','web_sources':[source]}}
         self.manager._save(parent)  # Parent need not be in the recent in-memory list.
         captured={}

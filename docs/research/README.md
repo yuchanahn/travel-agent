@@ -4,6 +4,10 @@
 
 노션 허브: https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f
 
+- [057: 웹 원본 메모리·요약·RAG 연결과 실제 비교](2026-10-19-057-web-session-memory.md) — 191개 테스트, 실제4턴·요약1회·손실 요약2조건 비교; 분기 격리·자동 색인·원문 근거 주입
+
+057 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e8108848ddab1a33a019d
+
 - [056: 출력4096·행동 지침·네이티브 종료 적용](2026-10-19-056-native-output-and-action-prompt.md) — 182개 테스트, 실제 공개2질의 검색 왕복; 관람시간 답변은 본문 미조회·근거 없는 정보·인용 누락으로 실패
 
 056 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e81179b46e69e47b7f282

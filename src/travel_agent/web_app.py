@@ -12,10 +12,11 @@ from urllib.parse import parse_qs, urlsplit
 from urllib.request import urlopen
 from uuid import uuid4
 
-from .agent import run_agent
+from .agent import run_agent, execute_tool
 from .brave_provider import api_key
 from .llm_config import generation_options
-from .memory import MemoryStore
+from .memory import MemoryStore, build_bm25_index
+from .session_context import compact_context, trace_events, turn_events, write_json
 
 STATIC = Path(__file__).with_name('static')
 RUN_ID = re.compile(r'[a-f0-9]{32}')
@@ -52,6 +53,10 @@ def visible_event(event):
         view.update(forced_by_budget=event.get('forced_by_budget'),stop_reason=event.get('stop_reason'))
     elif kind=='tool_budget_finalization':
         view.update(requested=event.get('requested'),remaining=event.get('remaining'))
+    elif kind=='context_prepared':
+        view.update({k:v for k,v in event.items() if k not in {'request_id','sequence','timestamp','kind'}})
+    elif kind=='memory_recalled':
+        view.update(query=event['query'], result=event['result'])
     else:
         return None
     return view
@@ -108,6 +113,9 @@ class RunManager:
         return list(reversed(turns))
 
     def continuation(self,parent):
+        checkpoint = self.directory/parent['id']/'context.json'
+        if checkpoint.exists():
+            return json.loads(checkpoint.read_text(encoding='utf-8'))['history']
         messages=None
         for path in (self.directory/parent['id']/'traces').glob('*.jsonl'):
             for line in path.read_text(encoding='utf-8').splitlines():
@@ -158,13 +166,53 @@ class RunManager:
                 self._save(job)
             folder=self.directory/run_id
             parent=self._job(job['parent_id']) if job.get('parent_id') else None
-            continuation={'history':self.continuation(parent),
-                          'prior_sources':parent['result'].get('web_sources',[])} if parent else {}
+            ancestors = []
+            cursor = parent
+            while cursor:
+                if cursor['id'] in {p['id'] for p in ancestors} or len(ancestors)>=100:
+                    raise ValueError('Invalid conversation chain')
+                ancestors.append(cursor)
+                cursor = self._job(cursor['parent_id']) if cursor.get('parent_id') else None
+            ancestors.reverse()
+            session = ancestors[0]['id'] if ancestors else run_id
+            history = self.continuation(parent) if parent else []
+            checkpoint = self.directory/parent['id']/'context.json' if parent else None
+            summary = json.loads(checkpoint.read_text(encoding='utf-8'))['summary'] if checkpoint and checkpoint.exists() else ''
             with MemoryStore(folder/'memory.sqlite3') as store:
-                result=run_agent(store,'local-web',run_id,job['query'],mode='bm25',
-                                 enable_web=job['enable_web'],trace_dir=folder/'traces',timeout=180,**continuation)
+                # A run gets only its ancestry, never a sibling branch or another chat.
+                for ancestor in ancestors:
+                    store.add('local-web',session,turn_events(self.directory,ancestor))
+                before_index = build_bm25_index(store,'local-web',session)
+                history, summary, context = compact_context(history,summary,folder=folder,
+                    model=os.environ.get('OLLAMA_MODEL','qwen3.5:4b-q4_K_M'),
+                    base_url=os.environ.get('OLLAMA_BASE_URL','http://127.0.0.1:11434').rstrip('/'))
+                recalled = execute_tool(store,'local-web',session,'memory_search',
+                    {'query':job['query'],'top_k':3},mode='bm25',rerank=False,max_bytes=6000) if summary and before_index['chunks'] else {'hits':[]}
+                context.update(memory_events=before_index['events'],memory_chunks=before_index['chunks'],
+                               recalled_hits=len(recalled['hits']))
+                result=run_agent(store,'local-web',session,job['query'],mode='bm25',summary=summary,
+                                 history=history,prior_sources=parent['result'].get('web_sources',[]) if parent else [],
+                                 prior_memory_ids=[i for i in parent['result'].get('evidence_ids',[]) if i.startswith(('m-','event:'))] if parent else [],
+                                 recalled_memory=recalled,context_info=context,
+                                 enable_web=job['enable_web'],trace_dir=folder/'traces',timeout=180)
+                finished = {**job,'finished_at':now(),'result':result}
+                inserted = store.add('local-web',session,turn_events(self.directory,finished))
+                after_index = build_bm25_index(store,'local-web',session)
+                latest = next((e['messages'] for e in reversed(trace_events(self.directory,job)) if e['kind']=='model_start'),None)
+                if latest:
+                    saved_history = [m for m in latest if m['role']!='system']
+                    # The request wrapper contains summary/retrieval. Preserve the
+                    # original user query in the rolling checkpoint instead.
+                    saved_history[len(history)] = {'role':'user','content':job['query']}
+                else:
+                    saved_history = history + [{'role':'user','content':job['query']}]
+                answer = result.get('answer') or result.get('partial_answer')
+                if answer:
+                    saved_history.append({'role':'assistant','content':answer})
+                write_json(folder/'context.json',{'history':saved_history,'summary':summary,'session':session})
+                context.update(saved_events=inserted,total_events=after_index['events'],total_chunks=after_index['chunks'])
             with self.lock:
-                job.update(state='done',finished_at=now(),result=public_result(result))
+                job.update(state='done',finished_at=finished['finished_at'],result=public_result(result),context=context)
                 self._save(job)
         except Exception as exc:
             with self.lock:

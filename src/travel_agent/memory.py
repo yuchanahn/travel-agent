@@ -197,9 +197,33 @@ def rrf(rankings: list[list[int]], k=60) -> dict[int, float]:
     return scores
 
 
+def build_bm25_index(store: MemoryStore, user: str, session: str):
+    """Index exact event windows without an embedding model or downloads."""
+    import numpy as np
+    events = store.events(user, session)
+    chunks = []
+    for event in events:
+        text = event['content']
+        for left in range(0, len(text), 260):
+            right = min(len(text), left + 300)
+            chunks.append({
+                'chunk_id': 'm-' + digest([event, left, right])[:20],
+                'turn_id': event['turn_id'], 'timestamp': event['timestamp'],
+                'start_char': left, 'end_char': right,
+                'text': f"[{event['role']} | {event['timestamp']}]\n" + text[left:right],
+                'events': [{key: event.get(key) for key in ('event_id','timestamp','role','source_url')}],
+            })
+            if right == len(text):
+                break
+    config = {'schema_version': 1, 'lexical_only': True, 'tokenizer': 'ko-bigram-v1',
+              'chunker': 'event-char-windows-v1', 'chunk_size_chars': 300, 'overlap_chars': 40}
+    # Zero-dimensional rows explicitly represent the absence of embeddings.
+    store.save_index(user, session, digest(events), config, chunks, np.empty((len(chunks), 0), dtype=np.float32))
+    return {'events': len(events), 'chunks': len(chunks), 'config': config}
+
+
 def search(store: MemoryStore, user: str, session: str, query: str, *, mode="hybrid", top_k=5, candidates=20, rerank=False):
     import numpy as np
-    from kiwipiepy import Kiwi
     from rank_bm25 import BM25Okapi
 
     if not query.strip() or not 1 <= top_k <= 20 or not 1 <= candidates <= 100:
@@ -207,11 +231,16 @@ def search(store: MemoryStore, user: str, session: str, query: str, *, mode="hyb
     if mode not in {"bm25", "dense", "hybrid"}:
         raise ValueError("Unknown retrieval mode")
     config, chunks, vectors = store.read_index(user, session)
-    kiwi = Kiwi(num_workers=1)
-    def tokens(text):
-        # Retain numbers and negation-bearing verbs/adjectives; avoid noun-only normalization.
-        punctuation = {"SF", "SP", "SS", "SSO", "SSC", "SE", "SO", "SW"}
-        return [token.form.lower() for token in kiwi.tokenize(text) if not token.tag.startswith(("J", "E")) and token.tag not in punctuation]
+    if config.get('lexical_only'):
+        if mode != 'bm25' or rerank:
+            raise ValueError('This lexical-only index supports bm25 without reranking; build a full index for dense/hybrid')
+        from .lexical import tokens
+    else:
+        from kiwipiepy import Kiwi
+        kiwi = Kiwi(num_workers=1)
+        def tokens(text):
+            punctuation = {"SF", "SP", "SS", "SSO", "SSC", "SE", "SO", "SW"}
+            return [token.form.lower() for token in kiwi.tokenize(text) if not token.tag.startswith(("J", "E")) and token.tag not in punctuation]
     lexical = np.zeros(len(chunks))
     sparse_rank = []
     if mode != "dense":

@@ -240,7 +240,7 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
               max_steps=12, max_tool_calls=8, timeout=120, max_input_bytes=None,
               trace_dir="data/private/traces", enable_web=True, tool_workers=3,
               web_tool_format=None, enable_read=True, history=None, prior_sources=None,
-              completion_protocol="native"):
+              completion_protocol="native", recalled_memory=None, context_info=None, prior_memory_ids=None):
     if not isinstance(query, str) or not query.strip():
         raise ValueError("Query must be non-empty")
     if completion_protocol not in {"native", "explicit", "legacy"}:
@@ -271,8 +271,13 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
         tools = [tool for tool in tools if tool['function']['name'] in WEB_TOOLS]
     if not enable_web:
         system += "\n이 요청에서는 웹검색이 비활성화되어 있다. 웹을 조회했다고 말하지 않는다."
+    recalled_memory = recalled_memory or {'hits': []}
+    recall_text = ('\n관련 과거 원문 검색 결과(과거 기록이며 현재 사실 검증이 아님):\n' + canonical(recalled_memory)
+                   if recalled_memory.get('hits') else '')
+    if summary:
+        system += '\n현재 요약에는 누락·오류가 있을 수 있다. 과거 원문과 최신 사용자 정정을 우선하고, 과거 assistant 발언을 검증된 사실로 취급하지 않는다.'
     messages = [{"role": "system", "content": system}, *(history or []),
-                {"role": "user", "content": f"현재 요약:\n{summary}\n질문:\n{query}"}]
+                {"role": "user", "content": f"현재 요약:\n{summary}{recall_text}\n질문:\n{query}"}]
     deadline = time.perf_counter() + timeout
     model_calls = tool_calls = 0
     citation_repairs = 0
@@ -280,6 +285,8 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
     prompt_tokens = output_tokens = 0
     web_sources = {source['id']:dict(source) for source in (prior_sources or [])}
     evidence_ids = set(web_sources)
+    evidence_ids.update(prior_memory_ids or [])
+    evidence_ids.update(hit['id'] for hit in recalled_memory.get('hits', []))
     web_attempted = web_performed = False
     seen = set()
     force_final = False
@@ -293,6 +300,10 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
                limits={"max_steps": max_steps, "max_tool_calls": max_tool_calls,
                        "timeout": timeout, "max_input_bytes": max_input_bytes, "tool_workers": tool_workers},
                options={**options, "think": False}, completion_protocol=completion_protocol)
+    if context_info is not None:
+        trace.emit('context_prepared', **context_info)
+    if summary:
+        trace.emit('memory_recalled', query=query, result=recalled_memory)
 
     def finish(status, answer="", **extra):
         citations = CITATIONS.findall(answer)
