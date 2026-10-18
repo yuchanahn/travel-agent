@@ -31,7 +31,7 @@ class ContextTests(unittest.TestCase):
             chat([{"role": "user", "content": "안녕"}], model="test", base_url="http://localhost", timeout=1)
         body = json.loads(http.call_args.args[0].data)
         self.assertEqual(body["options"]["num_ctx"], 65536)
-        self.assertEqual(body["options"]["num_predict"], 1024)
+        self.assertEqual(body["options"]["num_predict"], 4096)
 
     def test_recall_uses_same_config_and_accepts_summary_larger_than_old_budget(self):
         hit = {"chunk_id": "m-abcdef", "timestamp": "2026-10-18T00:00:00+09:00", "text": "합성 근거", "events": []}

@@ -4,6 +4,10 @@
 
 노션 허브: https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f
 
+- [056: 출력4096·행동 지침·네이티브 종료 적용](2026-10-19-056-native-output-and-action-prompt.md) — 182개 테스트, 실제 공개2질의 검색 왕복; 관람시간 답변은 본문 미조회·근거 없는 정보·인용 누락으로 실패
+
+056 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e81179b46e69e47b7f282
+
 - [055: finish 도입 폐기와 다음 개선 순서](2026-10-19-055-drop-finish-and-improvement-plan.md) — 최종 도구 후보·비교 취소, 네이티브 기준선과 근거 확보/활용 실패 분리 제안; 런타임 변경 없음
 
 055 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e81099da8cb8a1d76a1ef

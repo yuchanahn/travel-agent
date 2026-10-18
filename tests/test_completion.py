@@ -32,6 +32,7 @@ class CompletionTests(unittest.TestCase):
         self.assertEqual(new['answer'],'질문이 필요합니다.')
 
     def run_fixture(self,replies,**kwargs):
+        kwargs.setdefault('completion_protocol', 'explicit')
         with TemporaryDirectory() as folder, MemoryStore(Path(folder)/'db') as store:
             self.requests=[]
             def model(messages,**options):
@@ -97,3 +98,32 @@ class CompletionTests(unittest.TestCase):
     def test_invalid_protocol_is_rejected(self):
         with self.assertRaises(ValueError):
             self.run_fixture(reply('unused'),completion_protocol='unknown')
+
+    def test_native_finishes_without_tags_or_repair_calls(self):
+        source={'id':'web:1234567890abcdef','url':'https://example.org','title':'fixture','page_fetched':False}
+        r=self.run_fixture(reply('확인할 수 없습니다.'),completion_protocol='native',prior_sources=[source])
+        self.assertEqual((r['status'],r['model_calls'],r['continuation_requests']),('completed',1,0))
+        self.assertEqual((r['evidence_review_attempts'],r['citation_repair_attempts']),(0,0))
+        self.assertEqual(r['citation_status'],'missing')
+        self.assertNotIn('종료 프로토콜:',self.requests[0][0]['content'])
+
+    def test_native_executes_tool_and_returns_plain_answer(self):
+        call={'id':'native-call','function':{'name':'web_search','arguments':{'query':'public example','top_k':1}}}
+        with patch('travel_agent.agent.execute_tool',return_value={'hits':[]}):
+            r=self.run_fixture([reply(calls=[call]),reply('찾지 못했습니다.')],completion_protocol='native')
+        self.assertEqual((r['status'],r['model_calls'],r['tool_calls']),('completed',2,1))
+        self.assertEqual(self.requests[1][-1]['tool_call_id'],'native-call')
+
+    def test_native_budget_finalization_is_not_completed(self):
+        call={'function':{'name':'web_search','arguments':{'query':'public example'}}}
+        with patch('travel_agent.agent.execute_tool',return_value={'hits':[]}):
+            r=self.run_fixture([reply(calls=[call]),reply('한도 내 확인 결과입니다.')],completion_protocol='native',max_steps=2)
+        self.assertEqual((r['status'],r['model_calls']),('step_limit',2))
+        self.assertTrue(r['finalization_for_budget'])
+
+    def test_default_protocol_is_native(self):
+        with TemporaryDirectory() as folder, MemoryStore(Path(folder)/'db') as store:
+            with patch('travel_agent.agent.chat',return_value=reply('안녕하세요.')) as model:
+                result=run_agent(store,'public','fixture','안녕',trace_dir=Path(folder)/'trace')
+        self.assertEqual(result['completion_protocol'],'native')
+        self.assertEqual(model.call_count,1)

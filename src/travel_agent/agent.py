@@ -66,6 +66,10 @@ def final_answer(content):
     return match[1].strip()
 
 SYSTEM = """너는 여행 준비를 돕는 한국어 에이전트다.
+사용자가 요청한 조사·비교·추천 결과를 제공하는 것이 목표다. 필요한 확인을 현재 도구로 수행할 수 있으면 '검색하겠다'는 예고나 사용자에게 대신 확인하라는 안내로 끝내지 말고 실제 tool_calls로 실행한다.
+도구 결과를 받은 뒤 사용자 조건에 필요한 근거가 충분한지 판단한다. 부족한 근거를 다른 검색어나 출처 읽기로 확보할 수 있으면 다음 도구 행동을 선택한다. 같은 조회를 무조건 반복하지 않는다.
+날짜·인원 등 사용자만 정할 수 있는 필수 조건이 빠졌으면 필요한 질문을 한다. 접근 실패·새 근거 없음·도구의 한계로 확인할 수 없으면 확보한 결과와 미확인 이유를 설명한다. 모든 항목을 확인할 때까지 무한 조사하지 않는다.
+최종 답변이나 필요한 질문은 일반 답변으로 전달한다. 도구를 실행하지 않은 채 실행했다고 말하지 않는다.
 현재 질문과 제공된 요약으로 답할 수 있으면 바로 답한다. 인사·일반 설명에는 기억 검색이 필요 없다.
 과거에 정한 조건·이유·발언이 필요하고 현재 문맥에 없으면 memory_search를 사용한다.
 현재 질문에 새로 주어진 조건은 과거 기억이 아니므로 그 조건을 확인하려고 memory_search를 쓰지 않는다.
@@ -236,11 +240,11 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
               max_steps=12, max_tool_calls=8, timeout=120, max_input_bytes=None,
               trace_dir="data/private/traces", enable_web=True, tool_workers=3,
               web_tool_format=None, enable_read=True, history=None, prior_sources=None,
-              completion_protocol="explicit"):
+              completion_protocol="native"):
     if not isinstance(query, str) or not query.strip():
         raise ValueError("Query must be non-empty")
-    if completion_protocol not in {"explicit", "legacy"}:
-        raise ValueError("completion_protocol must be explicit or legacy")
+    if completion_protocol not in {"native", "explicit", "legacy"}:
+        raise ValueError("completion_protocol must be native, explicit or legacy")
     if not 1 <= max_steps <= 12 or not 1 <= max_tool_calls <= 20 or not 0 < timeout <= 600:
         raise ValueError("Limits: max_steps 1..12, max_tool_calls 1..20, timeout 0..600 seconds")
     max_input_bytes = input_byte_limit() if max_input_bytes is None else max_input_bytes
@@ -379,6 +383,8 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
                 continue
             if not assistant["content"].strip():
                 return finish("empty_answer")
+            if completion_protocol == 'native':
+                return finish(budget_stop if final_turn else 'completed', assistant['content'])
             if not final_turn and web_sources and not any(s.get('page_fetched') for s in web_sources.values()) and evidence_reviews == 0 and step < max_steps:
                 evidence_reviews += 1
                 feedback = ("최종 답변 전 근거 확인: 현재 받은 웹 자료는 검색 요약뿐이고 본문 읽기 성공은 0건입니다. "

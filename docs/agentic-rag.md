@@ -2,11 +2,11 @@
 
 ## 두 경로의 차이
 
-053부터 모델 호출 기본 한도는 최종 정리를 포함해12회다(이전6회). Python 호출·CLI·웹 화면에 공통 적용한다. 도구 호출 기본8회와 웹 요청 시간180초, 생성 컨텍스트65536·출력1024 설정은 그대로다. 재요청도 모델 호출 횟수에 포함되며 다른 한도에 먼저 도달하면12회 전에 멈출 수 있다.
+056부터 출력 기본 상한은4096토큰이다(이전1024). 모델 호출 최대12회·도구 호출8회·웹180초·컨텍스트65536은 유지한다. Python·2-Step·CLI·웹이 공통 생성 설정을 사용한다. 실제 생성량이 항상4096인 것은 아니다.
 
-052부터 기본 종료 프로토콜은 명시적 `<final>답변</final>`이다. 일반 텍스트는 진행 설명으로 보존하고 다음 행동을 모델에 다시 요청한다. 모델이 도구 호출을 선택하면 실행하고, 유효한 최종 태그를 선택하면 내부 태그를 제외한 답변으로 종료한다. 하네스는 답변의 충분함을 판정하지 않으며 기존 본문 검토·인용 수정 자동 재요청은 기본 경로에서 사용하지 않는다. 실제 인용 ID 상태는 계속 보고한다. `completed`는 모델의 자발적 종료이지 답변 품질 통과가 아니다.
+056부터 기본 completion_protocol은native다. 실제 tool_calls가 있으면 실행하고 결과를 다시 모델에 전달하며 도구 호출 없는 일반 답변이면 종료한다. 최종 태그·finish 도구·본문 검토 및 인용 수정 재요청을 기본 경로에서 요구하지 않는다. 인용 상태는 보고하며 completed는 품질 통과가 아니다. 실행 가능한 추가 확인은 실제 도구로 수행하고, 필수 사용자 조건이 없으면 질문하며 외부 한계는 설명하도록 시스템 지침을 보강했다.
 
-시간·입력·출력·모델/도구 호출 제한은 유지한다. 한도 때문에 마지막 답변을 요청한 경우에는 태그가 있어도 `step_limit`·`tool_limit`로 구분한다. `continuation_requested`·`completion_signal`과 요청 횟수·종료 신호 여부를 trace와 웹 실행 과정에서 볼 수 있다. `completion_protocol="legacy"`는 이전 실행과 통제 비교를 위한 Python 호출 옵션이며 CLI·웹의 기본은explicit이다.
+시간·입력·출력·모델/도구 호출 제한은 유지한다. 한도 때문에 마지막 답변을 요청하면 step_limit·tool_limit로 구분한다. explicit 태그 방식과 legacy 보완 재요청 방식은 과거 비교 재현용 Python 옵션이다. native에는 태그 신호가 없으므로 completion_signal_received=false가 정상이며 실패 지표로 해석하지 않는다.
 
 기존 `memory answer`는 프로그램이 먼저 검색하고 근거를 넣어 생성하는 2-Step RAG다. 새 `memory agent`는 모델이 검색 필요성과 질의를 선택한다. 둘 다 검색 결과는 결국 생성 입력 문맥에 들어간다. RAG 자체가 tool calling을 요구하는 것은 아니다.
 
@@ -71,7 +71,7 @@ travel-agent trace show REQUEST_ID
 travel-agent memory --user demo --session trip agent "최신 예산은?" --max-steps 4 --max-tool-calls 3 --timeout 90
 ```
 
-Ollama 호출은 `AGENT_CONTEXT_TOKENS`를 읽으며 기본 `num_ctx=65536`이다. Agentic과 2-Step answer가 공통 설정을 사용한다. 앱의 바이트 제한은 별도로 `AGENT_MAX_INPUT_BYTES`(기본196608), 에이전트 CLI의 `--max-input-bytes`로 조정한다. 기존 10000바이트 기본값과 12000바이트 상한은 제거했다. 바이트는 정확한 Qwen 토큰 수가 아니므로 설정한 num_ctx에 항상 맞는다는 보장은 없다. 앱의 바이트 한도를 넘으면 `context_limit`으로 중단한다. 생성 출력은 기본1024토큰이며 AGENT_MAX_OUTPUT_TOKENS(128~8192)로 조정한다. 길이 종료는 `output_limit`으로 구분한다. `.env`는 자동으로 읽지 않으므로 환경변수는 실행할 터미널에 설정한다.
+Ollama 호출은 `AGENT_CONTEXT_TOKENS`를 읽으며 기본 `num_ctx=65536`이다. Agentic과 2-Step answer가 공통 설정을 사용한다. 앱의 바이트 제한은 별도로 `AGENT_MAX_INPUT_BYTES`(기본196608), 에이전트 CLI의 `--max-input-bytes`로 조정한다. 기존 10000바이트 기본값과 12000바이트 상한은 제거했다. 바이트는 정확한 Qwen 토큰 수가 아니므로 설정한 num_ctx에 항상 맞는다는 보장은 없다. 앱의 바이트 한도를 넘으면 `context_limit`으로 중단한다. 생성 출력은 기본4096토큰이며 AGENT_MAX_OUTPUT_TOKENS(128~8192)로 조정한다. 길이 종료는 `output_limit`으로 구분한다. 호스트Python은`.env`를 자동으로 읽지 않으므로 환경변수는 실행할 터미널에 설정한다. Docker Compose는`.env`의명시값이 기본값보다 우선한다.
 
 시간 예산은 요청 전·모델 응답 후·도구 단계 경계에서 검사하고 남은 시간을 HTTP timeout에 전달한다. CPU 모델 로딩이나 동기 검색 실행을 강제 중단하는 hard deadline은 아니다. 한 단계가 오래 걸리면 실제 종료가 예산보다 늦을 수 있다.
 
