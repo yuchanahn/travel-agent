@@ -4,6 +4,10 @@
 
 노션 허브: https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f
 
+- [051: 텍스트 응답과 작업 완료를 분리하는 종료 설계](2026-10-19-051-explicit-completion-design.md) — 실제4회 모델·검색2회·본문0회 진단, 명시적 종료 계약과 하네스 검사 제안, 아직 미구현
+
+051 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e818e8d30dccfe7aec5ca
+
 - [050: 눈부심을 줄이는 다크모드](2026-10-19-050-dark-mode.md) — 기본 다크·테마 전환·선택 저장, 데스크톱/모바일 확인
 
 050 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e814fb7a1f7ee3452c614
