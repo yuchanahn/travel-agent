@@ -32,6 +32,10 @@
 
 ## 인덱스
 
+- [040: 블로그는 읽을 수 있나 — 검색 실패와 본문 읽기 분리 검증](2026-10-18-040-blog-reading-validation.md) — Bing RSS2질의는 무관한 후보, 별도 확보한 티스토리2개·네이버 글1개는 현 수집기로 본문 추출 성공
+
+040 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e81e1964ecdddb7a3f54e
+
 - [039: 명소 정보는 어디에서 빠졌나 — 원본·추출·전달 단계 진단](2026-10-18-039-page-acquisition-audit.md) — 관광공사 HTML·추출·발췌 대조, 추가 JS 데이터 경로 미수집 확인, 런타임 수정 없음
 
 039 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e8167a9e6f581e33832a8
