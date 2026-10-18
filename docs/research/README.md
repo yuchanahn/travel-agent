@@ -4,6 +4,10 @@
 
 노션 허브: https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f
 
+- [048: 입력창을 아래에 둔 대화 화면](2026-10-19-048-bottom-chat-composer.md) — 하단 입력창·독립 스크롤·말풍선·접힌 실행 과정·모바일 메뉴, 브라우저 검증
+
+048 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e81d0a95cd3ac653dcffd
+
 - [047: 검색하겠다는 문장과 실제 도구 호출은 다르다](2026-10-19-047-text-intent-without-tool-call.md) — 실제 trace 진단: stop·478토큰·툴콜0회, 출력 한도와 자연어 행동 예고를 구분
 
 047 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e813c86dcc98e24b562c3
