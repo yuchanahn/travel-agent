@@ -15,6 +15,14 @@ def reply(content='',calls=None,reason='stop'):
 
 
 class CompletionTests(unittest.TestCase):
+    def test_default_allows_seventh_call_and_stops_at_twelve(self):
+        r=self.run_fixture([reply('진행합니다.')]*6+[reply('<final>일곱 번째 호출에서 완료.</final>')])
+        self.assertEqual((r['status'],r['model_calls']),('completed',7))
+        self.assertFalse(r['finalization_for_budget'])
+        limited=self.run_fixture(reply('진행합니다.'))
+        self.assertEqual((limited['status'],limited['model_calls']),('step_limit',12))
+        self.assertEqual(self.events[0]['limits']['max_steps'],12)
+
     def test_same_progress_text_finishes_legacy_but_not_explicit(self):
         old=self.run_fixture(reply('검색을 진행하겠습니다.'),completion_protocol='legacy')
         new=self.run_fixture([reply('검색을 진행하겠습니다.'),reply('<final>질문이 필요합니다.</final>')])

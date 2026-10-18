@@ -233,7 +233,7 @@ def execute_batch(calls, *, store, user, session, mode, rerank, seen, enable_web
 
 
 def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=False,
-              max_steps=6, max_tool_calls=8, timeout=120, max_input_bytes=None,
+              max_steps=12, max_tool_calls=8, timeout=120, max_input_bytes=None,
               trace_dir="data/private/traces", enable_web=True, tool_workers=3,
               web_tool_format=None, enable_read=True, history=None, prior_sources=None,
               completion_protocol="explicit"):

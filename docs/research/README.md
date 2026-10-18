@@ -4,6 +4,10 @@
 
 노션 허브: https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f
 
+- [053: 모델 호출 기본 한도를6회에서12회로 늘리다](2026-10-19-053-model-call-budget-twelve.md) — Python·CLI·웹 기본값 통일,7회째 완료·12회 상한 검증,178개 테스트
+
+053 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e8178a7bbd1c9bc96457b
+
 - [052: 종료 판단은 모델에 두고 명시적 최종 신호를 받는다](2026-10-19-052-explicit-final-protocol.md) — 진행 텍스트 재요청·final 태그·한도 상태 분리, 실제 동일3질의6회 비교에서 조회2개는 새 방식 한도 종료,177개 테스트
 
 052 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e81eaa612d527e9273386

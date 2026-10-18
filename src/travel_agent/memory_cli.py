@@ -33,7 +33,7 @@ def add_parser(subparsers):
         if command in {"answer", "agent"}:
             action.add_argument("--summary", type=Path, help="Optional current compressed summary; original memory remains separate")
         if command == "agent":
-            action.add_argument("--max-steps", type=int, default=6, help="Maximum model calls including final answer")
+            action.add_argument("--max-steps", type=int, default=12, help="Maximum model calls including final answer")
             action.add_argument("--max-tool-calls", type=int, default=8)
             action.add_argument("--timeout", type=float, default=120)
             action.add_argument("--max-input-bytes", type=int, default=None,
