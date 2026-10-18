@@ -281,8 +281,17 @@ def handler_for(manager):
                     return False
                 parsed.port  # Reject malformed ports.
                 origin=self.headers.get('Origin')
-                return origin is None or origin=='http://'+host
-            except ValueError:
+                allowed = { 'http://'+host }
+                # Opt-in exact public origin for a separately authenticated
+                # tunnel instance. Host rewriting must still pass the local check.
+                origin_file = os.environ.get('WEB_PUBLIC_ORIGIN_FILE')
+                if origin_file:
+                    public_origin = Path(origin_file).read_text(encoding='utf-8').strip()
+                    public = urlsplit(public_origin)
+                    if public.scheme == 'https' and public.netloc and not public.path and not public.query and not public.fragment and not public.username:
+                        allowed.add(public_origin)
+                return origin is None or origin in allowed
+            except (ValueError, OSError):
                 return False
 
         def _send(self,status,value,kind='application/json; charset=utf-8'):

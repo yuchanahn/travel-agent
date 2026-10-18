@@ -4,6 +4,8 @@ Docker 웹 화면에서 기존 run_agent에 직접 질문을 보낸다. 실제 O
 
 ## 실행
 
+058에서 ngrok 공유용 인스턴스를 별도로 띄웠다. 기존 로컬 기록과 다른 컨테이너·볼륨을 사용하며 HTTPS Basic Auth로 보호한다. WEB_PUBLIC_ORIGIN_FILE에 적힌 정확한HTTPS Origin만 추가 허용하며 Host rewrite 뒤에도 로컬Host 검사를 유지한다. 인증정보와 현재 주소는 Git 제외data/private/share/access.json에 있다. 공유 계정 접속자는 공유 공간의 대화 목록을 함께 보며 개별 사용자 인증은 아니다. 중지는 scripts/stop_share.ps1이다. 자세한 검증은 [058](research/2026-10-19-058-ngrok-share.md)을 따른다.
+
 호스트 Ollama가 실행 중이어야 한다. Brave 키 한 줄은 Git 제외 파일 data/private/brave-api-key에 둔다. 기존 로컬 키를 그대로 사용하며 Docker에는 읽기 전용 secret으로 전달한다.
 
 ```powershell

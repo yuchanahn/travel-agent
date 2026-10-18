@@ -4,6 +4,10 @@
 
 노션 허브: https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f
 
+- [058: ngrok 외부 공유·기존 기록 분리](2026-10-19-058-ngrok-share.md) — 별도 공유 컨테이너·볼륨·Basic Auth, 정확한Origin 허용, 실제 외부 질문·답변,192개 테스트
+
+058 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e81dd8068fd65c2aea671
+
 - [057: 웹 원본 메모리·요약·RAG 연결과 실제 비교](2026-10-19-057-web-session-memory.md) — 191개 테스트, 실제4턴·요약1회·손실 요약2조건 비교; 분기 격리·자동 색인·원문 근거 주입
 
 057 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e8108848ddab1a33a019d

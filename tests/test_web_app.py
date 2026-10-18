@@ -1,6 +1,7 @@
 """Local API isolation, bounded execution and public event projection; no live model."""
 from http.client import HTTPConnection
 import json
+import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from threading import Event, Thread
@@ -51,6 +52,17 @@ class WebAppTests(unittest.TestCase):
                             {'query':'hi','base_url':'https://attacker.invalid'}]:
                 self.assertEqual(self.request('POST','/api/runs',payload)[0],400)
         model.assert_not_called()
+
+    def test_public_tunnel_allows_only_exact_https_origin_with_local_host(self):
+        origin_file=Path(self.temp.name)/'public-origin'
+        origin_file.write_text('https://example.ngrok-free.app',encoding='utf-8')
+        with patch.dict(os.environ,{'WEB_PUBLIC_ORIGIN_FILE':str(origin_file)}):
+            self.assertEqual(self.request('GET','/api/runs',headers={'Origin':'https://example.ngrok-free.app'})[0],200)
+            for origin in ['https://attacker.invalid','https://example.ngrok-free.app.attacker.invalid','http://example.ngrok-free.app']:
+                self.assertEqual(self.request('GET','/api/runs',headers={'Origin':origin})[0],403)
+            self.assertEqual(self.request('GET','/api/runs',headers={'Host':'example.ngrok-free.app'})[0],403)
+            origin_file.unlink()
+            self.assertEqual(self.request('GET','/api/runs')[0],403)
 
     def test_continuation_uses_server_trace_and_persisted_parent(self):
         parent_id='b'*32
