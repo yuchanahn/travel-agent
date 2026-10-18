@@ -4,6 +4,10 @@
 
 노션 허브: https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f
 
+- [061: 숙박·투어 검색 MCP 후보 조사](2026-10-19-061-lodging-tour-mcp-candidates.md) — OpenBnB·WinWin·GetYourGuide·Viator 소스 조사, 가입·크레딧 의존 구분; 설치·검색 검증 전
+
+061 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e8170951bd0309c2cfafc
+
 - [060: TourAPI 도입 취소와 MCP 범위 정리](2026-10-19-060-drop-tourapi.md) — 키 발급 후속 취소·빈 서버 설정 확인, 기존 검색과 MCP 기반 유지
 
 060 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e8158b232d4ead08071bd
