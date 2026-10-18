@@ -52,6 +52,35 @@ class WebAppTests(unittest.TestCase):
                 self.assertEqual(self.request('POST','/api/runs',payload)[0],400)
         model.assert_not_called()
 
+    def test_continuation_uses_server_trace_and_persisted_parent(self):
+        parent_id='b'*32
+        folder=Path(self.temp.name)/parent_id/'traces';folder.mkdir(parents=True)
+        messages=[{'role':'system','content':'old system'},
+                  {'role':'user','content':'two people, budget 250000'},
+                  {'role':'assistant','tool_calls':[{'id':'old-call'}]},
+                  {'role':'tool','tool_call_id':'old-call','content':'retrieved evidence'}]
+        (folder/'trace.jsonl').write_text(json.dumps({'kind':'model_start','messages':messages})+'\n',encoding='utf-8')
+        source={'id':'web:1234567890abcdef','url':'https://example.org','title':'fixture'}
+        parent={'id':parent_id,'query':'two people, budget 250000','state':'done','created_at':'test',
+                'result':{'status':'completed','answer':'previous answer','web_sources':[source]}}
+        self.manager._save(parent)  # Parent need not be in the recent in-memory list.
+        captured={}
+        def agent(*args,**kwargs):
+            captured.update(kwargs)
+            return {'status':'completed','answer':'continued answer'}
+        with patch('travel_agent.web_app.run_agent',side_effect=agent):
+            status,body,_=self.request('POST','/api/runs',{'query':'change to rain','parent_id':parent_id})
+            self.assertEqual(status,202)
+            run_id=json.loads(body)['id']
+            self.manager.pool.shutdown(wait=True)
+        self.assertEqual(captured['history'],messages[1:]+[{'role':'assistant','content':'previous answer'}])
+        self.assertEqual(captured['prior_sources'],[source])
+        snapshot=self.manager.snapshot(run_id)
+        self.assertEqual([t['query'] for t in snapshot['conversation']],['two people, budget 250000','change to rain'])
+        self.assertNotIn('retrieved evidence',json.dumps(snapshot))
+        for parent_id in ['../secret','f'*32]:
+            self.assertEqual(self.request('POST','/api/runs',{'query':'hi','parent_id':parent_id})[0],400)
+
     def test_job_reaches_real_runner_interface_and_survives_reload(self):
         ready=Event()
         def agent(store,user,session,query,**kwargs):

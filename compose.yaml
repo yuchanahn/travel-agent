@@ -3,7 +3,7 @@ services:
   web:
     build: .
     ports:
-      - "127.0.0.1::8000"
+      - "127.0.0.1:${WEB_UI_PORT:-}:8000"
     environment:
       TZ: Asia/Seoul
       OLLAMA_BASE_URL: http://host.docker.internal:11434

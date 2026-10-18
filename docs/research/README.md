@@ -4,6 +4,10 @@
 
 노션 허브: https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f
 
+- [046: 조건을 수정하며 이어서 질문하는 대화](2026-10-19-046-web-conversations.md) — 이전 메시지·도구 결과·출처 전달, 새 대화·복원, 실제 예산 정정 검증
+
+046 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e8187addffd6af78f7e82
+
 - [045: 직접 질문하고 실제 실행을 확인하는 로컬 웹 화면](2026-10-19-045-local-web-interface.md) — Docker 빈 로컬 포트, 실제 모델·검색 연결, 브라우저·복원·모바일 검증
 
 045 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e8134ae5dfa72566d7bc0

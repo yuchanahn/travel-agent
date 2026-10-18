@@ -31,6 +31,21 @@ def event(event_id="e1", content="환승 부담으로 강릉 제외"):
 
 
 class AgentTests(unittest.TestCase):
+    def test_conversation_history_and_source_ids_reach_next_model(self):
+        history=[{'role':'user','content':'budget 250000'},
+                 {'role':'assistant','content':'previous answer'}]
+        source={'id':'web:1234567890abcdef','title':'fixture','url':'https://example.org','page_fetched':True}
+        captured=[]
+        def model(messages,**kwargs):
+            captured.extend(copy.deepcopy(messages))
+            return reply('기존 근거입니다. [web:1234567890abcdef]')
+        with patch('travel_agent.agent.chat',side_effect=model):
+            result=self.run_agent(history=history,prior_sources=[source])
+        self.assertEqual(captured[1:3],history)
+        self.assertEqual(history[0]['content'],'budget 250000')
+        self.assertEqual(result['citation_status'],'valid')
+        self.assertEqual(result['web_sources'][0]['id'],source['id'])
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.traces = Path(self.temp.name) / "traces"

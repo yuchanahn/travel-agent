@@ -17,7 +17,7 @@
     <div class="workspace">
       <aside>
         <section class="card composer">
-          <div class="section-heading"><h2>새로운 질문</h2><span class="subtle">독립 실행</span></div>
+          <div class="section-heading"><h2 id="composer-title">새 대화</h2><button id="new-chat" class="text-button" type="button">새 대화</button></div>
           <form id="question-form">
             <label for="question" class="sr-only">에이전트에게 보낼 질문</label>
             <textarea id="question" name="question" maxlength="4000" placeholder="어디로, 누구와 여행하나요?&#10;예산과 이동 조건도 함께 알려주세요." required></textarea>
@@ -26,7 +26,7 @@
             <p id="form-error" class="error" role="alert" hidden></p>
             <button id="send" class="primary" type="submit">질문 보내기 <span>↗</span></button>
           </form>
-          <p class="independent-note">이전 질문은 자동으로 이어지지 않습니다. 필요한 조건을 이번 질문에 함께 적어주세요.</p>
+          <p class="independent-note" id="conversation-note">첫 질문으로 새 대화를 시작합니다. 답변이 끝나면 이어서 질문할 수 있습니다.</p>
           <details class="presets"><summary>이전 검증 질문 불러오기 <span>＋</span></summary><div id="presets"></div></details>
         </section>
         <section class="card recent"><div class="section-heading"><h2>최근 실행</h2><span id="run-count" class="subtle">0</span></div><div id="history"><p class="muted small">아직 실행 기록이 없습니다.</p></div></section>
@@ -37,6 +37,7 @@
           <div class="result-top"><div><span id="state" class="state idle">실행 대기</span><span id="elapsed" class="elapsed"></span></div><button id="copy" class="text-button" hidden>답변 복사</button></div>
           <div id="empty-state" class="empty-state"><div class="empty-symbol">↗</div><h2>첫 질문을 보내보세요.</h2><p>모델의 답변이 이곳에 표시됩니다.<br>검색어와 도구 결과도 직접 확인할 수 있어요.</p><div class="empty-flow"><span>질문</span><b>→</b><span>판단과 도구 사용</span><b>→</b><span>답변</span></div></div>
           <div id="run-content" hidden>
+            <div id="conversation" aria-label="이전 대화"></div>
             <div class="asked-question"><span>이번 질문</span><p id="asked-text"></p></div>
             <div id="progress" class="progress" role="status"><span class="spinner"></span><span id="progress-text">실행 준비 중</span></div>
             <div id="answer" class="prose" aria-live="polite"></div>

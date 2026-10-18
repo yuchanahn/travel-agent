@@ -222,7 +222,7 @@ def execute_batch(calls, *, store, user, session, mode, rerank, seen, enable_web
 def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=False,
               max_steps=6, max_tool_calls=8, timeout=120, max_input_bytes=None,
               trace_dir="data/private/traces", enable_web=True, tool_workers=3,
-              web_tool_format=None, enable_read=True):
+              web_tool_format=None, enable_read=True, history=None, prior_sources=None):
     if not isinstance(query, str) or not query.strip():
         raise ValueError("Query must be non-empty")
     if not 1 <= max_steps <= 12 or not 1 <= max_tool_calls <= 20 or not 0 < timeout <= 600:
@@ -249,15 +249,15 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
         tools = [tool for tool in tools if tool['function']['name'] in WEB_TOOLS]
     if not enable_web:
         system += "\n이 요청에서는 웹검색이 비활성화되어 있다. 웹을 조회했다고 말하지 않는다."
-    messages = [{"role": "system", "content": system},
+    messages = [{"role": "system", "content": system}, *(history or []),
                 {"role": "user", "content": f"현재 요약:\n{summary}\n질문:\n{query}"}]
     deadline = time.perf_counter() + timeout
     model_calls = tool_calls = 0
     citation_repairs = 0
     evidence_reviews = 0
     prompt_tokens = output_tokens = 0
-    evidence_ids = set()
-    web_sources = {}
+    web_sources = {source['id']:dict(source) for source in (prior_sources or [])}
+    evidence_ids = set(web_sources)
     web_attempted = web_performed = False
     seen = set()
     force_final = False

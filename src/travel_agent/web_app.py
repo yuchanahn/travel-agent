@@ -1,4 +1,4 @@
-"""Loopback-only development UI over the real agent; requests are independent."""
+"""Loopback-only development UI with server-owned conversation continuations."""
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
@@ -83,12 +83,56 @@ class RunManager:
         temporary.write_text(json.dumps(job,ensure_ascii=False),encoding='utf-8')
         temporary.replace(folder/'run.json')
 
-    def submit(self,query,enable_web):
+    def _job(self,run_id):
+        if not isinstance(run_id,str) or not RUN_ID.fullmatch(run_id):
+            raise ValueError('대화 실행 ID가 올바르지 않습니다.')
+        if run_id in self.jobs:
+            return self.jobs[run_id]
+        try:
+            return json.loads((self.directory/run_id/'run.json').read_text(encoding='utf-8'))
+        except (OSError,ValueError):
+            raise ValueError('이전 대화를 찾을 수 없습니다.')
+
+    def conversation(self,job):
+        turns=[]
+        seen=set()
+        while job:
+            if job['id'] in seen or len(seen)>=100:
+                raise ValueError('대화 길이 한도에 도달했습니다. 새 대화를 시작해주세요.')
+            seen.add(job['id'])
+            turns.append({'id':job['id'],'query':job['query'],
+                          'answer':job.get('result',{}).get('answer',''),'state':job['state']})
+            job=self._job(job['parent_id']) if job.get('parent_id') else None
+        return list(reversed(turns))
+
+    def continuation(self,parent):
+        messages=None
+        for path in (self.directory/parent['id']/'traces').glob('*.jsonl'):
+            for line in path.read_text(encoding='utf-8').splitlines():
+                event=json.loads(line)
+                if event['kind']=='model_start':
+                    messages=event['messages']
+        if messages is None:
+            raise ValueError('이전 대화의 모델 입력 기록을 찾을 수 없습니다.')
+        return [m for m in messages if m['role']!='system']+[
+            {'role':'assistant','content':parent['result']['answer']}]
+
+    def submit(self,query,enable_web,parent_id=None):
         if not isinstance(query,str) or not query.strip() or len(query)>4000 or type(enable_web) is not bool:
             raise ValueError('질문은1~4000자, 웹검색 설정은 true/false여야 합니다.')
+        if parent_id is not None:
+            with self.lock:
+                parent=self._job(parent_id)
+                if parent['state']!='done' or parent.get('result',{}).get('status')!='completed':
+                    raise ValueError('이전 답변이 정상 완료된 뒤 이어서 질문해주세요.')
+                if len(self.conversation(parent))>=100:
+                    raise ValueError('대화 길이 한도에 도달했습니다. 새 대화를 시작해주세요.')
+                self.continuation(parent)
         if not self.slots.acquire(blocking=False):
             raise RuntimeError('실행 대기열이 가득 찼습니다. 현재 요청이 끝난 뒤 다시 보내주세요.')
         job={'id':uuid4().hex,'query':query.strip(),'enable_web':enable_web,'state':'queued','created_at':now()}
+        if parent_id is not None:
+            job['parent_id']=parent_id
         try:
             with self.lock:
                 self.jobs[job['id']]=job
@@ -111,9 +155,12 @@ class RunManager:
                 job.update(state='running',started_at=now())
                 self._save(job)
             folder=self.directory/run_id
+            parent=self._job(job['parent_id']) if job.get('parent_id') else None
+            continuation={'history':self.continuation(parent),
+                          'prior_sources':parent['result'].get('web_sources',[])} if parent else {}
             with MemoryStore(folder/'memory.sqlite3') as store:
                 result=run_agent(store,'local-web',run_id,job['query'],mode='bm25',
-                                 enable_web=job['enable_web'],trace_dir=folder/'traces',timeout=180)
+                                 enable_web=job['enable_web'],trace_dir=folder/'traces',timeout=180,**continuation)
             with self.lock:
                 job.update(state='done',finished_at=now(),result=public_result(result))
                 self._save(job)
@@ -149,6 +196,7 @@ class RunManager:
                     if projected:
                         events.append(projected)
         result.update(events=events,next_sequence=sequence)
+        result['conversation']=self.conversation(result)
         return result
 
 
@@ -167,7 +215,7 @@ def health():
     except Exception:
         configured=False
     return {'status':'ok','model':model,'ollama':ollama,'brave_configured':configured,
-            'options':generation_options(),'independent_requests':True}
+            'options':generation_options(),'independent_requests':False}
 
 
 def handler_for(manager):
@@ -236,9 +284,9 @@ def handler_for(manager):
                 if not 0<size<=32768:
                     return self._send(413,{'error':'질문이 너무 큽니다.'})
                 payload=json.loads(self.rfile.read(size))
-                if not isinstance(payload,dict) or set(payload)-{'query','enable_web'}:
+                if not isinstance(payload,dict) or set(payload)-{'query','enable_web','parent_id'}:
                     raise ValueError()
-                run_id=manager.submit(payload.get('query'),payload.get('enable_web',True))
+                run_id=manager.submit(payload.get('query'),payload.get('enable_web',True),payload.get('parent_id'))
                 return self._send(202,{'id':run_id})
             except (ValueError,UnicodeError):
                 return self._send(400,{'error':'질문과 웹검색 설정을 확인해주세요.'})
