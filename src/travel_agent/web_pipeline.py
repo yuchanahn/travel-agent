@@ -18,7 +18,7 @@ from uuid import uuid4
 from lxml import html
 from rank_bm25 import BM25Plus
 
-from .web import _request_html, _parse_search_html, _clean_url, WebSearchError
+from .web import _request_html, _parse_search_html, _parse_search_rss, _bing_locale_params, _clean_url, WebSearchError
 from .web_read import fetch_public_page, extract_page
 
 
@@ -167,7 +167,7 @@ def pack_digest(query, sources, max_bytes, summary):
 
 
 def search_evidence(query, *, pages=3, top_k=5, read_pages=5, max_bytes=6000, keep_dir=None, timeout=12,
-                    min_coverage=.25):
+                    min_coverage=.25,serp_format='html',locale='none'):
     if not isinstance(query,str) or not 0 < len(query.strip()) <= 500:
         raise ValueError('Query must contain 1..500 characters')
     if type(pages) is not int or not 1 <= pages <= 10 or type(top_k) is not int or not 1 <= top_k <= 10:
@@ -176,6 +176,9 @@ def search_evidence(query, *, pages=3, top_k=5, read_pages=5, max_bytes=6000, ke
         raise ValueError('Invalid read count, output budget or timeout')
     if not 0 <= min_coverage <= 1:
         raise ValueError('min_coverage must be between 0 and 1')
+    if serp_format not in {'html','rss'}:
+        raise ValueError('serp_format must be html or rss')
+    _bing_locale_params(locale)
     query = query.strip()
     request_id = uuid4().hex
     with TemporaryDirectory(prefix='travel-search-') as temp:
@@ -189,15 +192,17 @@ def search_evidence(query, *, pages=3, top_k=5, read_pages=5, max_bytes=6000, ke
         offset, seen, page_params = 1, set(), {}
         for page in range(1,pages+1):
             event = {'id':uuid4().hex,'tool':'bing_search_http', 'query':query,'page':page,'first':offset,
+                     'response_format':serp_format,'locale':locale,
                      'started_at':datetime.now(timezone.utc).isoformat()}
             try:
-                raw, info = _request_html('bing',query,timeout,**({'first':offset,'page_params':page_params} if page > 1 else {}))
+                raw, info = _request_html('bing',query,timeout,search_format=serp_format,locale=locale,
+                                          **({'first':offset,'page_params':page_params} if page > 1 else {}))
                 event.update(info)
                 event['pagination_param_names'] = sorted(page_params)
-                (directory/f'serp-{page}.html').write_text(raw,encoding='utf-8')
+                (directory/f'serp-{page}.{ "xml" if serp_format=="rss" else "html" }').write_text(raw,encoding='utf-8')
                 if any(s in raw.lower() for s in ('id="b_captcha"','verify you are human')):
                     raise WebSearchError('Access challenge',details={'reason':'access_challenge'})
-                rows = _parse_search_html(raw,'bing')
+                rows = _parse_search_rss(raw,'bing') if serp_format=='rss' else _parse_search_html(raw,'bing')
                 event.update(rows.details)
                 if not rows:
                     report['stop_reason'] = 'empty_or_unparsed'
@@ -210,6 +215,9 @@ def search_evidence(query, *, pages=3, top_k=5, read_pages=5, max_bytes=6000, ke
                     report['stop_reason'] = 'repeated_page'
                     break
                 seen.update(urls)
+                if serp_format=='rss':
+                    report['stop_reason']='feed_limit'
+                    break
                 next_page = next_request(raw,query,offset)
                 if next_page is None:
                     report['stop_reason'] = 'no_next_link'
@@ -277,6 +285,7 @@ def search_evidence(query, *, pages=3, top_k=5, read_pages=5, max_bytes=6000, ke
                 evidence['content_kind'] = 'search_snippet'
             sources.append({**item, **evidence, 'id':'web:'+sha256(item['url'].encode()).hexdigest()[:16]})
         summary = {'collected':len(report['raw_rows']),'groups':len(groups), 'shortlisted':len(shortlist),
+                   'response_format':serp_format,'locale':locale,
                    'stop_reason':report['stop_reason'],'retrieval_complete':False,
                    'ranking':'lexical_bm25plus','min_query_coverage':min_coverage,
                    'evidence_status':'unverified_candidates' if shortlist else 'insufficient_candidates',

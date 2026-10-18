@@ -3,9 +3,11 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
+from types import SimpleNamespace
 
 from travel_agent.web_pipeline import (canonical_url, next_offset, group_candidates,
                                        rank_candidates, pack_digest, search_evidence, passages)
+from travel_agent.web import _parse_search_rss, _bing_locale_params, _request_html
 
 
 def serp(start, next_first=None):
@@ -15,6 +17,42 @@ def serp(start, next_first=None):
 
 
 class PipelineTests(unittest.TestCase):
+    def test_rss_preserves_sources_and_rejects_dtd_or_wrong_format(self):
+        feed='<rss><channel><item><title>TaskGroup</title><link>https://docs.python.org/3/library/asyncio-task.html</link><description>&lt;b&gt;Cancellation&lt;/b&gt; semantics</description></item><item><title>Unsafe</title><link>file:///secret</link></item></channel></rss>'
+        rows=_parse_search_rss(feed)
+        self.assertEqual(len(rows),1)
+        self.assertEqual(rows[0]['body'],'Cancellation semantics')
+        self.assertEqual(rows.details['result_cards'],2)
+        for invalid in ['<html><body>Access check</body></html>',
+                        '<!DOCTYPE rss [<!ENTITY leak SYSTEM "file:///secret">]><rss><channel/></rss>']:
+            with self.assertRaises(ValueError):
+                _parse_search_rss(invalid)
+
+    def test_rss_stops_at_feed_limit_not_fake_pagination(self):
+        feed='<rss><channel><item><title>Python documentation</title><link>https://docs.python.org/</link><description>Python language documentation</description></item></channel></rss>'
+        with patch('travel_agent.web_pipeline._request_html',return_value=(feed,{'http_status':200})) as request:
+            result=search_evidence('Python',pages=10,read_pages=0,serp_format='rss')
+        self.assertEqual(request.call_count,1)
+        self.assertEqual(result['stop_reason'],'feed_limit')
+        self.assertFalse(result['retrieval_complete'])
+        self.assertEqual(result['sources'][0]['url'],'https://docs.python.org/')
+
+    def test_locale_does_not_send_observed_bad_us_market_parameter(self):
+        self.assertEqual(_bing_locale_params('en-US'),{'setlang':'en'})
+        self.assertEqual(_bing_locale_params('ko-KR'),{'setlang':'ko','cc':'kr'})
+        self.assertEqual(_bing_locale_params('none'),{})
+        with self.assertRaises(ValueError):
+            _bing_locale_params('en-US&q=another')
+
+    def test_real_request_builder_keeps_query_and_explicit_format(self):
+        with patch.dict('os.environ',{'WEB_HTTP_TRANSPORT':'curl'}), patch('curl_cffi.requests.Session') as session:
+            get=session.return_value.__enter__.return_value.get
+            get.return_value=SimpleNamespace(status_code=200,content=b'<rss><channel/></rss>')
+            text,info=_request_html('bing','TaskGroup cancellation',12,search_format='rss',locale='en-US')
+        self.assertEqual(get.call_args.kwargs['params'],{'q':'TaskGroup cancellation','format':'rss','setlang':'en'})
+        self.assertEqual(info['response_format'],'rss')
+        self.assertIn('<rss>',text)
+
     def test_next_link_cannot_change_query_or_host(self):
         self.assertEqual(next_offset(serp(0,4)[0],'Python',1),4)
         self.assertIsNone(next_offset(serp(0,4)[0],'Other',1))

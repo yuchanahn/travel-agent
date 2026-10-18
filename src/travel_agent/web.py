@@ -9,7 +9,7 @@ import binascii
 from urllib.error import HTTPError
 from urllib.request import Request, build_opener, HTTPRedirectHandler
 from urllib.parse import urlencode
-from lxml import html
+from lxml import html, etree
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from hashlib import sha256
@@ -45,9 +45,26 @@ class _NoRedirect(HTTPRedirectHandler):
         return None
 
 
-def _request_html(engine, query, timeout, *, first=None, page_params=None):
+def _bing_locale_params(locale):
+    """Keep locale explicit; do not equate web search with Bing API mkt."""
+    if locale in (None, '', 'none'):
+        return {}
+    if not isinstance(locale,str) or not re.fullmatch(r'[a-z]{2}(?:-[A-Z]{2})?',locale):
+        raise ValueError('Locale must be none, a two-letter language or language-COUNTRY')
+    language, _, country = locale.partition('-')
+    # Repeated direct-HTTP probes reproduced junk for cc=us. Other excluded
+    # countries follow the upstream workaround and are not locally validated.
+    return {'setlang':language, **({'cc':country.lower()} if country and country not in {'US','CN','RU'} else {})}
+
+
+def _request_html(engine, query, timeout, *, first=None, page_params=None, search_format='html', locale=None):
     """One anonymous HTTPS request to a fixed search endpoint; no browser or retry."""
     params = {"q": query}
+    if search_format not in {'html','rss'}:
+        raise ValueError('Search response format must be html or rss')
+    if search_format=='rss':
+        params['format']='rss'
+    params.update(_bing_locale_params(locale))
     if first is not None:
         params['first'] = first
     if page_params:
@@ -59,7 +76,8 @@ def _request_html(engine, query, timeout, *, first=None, page_params=None):
     transport = os.environ.get('WEB_HTTP_TRANSPORT', 'curl')
     if transport not in {'curl','urllib'}:
         raise ValueError('WEB_HTTP_TRANSPORT must be curl or urllib')
-    info = {"method": "GET", "http_transport": transport}
+    info = {"method": "GET", "http_transport": transport,
+            "response_format":search_format,"locale_params":_bing_locale_params(locale)}
     try:
         if transport == 'curl':
             from curl_cffi.requests import Session
@@ -135,6 +153,31 @@ def _parse_search_html(text, engine):
         if title and target:
             rows.append({"title": title, "href": target, "body": snippet})
     return _EngineRows(rows, {'result_cards':len(cards), 'parsed_results':len(rows)})
+
+
+def _parse_search_rss(text, engine='bing'):
+    """Parse bounded RSS without external entities; titles are not fact checks."""
+    parser=etree.XMLParser(resolve_entities=False,no_network=True)
+    try:
+        tree=etree.fromstring(text.encode('utf-8'),parser=parser)
+    except etree.XMLSyntaxError as exc:
+        raise ValueError('Response is not valid RSS XML') from exc
+    if tree.tag!='rss' or tree.getroottree().docinfo.doctype:
+        raise ValueError('Expected an RSS document without a DTD')
+    items=tree.findall('./channel/item')
+    rows=[]
+    for item in items:
+        title=' '.join((item.findtext('title') or '').split())
+        target=_unwrap_search_url(item.findtext('link') or '',engine)
+        body=item.findtext('description') or ''
+        if '<' in body:
+            try:
+                body=html.fragment_fromstring(body,create_parent=True).text_content()
+            except (ValueError,etree.ParserError):
+                pass
+        if title and target:
+            rows.append({'title':title,'href':target,'body':' '.join(body.split())})
+    return _EngineRows(rows,{'result_cards':len(items),'parsed_results':len(rows)})
 
 
 def _direct_search(query, top_k, timeout, engine):
@@ -315,6 +358,8 @@ def add_parser(subparsers):
     research.add_argument("--read-pages", type=int, default=5)
     research.add_argument("--max-bytes", type=int, default=6000)
     research.add_argument("--keep-dir", help="Keep raw responses in a private directory; otherwise delete temporary files")
+    research.add_argument("--serp-format",choices=['html','rss'],default='html',help='Explicit Bing response format; RSS depth is limited')
+    research.add_argument("--locale",default='none',help='Explicit locale, e.g. ko-KR or en; no mkt parameter')
 
 
 def run(args):
@@ -322,7 +367,7 @@ def run(args):
         from .web_pipeline import search_evidence
         result = search_evidence(args.query, pages=args.pages, top_k=args.top_k,
                                  read_pages=args.read_pages, max_bytes=args.max_bytes,
-                                 keep_dir=args.keep_dir)
+                                 keep_dir=args.keep_dir,serp_format=args.serp_format,locale=args.locale)
         print(result['digest'])
         return 0 if result['sources'] else 1
     try:

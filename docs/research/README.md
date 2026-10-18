@@ -32,6 +32,10 @@
 
 ## 인덱스
 
+- [036: 같은 검색어가 달라지는 이유 — Bing 언어·지역 실패 재현과 RSS 대조](2026-10-18-036-bing-context-and-rss-diagnosis.md) — 공개 이슈·수정 코드 조사,42회 조건 대조·RSS12회 반복, 특정 locale 실패 재현, 선택형 RSS·명시 locale 구현, 과거 기본 요청 원인 미확인, Python137개 통과
+
+036 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e81c3b082e31aa74d0443
+
 - [035: 검색 응답 변동을 확인하고 출력 예산 안에서 문단을 다시 고르다](2026-10-18-035-search-variance-and-budgeted-passages.md) — Bing12요청 행렬·같은 코드 반복 실행·동일 본문 오프라인 발췌 비교, Python133개 통과, 검색 안정성·여행 조건 품질 미달 보존
 
 035 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e81c3a9f8c74dd7e3bc9f

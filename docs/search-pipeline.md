@@ -40,3 +40,22 @@ python scripts/repack_search_evidence.py data/private/search-pipeline/035-repeat
 ```
 
 첫 명령은12회 직접 검색을 실행하는 별도 조사다. 두 번째 명령은 기존 evaluate_search_pipeline.py 실행 폴더의 summary.json과 저장된 추출본이 있어야 하며 네트워크·LLM을 호출하지 않는다. 질의·제목 헤더를 제외한 실제 전달 본문에서 표식 유무를 비교한다. 표식 검사는 의미적 품질 평가가 아니다.
+
+## 036: 언어·지역과 응답 형식 조사
+
+같은 q라도 지역·언어·세션 등 요청 맥락이 다르면 같은 입력이 아니다.036의42회 순서 섞은 반복 조사에서는 Python 질의의 `mkt=en-US`와 `cc=us`가 각각3회 모두 목표 문서를 놓치고 무관한 결과를 반환했다. q만 전송·setlang=en·세션 재사용은 각3회 목표를 확보했다. 과거의 q만 보낸 실패까지 같은 원인으로 설명한 것은 아니다. 응답200·검색창에 정확한 q가 남아 있다는 사실만으로 검색 성공을 판정하지 않는다.
+
+언어·지역을 명시하려면 연구 CLI의 `--locale ko-KR` 또는 `--locale en`을 사용한다. 기본 none은 기존 요청을 유지한다. 웹검색에 mkt를 보내지 않고 setlang을 사용하며 cc=US/CN/RU는 보내지 않는다. US는 로컬에서 실패를 재현했고 CN/RU 제외는 외부 수정안에 따른 예방적 설정으로 직접 검증하지 않았다. 이 설정의 일반 품질 우위는 확인하지 않았다.
+
+```powershell
+python -m travel_agent web research "국립춘천박물관 관람시간 휴관일 교통" --locale ko-KR
+python -m travel_agent web research "국립춘천박물관 관람시간 휴관일 교통" --serp-format rss --keep-dir data/private/search-pipeline/rss
+python scripts/diagnose_bing_variance.py
+python scripts/diagnose_bing_variance.py --rss-only
+```
+
+RSS는 같은 Bing `/search`에 format=rss를 명시하는 별도 응답 경로다. 기본 HTML을 자동 대체하거나 실패 뒤 몰래 호출하지 않는다. XML 외부 엔티티·DTD를 허용하지 않고 제목·URL·요약을 기존 재정렬·본문 읽기·발췌 경로로 넘긴다. 기본 에이전트 web_search는 그대로다.
+
+RSS 조사4질의×3회에서 모두 목표 주소를 확보하고 질의별 URL 순서가 같았다. 이 시간대·한 호스트의 관찰이며 장기 안정성·의미적 정확성 검증은 아니다. 실제 반환은 각10개였고 페이지·날짜·언어·SafeSearch 필터의 동일 동작을 보장하지 않는다. `--pages`가 커도 RSS는 한 피드에서 멈추고 `stop_reason=feed_limit`, `retrieval_complete=false`로 기록한다. 본문 실험에는 여전히 무관한 후보와 미흡한 발췌가 남았다.
+
+진단 스크립트는 기본42회, --rss-only는12회 직접 검색한다. 원문은 비공개에 보존하고, 세션·쿠키는 값 대신 정책·이름만 기록한다. 숫자 HTTP 버전3은 curl enum의V2_0(HTTP/2)이며 HTTP/3이 아니다. 상세 원인 후보·반복 결과·확정 범위는 연구일지036을 따른다.
