@@ -32,6 +32,10 @@
 
 ## 인덱스
 
+- [044: 실제 에이전트13회 검증 — 여행 답변은 아직 불합격](2026-10-18-044-live-brave-agent-validation.md) — 여행3질의 전후·중간 실행과 제어4사례, 보완본 여행 수동0/3, 인사/기억 회상 통과, Python158개 통과
+
+044 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e810db461e02cd63f1e7d
+
 - [043: 같은 본문으로 발췌 검증 — 문장 경계와 메뉴 의심 표시](2026-10-18-043-evidence-boundaries.md) — 기존 추출문10개·패킷3개 고정 비교, 문장/줄 경계 우선·메뉴 레이아웃 경고, 새 API0건·Python154개 통과
 
 043 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e81d6a15ef0babb15c59f

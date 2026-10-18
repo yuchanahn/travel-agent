@@ -106,7 +106,8 @@ class AgentWebTests(unittest.TestCase):
         with patch("travel_agent.web._provider_search", return_value=[row()]):
             evidence = web_search("q", top_k=1)
         source_id = evidence["hits"][0]["id"]
-        replies = [model_reply(calls=[web_call()]), model_reply(f"검색 요약입니다. [{source_id}]")]
+        replies = [model_reply(calls=[web_call()]), model_reply(f"검색 요약입니다. [{source_id}]"),
+                   model_reply(f"본문은 확인하지 못했고 검색 요약만 확인했습니다. [{source_id}]")]
         with patch("travel_agent.agent.chat", side_effect=replies), patch("travel_agent.agent.web_search", return_value=evidence):
             result = self.run_agent()
         self.assertTrue(result["web_search_attempted"])
@@ -127,6 +128,46 @@ class AgentWebTests(unittest.TestCase):
         self.assertFalse(result["web_search_performed"])
         self.assertEqual(result["web_sources"], [])
         self.assertIn("tool_error", [r["kind"] for r in read_trace(self.trace_dir, result["request_id"])])
+
+    def test_snippet_only_draft_gets_one_review_and_can_read_instead_of_guessing(self):
+        source_id='web:0123456789abcdef'
+        evidence={'hits':[{'id':source_id,'title':'Museum','url':'https://example.org/','snippet':'Visitor guide'}],
+                  'searched_at':'2026-10-18','web_search_performed':True}
+        page={'id':source_id,'title':'Museum','url':'https://example.org/','content_kind':'page_excerpt',
+              'page_fetched':True,'truncated':False,'text':'Closed Monday.'}
+        read={'function':{'name':'web_read','arguments':{'source_id':source_id,'query':'휴관일'}}}
+        replies=[model_reply(calls=[web_call()]),model_reply(f'매일 운영합니다. [{source_id}]'),
+                 model_reply(calls=[read]),model_reply(f'월요일 휴관입니다. [{source_id}]')]
+        with patch('travel_agent.agent.chat',side_effect=replies), \
+                patch('travel_agent.agent.web_search',return_value=evidence), \
+                patch('travel_agent.agent.web_read',return_value=page):
+            result=self.run_agent()
+        self.assertEqual(result['evidence_review_attempts'],1)
+        self.assertTrue(result['web_sources'][0]['page_fetched'])
+        self.assertIn('월요일 휴관',result['answer'])
+        trace=read_trace(self.trace_dir,result['request_id'])
+        self.assertEqual(sum(e['kind']=='evidence_review' for e in trace),1)
+
+    def test_budget_overflow_reserves_a_final_answer_without_executing_proposals(self):
+        source_id='web:0123456789abcdef'
+        evidence={'hits':[{'id':source_id,'title':'Museum','url':'https://example.org/','snippet':'Visitor guide'}],
+                  'searched_at':'2026-10-18','web_search_performed':True}
+        replies=[model_reply(calls=[web_call()]),model_reply(calls=[web_call('second'),web_call('third')]),
+                 model_reply(f'요금은 미확인입니다. [{source_id}]')]
+        with patch('travel_agent.agent.chat',side_effect=replies) as model, \
+                patch('travel_agent.agent.web_search',return_value=evidence) as search:
+            result=self.run_agent(max_tool_calls=2)
+        self.assertEqual(result['status'],'completed')
+        self.assertEqual(search.call_count,1)
+        self.assertTrue(result['finalization_for_budget'])
+        self.assertEqual(model.call_args.kwargs['tools'],[])
+
+    def test_empty_memory_scope_does_not_advertise_unusable_memory_tools(self):
+        with patch('travel_agent.agent.chat',return_value=model_reply('안녕하세요.')) as model:
+            self.run_agent()
+        names=[tool['function']['name'] for tool in model.call_args.kwargs['tools']]
+        self.assertNotIn('memory_search',names)
+        self.assertNotIn('memory_show',names)
 
     def test_no_web_removes_schema_and_blocks_proposed_call(self):
         replies = [model_reply(calls=[web_call()]), model_reply("웹검색이 비활성화되어 있습니다.")]

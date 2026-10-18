@@ -44,6 +44,8 @@ travel-agent trace show REQUEST_ID
 
 ## 도구와 범위
 
+044부터 현재 사용자·세션에 저장 이벤트가 없으면 memory_search·memory_show를 모델 스키마에서 제외한다. 저장된 기록이 있을 때만 메모리 도구를 노출하며, 데이터는 있지만 색인이 없거나 오래됐을 때의 오류는 그대로 알린다. 현재 질문에 새로 주어진 조건을 빈 메모리에서 찾던 실제 실패를 줄이기 위한 실행 조건이다.
+
 - `memory_search(query, top_k=3)`: 기존 BM25/dense/hybrid 검색을 사용한다. query 1..500자, top_k 1..5. `--mode`와 `--rerank`는 호스트 실행 옵션이다.
 - `memory_show(event_id)`: 해당 범위의 원본 이벤트 전체를 조회한다. 원문 출처·역할·추가 메타데이터를 보존한다.
 
@@ -63,7 +65,7 @@ travel-agent trace show REQUEST_ID
 travel-agent memory --user demo --session trip agent "최신 예산은?" --max-steps 4 --max-tool-calls 3 --timeout 90
 ```
 
-Ollama 호출은 `AGENT_CONTEXT_TOKENS`를 읽으며 기본 `num_ctx=65536`이다. Agentic과 2-Step answer가 공통 설정을 사용한다. 앱의 바이트 제한은 별도로 `AGENT_MAX_INPUT_BYTES`(기본196608), 에이전트 CLI의 `--max-input-bytes`로 조정한다. 기존 10000바이트 기본값과 12000바이트 상한은 제거했다. 바이트는 정확한 Qwen 토큰 수가 아니므로 설정한 num_ctx에 항상 맞는다는 보장은 없다. 앱의 바이트 한도를 넘으면 `context_limit`으로 중단한다. 생성 출력은 최대512토큰이며 길이 종료는 `output_limit`으로 구분한다. `.env`는 자동으로 읽지 않으므로 환경변수는 실행할 터미널에 설정한다.
+Ollama 호출은 `AGENT_CONTEXT_TOKENS`를 읽으며 기본 `num_ctx=65536`이다. Agentic과 2-Step answer가 공통 설정을 사용한다. 앱의 바이트 제한은 별도로 `AGENT_MAX_INPUT_BYTES`(기본196608), 에이전트 CLI의 `--max-input-bytes`로 조정한다. 기존 10000바이트 기본값과 12000바이트 상한은 제거했다. 바이트는 정확한 Qwen 토큰 수가 아니므로 설정한 num_ctx에 항상 맞는다는 보장은 없다. 앱의 바이트 한도를 넘으면 `context_limit`으로 중단한다. 생성 출력은 기본1024토큰이며 AGENT_MAX_OUTPUT_TOKENS(128~8192)로 조정한다. 길이 종료는 `output_limit`으로 구분한다. `.env`는 자동으로 읽지 않으므로 환경변수는 실행할 터미널에 설정한다.
 
 시간 예산은 요청 전·모델 응답 후·도구 단계 경계에서 검사하고 남은 시간을 HTTP timeout에 전달한다. CPU 모델 로딩이나 동기 검색 실행을 강제 중단하는 hard deadline은 아니다. 한 단계가 오래 걸리면 실제 종료가 예산보다 늦을 수 있다.
 
@@ -71,7 +73,13 @@ Ollama 호출은 `AGENT_CONTEXT_TOKENS`를 읽으며 기본 `num_ctx=65536`이�
 
 종료 상태: completed, step_limit, tool_limit, timeout, context_limit, output_limit, model_error, protocol_error, empty_answer. completed는 루프가 최종 답변으로 끝났다는 뜻이며 내용 품질 통과를 뜻하지 않는다. CLI는 completed만 종료 코드0, 나머지는1을 반환한다.
 
+tool_limit는044의 중간 실행까지 사용한 종료 상태다. 현재는 호출 예산 초과 제안을 실행하지 않고 남은 모델 호출로 정리하며, 도구를 비활성화한 정리 단계에서도 도구를 요구하면 protocol_error로 종료한다.
+
 ## 인용 검사와 한 번의 수정
+
+044부터 웹 출처는 있지만 본문 읽기 성공이 없는 초안에는 최대 한 번 근거 검토를 요청한다. 모델이 필요한 본문을 선택해 읽거나 미확인으로 답할 수 있으며 특정 검색어·사이트·호출 순서를 강제하지 않는다. 마지막 모델 호출 또는 도구 예산 소진 시에는 도구 스키마를 비우고 확보 근거와 미확인 항목으로 정리하도록 한다. 이 단계에서도 도구를 요구하면 실행하지 않고 오류로 종료한다. 추가 검토와 최종 답변 호출도 기존 모델 호출·시간 예산 안에서만 수행한다. evidence_review_attempts·finalization_for_budget와 trace의 evidence_review·tool_budget_finalization으로 확인할 수 있다. 이 처리는 답변의 사실성을 보장하지 않는다.
+
+web_read도043의 문장·줄 경계와 한국어 bigram·BM25Plus 발췌를 사용한다. body_signal 레이아웃 경고를 간결한 모델 입력에도 남긴다. web research 전체를 web_search에 합친 것은 아니다.
 
 모델이 `[m-...]`, `[event:...]` 또는 `[web:...]`를 쓰면 실제 도구로 제공한 근거 ID 안에 있는지 검사한다. 잘못된 ID나, 근거가 있는데 인용 형식이 없는 답변에는 최대 한 번 형식 수정을 요청한다. 실제 허용 ID를 제공하고 새 사실을 추가하지 말라고 지시하며, 근거를 못 찾은 유보 답변에는 인용을 강요하지 않는다. 코드가 임의로 인용을 붙이지 않는다.
 

@@ -109,7 +109,9 @@ class AgentTests(unittest.TestCase):
     def test_step_and_tool_limits_prevent_execution(self):
         with patch("travel_agent.agent.chat", return_value=reply(calls=[call(query="q"), call(query="other")])), patch("travel_agent.agent.execute_tool") as tool:
             self.assertEqual(self.run_agent(max_steps=1)["status"], "step_limit")
-            self.assertEqual(self.run_agent(max_tool_calls=1)["status"], "tool_limit")
+            # The model keeps proposing tools even during the reserved final
+            # turn with an empty schema; this is now a protocol violation.
+            self.assertEqual(self.run_agent(max_tool_calls=1)["status"], "protocol_error")
         tool.assert_not_called()
 
     def test_context_limit_prevents_model_call(self):

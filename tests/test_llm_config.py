@@ -19,11 +19,19 @@ def response():
 
 
 class ContextTests(unittest.TestCase):
+    def test_output_budget_is_explicit_and_context_stays_64k(self):
+        with patch.dict(os.environ, {'AGENT_MAX_OUTPUT_TOKENS':'1536'}), patch('travel_agent.agent.urlopen',return_value=response()) as http:
+            chat([],model='test',base_url='http://localhost',timeout=1)
+        options=json.loads(http.call_args.args[0].data)['options']
+        self.assertEqual(options['num_predict'],1536)
+        self.assertEqual(options['num_ctx'],65536)
+
     def test_agent_request_uses_64k_by_default(self):
         with patch.dict(os.environ, {}, clear=True), patch("travel_agent.agent.urlopen", return_value=response()) as http:
             chat([{"role": "user", "content": "안녕"}], model="test", base_url="http://localhost", timeout=1)
         body = json.loads(http.call_args.args[0].data)
         self.assertEqual(body["options"]["num_ctx"], 65536)
+        self.assertEqual(body["options"]["num_predict"], 1024)
 
     def test_recall_uses_same_config_and_accepts_summary_larger_than_old_budget(self):
         hit = {"chunk_id": "m-abcdef", "timestamp": "2026-10-18T00:00:00+09:00", "text": "합성 근거", "events": []}
@@ -55,6 +63,8 @@ class ContextTests(unittest.TestCase):
         self.assertEqual(result["status"], "completed")
         self.assertEqual(start["options"]["num_ctx"], 65536)
         self.assertEqual(start["limits"]["max_input_bytes"], 196608)
+        self.assertEqual(start['web_provider'],'brave')
+        self.assertEqual(start['web_backend'],'brave')
 
 
 if __name__ == "__main__":

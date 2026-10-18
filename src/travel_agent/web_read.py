@@ -4,7 +4,6 @@ from http.client import HTTPConnection, HTTPSConnection, HTTPException
 from datetime import datetime, timezone
 from io import BytesIO
 import ipaddress
-import re
 import socket
 import time
 from urllib.parse import urlsplit
@@ -13,6 +12,7 @@ from trafilatura import extract
 
 from .memory import canonical
 from .web import WebSearchError, _clean_url
+from .evidence_text import bounded_blocks, body_signal
 
 MAX_PAGE_BYTES = 2 * 1024 * 1024
 
@@ -77,24 +77,10 @@ def extract_page(body, url, output_format='markdown'):
 
 
 def select_excerpt(text, query, max_bytes):
-    """Select whole bounded paragraphs by query terms; no semantic ranking claim."""
-    blocks = []
-    for paragraph in re.split(r'\n\s*\n', text):
-        # Splitting also bounds pages whose entire text is one long paragraph.
-        for start in range(0, len(paragraph), 450):
-            block = paragraph[start:start+450].strip()
-            if block:
-                blocks.append(block)
-    terms = set(re.findall(r'[\w]+', query.lower()))
-    ranked = sorted(range(len(blocks)), key=lambda i: (-sum(term in blocks[i].lower() for term in terms), i))
-    chosen = []
-    for index in ranked:
-        trial = '\n\n'.join(blocks[i] for i in sorted([*chosen, index]))
-        if len(trial.encode('utf-8')) <= max_bytes:
-            chosen.append(index)
-        if len(chosen) >= 4:
-            break
-    return '\n\n'.join(blocks[i] for i in sorted(chosen)), sorted(chosen), len(blocks)
+    """Share research's selector; import lazily to avoid a fetcher import cycle."""
+    from .web_pipeline import passages
+    excerpt, selected = passages(text, query, limit=2000, max_bytes=max_bytes)
+    return excerpt, selected, len(bounded_blocks(text,600,max_bytes))
 
 
 def web_read(source, query, *, timeout=12, max_bytes=3500):
@@ -104,13 +90,14 @@ def web_read(source, query, *, timeout=12, max_bytes=3500):
     result = {'id':source['id'], 'title':source['title'], 'url':source['url'],
               'content_kind':'page_excerpt', 'page_fetched':True, 'format':'markdown',
               'verified_current':False, 'selection_query':query, 'text':'',
+              'body_signal':body_signal(text),
               'truncated':True, 'selected_blocks':[], 'total_blocks':0,
               'download_bytes':len(body), **info}
     result['fetched_at'] = datetime.now(timezone.utc).isoformat()
     available = max_bytes - len(canonical(result).encode('utf-8')) - 160
     excerpt, selected, total = select_excerpt(text, query, max(0, available))
     result.update(text=excerpt, selected_blocks=selected, total_blocks=total,
-                  truncated=len(selected)<total, elapsed_ms=round((time.perf_counter()-started)*1000))
+                  truncated=excerpt!=text, elapsed_ms=round((time.perf_counter()-started)*1000))
     # JSON escaping also consumes bytes; keep whole blocks rather than silently
     # exceeding the tool budget when a page contains many quotes/backslashes.
     while len(canonical(result).encode('utf-8')) > max_bytes and result['selected_blocks']:

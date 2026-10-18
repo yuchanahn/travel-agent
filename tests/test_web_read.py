@@ -118,8 +118,9 @@ class ReadingTests(unittest.TestCase):
         text='\n\n'.join(['Unrelated text '+str(i) for i in range(20)]+['Monday closed. bus 11.'])
         selected, indices, total = select_excerpt(text,'Monday bus',100)
         self.assertIn('Monday closed',selected)
-        self.assertIn(20,indices)
-        self.assertEqual(total,21)
+        self.assertTrue(indices)
+        self.assertTrue(all(0 <= index < total for index in indices))
+        self.assertLessEqual(len(selected.encode()),100)
 
     def test_empty_extraction_is_not_page_success(self):
         with patch('travel_agent.web_read.extract',return_value=None), self.assertRaises(WebSearchError):

@@ -242,6 +242,11 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
     tools = [tool for tool in TOOLS if (enable_web or tool["function"]["name"] not in WEB_TOOLS)
              and (enable_read or tool["function"]["name"] != "web_read")]
     system = SYSTEM + "\n오늘 날짜: " + date.today().isoformat()
+    has_memory = store.db.execute('SELECT 1 FROM events WHERE user_id=? AND session_id=? LIMIT 1',
+                                  (user,session)).fetchone() is not None
+    if not has_memory:
+        system += "\n현재 사용자·세션에는 저장된 과거 원문이 없다. 이번 질문의 새 조건을 과거 기억에서 확인할 필요는 없다."
+        tools = [tool for tool in tools if tool['function']['name'] in WEB_TOOLS]
     if not enable_web:
         system += "\n이 요청에서는 웹검색이 비활성화되어 있다. 웹을 조회했다고 말하지 않는다."
     messages = [{"role": "system", "content": system},
@@ -249,15 +254,17 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
     deadline = time.perf_counter() + timeout
     model_calls = tool_calls = 0
     citation_repairs = 0
+    evidence_reviews = 0
     prompt_tokens = output_tokens = 0
     evidence_ids = set()
     web_sources = {}
     web_attempted = web_performed = False
     seen = set()
+    force_final = False
     trace.emit("run_start", user=user, session=session, query=query, summary=summary,
                model=model, base_url=base_url, mode=mode, rerank=rerank, tools=tools, enable_web=enable_web,
-               web_provider=os.environ.get("WEB_SEARCH_PROVIDER", "http"),
-               web_tool_format=web_tool_format, web_backend=os.environ.get("WEB_SEARCH_BACKEND", "google" if os.environ.get("WEB_SEARCH_PROVIDER") == "webserp" else "bing"),
+               web_provider=os.environ.get("WEB_SEARCH_PROVIDER", "brave"),
+               web_tool_format=web_tool_format, web_backend=os.environ.get("WEB_SEARCH_BACKEND", {"webserp":"google","http":"bing"}.get(os.environ.get("WEB_SEARCH_PROVIDER"),"brave")),
                limits={"max_steps": max_steps, "max_tool_calls": max_tool_calls,
                        "timeout": timeout, "max_input_bytes": max_input_bytes, "tool_workers": tool_workers},
                options={**options, "think": False})
@@ -272,6 +279,8 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
                   "citation_ids_valid": bool(citations) and all(item in evidence_ids for item in citations),
                   "citation_status": citation_status,
                   "citation_repair_attempts": citation_repairs,
+                  "evidence_review_attempts": evidence_reviews,
+                  "finalization_for_budget": force_final,
                   "citation_gate_passed": citation_status in {"valid", "no_evidence"},
                   "web_search_attempted": web_attempted, "web_search_performed": web_performed,
                   "web_sources": [{**source, "cited": source["id"] in citations} for source in web_sources.values()],
@@ -283,14 +292,22 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
         remaining = deadline - time.perf_counter()
         if remaining <= 0:
             return finish("timeout")
-        input_bytes = len(canonical({"messages": messages, "tools": tools}).encode("utf-8"))
+        final_turn = force_final or (step == max_steps and tool_calls > 0) or tool_calls >= max_tool_calls
+        force_final = final_turn
+        active_tools = [] if final_turn else tools
+        if final_turn:
+            messages.append({'role':'user','content':
+                             '실행 예산상 이번 응답으로 마무리하세요. 추가 도구 호출은 사용할 수 없습니다. '
+                             '실제로 확인한 근거와 미확인·실패 항목만 구분해 간결히 답하고, 빈칸을 추정으로 채우지 마세요.'})
+        input_bytes = len(canonical({"messages": messages, "tools": active_tools}).encode("utf-8"))
         if input_bytes > max_input_bytes:
             return finish("context_limit", input_bytes=input_bytes)
-        trace.emit("model_start", step=step, messages=messages, input_bytes=input_bytes)
+        trace.emit("model_start", step=step, messages=messages, input_bytes=input_bytes,
+                   tool_names=[tool['function']['name'] for tool in active_tools], final_turn=final_turn)
         started = time.perf_counter()
         model_calls += 1
         try:
-            reply = chat(messages, model=model, base_url=base_url, timeout=max(0.001, remaining), tools=tools)
+            reply = chat(messages, model=model, base_url=base_url, timeout=max(0.001, remaining), tools=active_tools)
             message = reply.get("message", {})
             if not isinstance(message, dict) or message.get("role") != "assistant" or not isinstance(message.get("content", ""), str):
                 raise ValueError("Malformed assistant message")
@@ -319,6 +336,16 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
         if not calls:
             if not assistant["content"].strip():
                 return finish("empty_answer")
+            if not final_turn and web_sources and not any(s.get('page_fetched') for s in web_sources.values()) and evidence_reviews == 0 and step < max_steps:
+                evidence_reviews += 1
+                feedback = ("최종 답변 전 근거 확인: 현재 받은 웹 자료는 검색 요약뿐이고 본문 읽기 성공은 0건입니다. "
+                            "방금 초안의 요금·시간·노선·이동·관람 제약이 실제 자료에 있는지 확인하세요. "
+                            "필요하면 앞선 출처 ID로 web_read를 호출하거나 추가 검색하세요. "
+                            "확인할 수 없는 값은 추정해서 쓰지 말고 미확인으로 남기세요. "
+                            "도구 사용 자체가 목적은 아니며 확인된 내용만으로도 답할 수 있습니다.")
+                trace.emit('evidence_review',step=step,feedback=feedback)
+                messages.extend([assistant,{'role':'user','content':feedback}])
+                continue
             citations = CITATIONS.findall(assistant["content"])
             invalid = any(item not in evidence_ids for item in citations)
             missing = bool(evidence_ids) and not citations
@@ -333,10 +360,15 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
                 messages.extend([assistant, {"role": "user", "content": feedback}])
                 continue
             return finish("completed", assistant["content"])
+        if final_turn:
+            return finish('protocol_error',error='Model requested tools during finalization with tools disabled')
         if step == max_steps:
             return finish("step_limit")
         if tool_calls + len(calls) > max_tool_calls:
-            return finish("tool_limit")
+            force_final = True
+            trace.emit('tool_budget_finalization',step=step,requested=len(calls),remaining=max_tool_calls-tool_calls)
+            messages.append({'role':'user','content':'방금 제안한 도구 묶음은 남은 호출 예산을 넘어서 실행하지 않았습니다. 확보한 자료만으로 답하세요.'})
+            continue
         if any(not isinstance(call, dict) or not isinstance(call.get("function"), dict)
                or not isinstance(call["function"].get("name"), str) for call in calls):
             return finish("protocol_error")
