@@ -50,8 +50,21 @@ def _request_html(engine, query, timeout):
     params = {"q": query}
     request = Request(SEARCH_URLS[engine] + "?" + urlencode(params),
                       headers={"Accept-Language": "en-US,en;q=0.9"})
-    info = {"method": "GET"}
+    transport = os.environ.get('WEB_HTTP_TRANSPORT', 'curl')
+    if transport not in {'curl','urllib'}:
+        raise ValueError('WEB_HTTP_TRANSPORT must be curl or urllib')
+    info = {"method": "GET", "http_transport": transport}
     try:
+        if transport == 'curl':
+            from curl_cffi.requests import Session
+            with Session(impersonate='edge101') as session:
+                response = session.get(SEARCH_URLS[engine], params=params, timeout=timeout, allow_redirects=False)
+            info['http_status'] = response.status_code
+            if response.status_code != 200:
+                raise WebSearchError('Search engine HTTP failure', details={'reason':'http_error', **info})
+            if len(response.content) > MAX_RESPONSE_BYTES:
+                raise WebSearchError('Search response too large', details={'reason':'response_too_large', **info})
+            return response.content.decode('utf-8', errors='replace'), info
         try:
             incoming = build_opener(_NoRedirect()).open(request, timeout=timeout)
         except HTTPError as exc:
@@ -171,7 +184,7 @@ def _combined_search(query, top_k, timeout, engines):
                            "start_ms": offset, "elapsed_ms": round((time.perf_counter() - tick) * 1000)}
         except WebSearchError as exc:
             return [], {"status": "error", "reason": exc.details.get("reason", "provider_failed"),
-                        **{key: exc.details[key] for key in ("http_status", "method") if key in exc.details},
+                        **{key: exc.details[key] for key in ("http_status", "method", "http_transport") if key in exc.details},
                         "start_ms": offset, "elapsed_ms": round((time.perf_counter() - tick) * 1000)}
         except Exception as exc:
             # Isolate an unexpected engine/library failure from its sibling.

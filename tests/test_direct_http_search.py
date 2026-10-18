@@ -1,6 +1,7 @@
 """Transport failures and live-markup regressions without external requests."""
 import base64
 import builtins
+import os
 from io import BytesIO
 import unittest
 from unittest.mock import patch
@@ -18,7 +19,17 @@ class Response(BytesIO):
     status = 200
 
 
+@patch.dict(os.environ, {'WEB_HTTP_TRANSPORT':'urllib'})
 class DirectSearchTests(unittest.TestCase):
+    def test_curl_transport_preserves_query_and_never_follows_redirects(self):
+        with patch.dict(os.environ, {'WEB_HTTP_TRANSPORT':'curl'}), patch('curl_cffi.requests.Session') as session:
+            session.return_value.__enter__.return_value.get.return_value = SimpleNamespace(status_code=200,content=b'<html>body</html>')
+            _, details = _request_html('bing','public query',7)
+        request=session.return_value.__enter__.return_value.get
+        self.assertEqual(request.call_args.kwargs['params'],{'q':'public query'})
+        self.assertFalse(request.call_args.kwargs['allow_redirects'])
+        self.assertEqual(details['http_transport'],'curl')
+
     def test_get_preserves_unicode_query_and_fixed_engine_endpoint(self):
         with patch('travel_agent.web.build_opener') as opener:
             opener.return_value.open.return_value = Response(b'<html>body</html>')

@@ -32,6 +32,10 @@
 
 ## 인덱스
 
+- [033: 여행 검색의 범위·본문·토큰 평가 — 기능 통과와 답변 불합격](2026-10-18-033-travel-search-evaluation.md) — 합성3사례·top3/top5/병렬 탐색, 동일 근거 토큰 비교·본문 발췌·web_read 구현, 실제 답변 실패 보존, Python124개·pip check 통과
+
+033 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e8103bda5fe1cc0f73788
+
 - [032: 덕덕고를 제거하고 Bing 단독 검색으로 정리하다](2026-10-18-032-bing-only-search.md) — DDG 요청·파서·기본primp 의존성 제거, Bing3질의 공식 주소 확인, 병렬 툴 호출 유지, Python110개·pip check 통과
 
 032 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e81288307e20940fc717a

@@ -1,0 +1,27 @@
+{
+  "purpose": "Small synthetic development cases, not a general travel benchmark",
+  "criteria": {
+    "retrieval": "Keep the same first response for top3/top5; compare added unique URLs and inspect relevant official evidence manually. Domain diversity is not recommendation quality.",
+    "parallel": "Record actual overlapping request intervals, total wall time and each failure; preserve query attribution and deduplicate URLs.",
+    "representation": "Serialize the same evidence as full JSON, concise JSON and Markdown. Count UTF-8 bytes and actual Ollama prompt_eval_count with the same raw prompt wrapper. Do not equate bytes with tokens.",
+    "reading": "Fetch only selected search sources; compare HTML, extracted TXT and Markdown on the same body. Check retention of needed facts, output truncation and failure. Never equate page read with current fact verification.",
+    "answer": "Compare two candidates against transport, indoor alternatives and budget uncertainty; cite actual evidence and disclose unknowns. Runtime completion and citation ID validity are not quality scores."
+  },
+  "cases": [
+    {
+      "id": "rainy_day",
+      "question": "서울에서 대중교통으로 당일치기 갈 만한 커플 여행지 두 곳을 비교해줘. 비가 와도 할 일이 있으면 좋겠어. 교통과 실내 대안의 근거를 보여줘.",
+      "queries": ["서울 출발 대중교통 당일치기 커플 여행 비오는날", "춘천 국립춘천박물관 대중교통 관람 안내", "수원 화성 박물관 대중교통 관람 안내"]
+    },
+    {
+      "id": "chuncheon",
+      "question": "차 없이 춘천으로 커플 1박2일 여행을 생각 중이야. 두 사람이 총25만원 예산일 때 박물관과 케이블카를 비교해줘. 교통·비 오는 날 대안과 확인하지 못한 비용을 구분해줘.",
+      "queries": ["춘천 1박2일 뚜벅이 커플 여행 박물관 케이블카", "국립춘천박물관 관람시간 휴관일 교통", "춘천 삼악산 호수케이블카 이용요금 셔틀 운행 안내"]
+    },
+    {
+      "id": "gangneung",
+      "question": "부모님과 강릉에 주말 당일치기로 가려고 해. 비가 오고 오래 걷기 어렵다고 할 때 실내 여행지 두 곳을 비교하고 이동·관람 제약을 확인해줘.",
+      "queries": ["강릉 비오는날 부모님 실내 여행 걷기 적은 곳", "강릉 오죽헌 시립박물관 관람 안내 편의시설", "강릉 아르떼뮤지엄 관람 안내 접근성"]
+    }
+  ]
+}
