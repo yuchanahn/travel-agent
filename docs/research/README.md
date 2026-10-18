@@ -32,6 +32,10 @@
 
 ## 인덱스
 
+- [030: Bing 장애를 DDGS 유지보수·요청 방식·HTML 파싱으로 나눠 조사하다](2026-10-18-030-bing-maintenance-and-http-diagnosis.md) — 최신 배포·이슈 조사, HTTP20회 비교, 원본 파서 누락2건 복원, 런타임 활성화 보류, Python106개 통과
+
+030 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e817c8d34f9024a2ab0ea
+
 - [029: 덕덕고·Bing을 명시적으로 병렬 수집하고 결과를 통합하다](2026-10-18-029-dual-engine-fusion.md) — 엔진별 실행·중복 제거·RRF·부분 실패 구현, Bing 비활성 유지, DuckDuckGo GET·실제 모델 답변 확인, Python102개 통과
 
 029 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e81ec8d63e6889ee105a4

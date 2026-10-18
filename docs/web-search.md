@@ -114,3 +114,7 @@ python scripts/evaluate_web.py --case official --output artifacts/web-official.j
 ```
 
 6개 소규모 개발 사례에 같은 로컬 모델을 사용한다. 웹 비활성화·공식 홈페이지·인사·과거 기억·복합 요청·의도적 공급자 오류를 구분한다. 결과 변동과 실패를 포함한 실제 질문·답변은 [연구일지010](research/2026-10-17-010-web-search.md)에 정리했다. 완료 상태는 품질 통과가 아니다.
+
+## Bing 유지보수·HTTP 재검증 (2026-10-18)
+
+DDGS 최신 배포는 설치본과 같은9.16.0(2026-08-26)이다. Bing 비활성화는2025-11-29부터 유지된다. 최근 직접 HTTP 진단에서 관련 응답을 받는 조건과 DDGS의 두 HTML 중 한 형태에 대한 파싱 누락을 분리했다. 단순 urllib 요청은3개 공개 질의×2반복에서 기대 도메인을 찾았지만, 언어·국가 파라미터 비교에는 무관한200 응답도 있었다. 앱의 Bing은 여전히 비활성 상태이며 이 연구용 파서를 런타임에 연결하지 않았다. [실험·한계·실행법](research/2026-10-18-030-bing-maintenance-and-http-diagnosis.md)을 참고한다. `python scripts/diagnose_bing.py --variant ddgs --variant plain --include-travel --repeat 2`로 브라우저·LLM 없이 비교할 수 있다.
