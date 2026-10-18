@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>여행 에이전트 · 실험실</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-icon">↗</span><strong>여행 에이전트</strong><span class="brand-sub">실험실</span></div>
+    <span class="local-tag"><i></i> LOCAL WORKSPACE</span>
+  </header>
+  <main>
+    <div class="page-heading"><div><span class="eyebrow">AGENT PLAYGROUND</span><h1>직접 질문하고, 실행을 확인하세요.</h1><p>실제 모델의 답변과 검색·본문 읽기 과정을 한곳에서 살펴봅니다.</p></div><span id="connection" class="connection">연결 확인 중</span></div>
+    <div class="workspace">
+      <aside>
+        <section class="card composer">
+          <div class="section-heading"><h2>새로운 질문</h2><span class="subtle">독립 실행</span></div>
+          <form id="question-form">
+            <label for="question" class="sr-only">에이전트에게 보낼 질문</label>
+            <textarea id="question" name="question" maxlength="4000" placeholder="어디로, 누구와 여행하나요?&#10;예산과 이동 조건도 함께 알려주세요." required></textarea>
+            <div class="input-footer"><span>Ctrl + Enter로 보내기</span><span id="char-count">0 / 4,000</span></div>
+            <label class="web-option"><span><strong>웹 검색 사용</strong><small>Brave 검색과 필요한 출처 본문 읽기</small></span><input id="enable-web" type="checkbox" checked><span class="switch" aria-hidden="true"></span></label>
+            <p id="form-error" class="error" role="alert" hidden></p>
+            <button id="send" class="primary" type="submit">질문 보내기 <span>↗</span></button>
+          </form>
+          <p class="independent-note">이전 질문은 자동으로 이어지지 않습니다. 필요한 조건을 이번 질문에 함께 적어주세요.</p>
+          <details class="presets"><summary>이전 검증 질문 불러오기 <span>＋</span></summary><div id="presets"></div></details>
+        </section>
+        <section class="card recent"><div class="section-heading"><h2>최근 실행</h2><span id="run-count" class="subtle">0</span></div><div id="history"><p class="muted small">아직 실행 기록이 없습니다.</p></div></section>
+        <div class="model-info"><span class="model-mark">Q</span><div><strong id="model-name">Qwen3.5</strong><span id="model-options">로컬 모델 연결 확인 중</span></div></div>
+      </aside>
+      <section class="results-area" aria-label="에이전트 실행 결과">
+        <div class="card result-card">
+          <div class="result-top"><div><span id="state" class="state idle">실행 대기</span><span id="elapsed" class="elapsed"></span></div><button id="copy" class="text-button" hidden>답변 복사</button></div>
+          <div id="empty-state" class="empty-state"><div class="empty-symbol">↗</div><h2>첫 질문을 보내보세요.</h2><p>모델의 답변이 이곳에 표시됩니다.<br>검색어와 도구 결과도 직접 확인할 수 있어요.</p><div class="empty-flow"><span>질문</span><b>→</b><span>판단과 도구 사용</span><b>→</b><span>답변</span></div></div>
+          <div id="run-content" hidden>
+            <div class="asked-question"><span>이번 질문</span><p id="asked-text"></p></div>
+            <div id="progress" class="progress" role="status"><span class="spinner"></span><span id="progress-text">실행 준비 중</span></div>
+            <div id="answer" class="prose" aria-live="polite"></div>
+            <p id="answer-note" class="answer-note" hidden>실제 모델 응답입니다. 내용의 정확성은 아직 검증되지 않았습니다.</p>
+            <div id="metrics" class="metrics" hidden></div>
+            <details id="sources" class="sources" hidden><summary id="source-title">사용한 출처</summary><div id="source-list"></div></details>
+          </div>
+        </div>
+        <section id="trace-panel" class="card trace-panel" hidden><div class="section-heading"><div><h2>실행 기록 <span id="event-count" class="count">0</span></h2><p class="muted small">모델이 실제로 요청한 도구와 반환된 결과입니다.</p></div><span class="trace-label">LIVE TRACE</span></div><div id="events"></div></section>
+      </section>
+    </div>
+    <footer>질문과 실행 기록은 이 로컬 환경에 저장됩니다. <span>실행 완료는 답변 품질 통과를 의미하지 않습니다.</span></footer>
+  </main>
+</body>
+</html>

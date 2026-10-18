@@ -4,6 +4,10 @@
 
 노션 허브: https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f
 
+- [045: 직접 질문하고 실제 실행을 확인하는 로컬 웹 화면](2026-10-19-045-local-web-interface.md) — Docker 빈 로컬 포트, 실제 모델·검색 연결, 브라우저·복원·모바일 검증
+
+045 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e8134ae5dfa72566d7bc0
+
 ## 기록 단위
 
 의미 있는 구현·실험·결정 단위로 작성한다. 날짜는 Asia/Seoul 기준, 파일명은 YYYY-MM-DD-NNN-topic.md다. 작은 명령마다 기록을 늘리지 않는다.

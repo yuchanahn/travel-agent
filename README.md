@@ -49,6 +49,8 @@ Brave 연결 후 실제 에이전트는044에서 초기·중간·보완본 여�
 
 ## 개발 시작
 
+웹 화면으로 직접 실험하려면 호스트 Ollama와 Docker를 켜고 `.\scripts\start_web.ps1`을 실행한다. 출력된 로컬 주소에서 질문과 실제 도구 기록을 확인한다. 각 요청은 독립 실행이며 [Docker 웹 화면 사용법](docs/web-interface.md)에 실행·중지·기록 보존 방식을 정리했다.
+
 Windows PowerShell, Python 3.12가 필요하다. 처음 한 번 가상환경을 만들고 프로젝트를 개발 모드로 설치한다. 가상환경이 이미 있으면 생성 명령은 생략한다.
 
 ```powershell
