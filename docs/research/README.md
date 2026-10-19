@@ -4,6 +4,14 @@
 
 노션 허브: https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f
 
+- [071: Ollama 복귀·기존 툴 기록 호환](2026-10-19-071-return-to-ollama.md) —50733·Qwen4B Q4_K_M·64K/4096, 문자열 인자400 재현·객체 변환 후 실제 응답, 웹2턴 삭제·253개 검사
+
+071 노션 동기화 완료: https://app.notion.com/p/3fed058c022e8134b5e2d03ecaf91ecf
+
+- [070: 동일 근거 전후 품질 비교](2026-10-19-070-paired-quality-comparison.md) —24회 실행·5완료/19모델API오류, 정상 시설1쌍8/8 동점·향상 미입증, 고정 질문/기준과 수동 점수 공개
+
+070 노션 동기화 완료: https://app.notion.com/p/3fed058c022e81a3b0b2ed45db036368
+
 - [069: 숙소별 근거 분리·동일 추출문 추가 읽기](2026-10-19-069-scoped-evidence-and-page-reading.md) —246개 Python·JS3종, 실제 모델 근거 조회·공개 페이지1HTTP/12구간 재조립, 인용 누락·품질 한계 유지
 
 069 노션 동기화 완료: https://app.notion.com/p/3fed058c022e812484cce6ca0306ca76

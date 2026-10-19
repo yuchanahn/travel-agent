@@ -1,0 +1,236 @@
+[
+  {
+    "id": "facilities",
+    "query": "합성 숙소111과222를 비교해줘. 각 숙소의 수영장·바비큐·레코드 플레이어·세탁기 제공 여부와 취소규정을 표로 알려줘. 없는 자료는 미확인이라고 쓰고 실제 확인한 근거를 인용해줘.",
+    "history": [
+      {
+        "role": "user",
+        "content": "다음은 테스트용 합성 숙소 자료다. 실제 숙소나 실시간 예약 정보가 아니다."
+      },
+      {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "fixture-0",
+            "function": {
+              "name": "mcp_openbnb_airbnb_listing_details",
+              "arguments": {
+                "checkin": "2026-11-14",
+                "checkout": "2026-11-15",
+                "adults": 2
+              }
+            }
+          }
+        ]
+      },
+      {
+        "role": "tool",
+        "tool_name": "mcp_openbnb_airbnb_listing_details",
+        "tool_call_id": "fixture-0",
+        "content": "{\"id\":\"mcp:aaaaaaaaaaaaaaaa\",\"server\":\"openbnb\",\"remote_tool\":\"airbnb_listing_details\",\"request_context\":{\"checkin\":\"2026-11-14\",\"checkout\":\"2026-11-15\",\"adults\":2},\"observed_at\":\"2026-10-19T00:00:00+00:00\",\"verified_current\":false,\"data\":{\"source\":\"Airbnb public page\",\"price_conditions_verified\":false,\"price_status\":\"page_display_only\",\"listing_url\":\"https://www.airbnb.com/rooms/111\",\"sections\":[{\"id\":\"AMENITIES_DEFAULT\",\"seeAllAmenitiesGroups\":{\"Outdoor\":\"Pool, BBQ grill\"}}],\"missing_sections\":[\"POLICIES_DEFAULT\"],\"omitted_sections\":[]}}"
+      },
+      {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "fixture-1",
+            "function": {
+              "name": "mcp_openbnb_airbnb_listing_details",
+              "arguments": {
+                "checkin": "2026-11-14",
+                "checkout": "2026-11-15",
+                "adults": 2
+              }
+            }
+          }
+        ]
+      },
+      {
+        "role": "tool",
+        "tool_name": "mcp_openbnb_airbnb_listing_details",
+        "tool_call_id": "fixture-1",
+        "content": "{\"id\":\"mcp:bbbbbbbbbbbbbbbb\",\"server\":\"openbnb\",\"remote_tool\":\"airbnb_listing_details\",\"request_context\":{\"checkin\":\"2026-11-14\",\"checkout\":\"2026-11-15\",\"adults\":2},\"observed_at\":\"2026-10-19T00:00:00+00:00\",\"verified_current\":false,\"data\":{\"source\":\"Airbnb public page\",\"price_conditions_verified\":false,\"price_status\":\"page_display_only\",\"listing_url\":\"https://www.airbnb.com/rooms/222\",\"sections\":[{\"id\":\"AMENITIES_DEFAULT\",\"seeAllAmenitiesGroups\":{\"Entertainment\":\"Record player\",\"Not included\":\"Washer\"}}],\"missing_sections\":[\"POLICIES_DEFAULT\"],\"omitted_sections\":[]}}"
+      }
+    ],
+    "mcp_sources": [
+      {
+        "id": "mcp:aaaaaaaaaaaaaaaa"
+      },
+      {
+        "id": "mcp:bbbbbbbbbbbbbbbb"
+      }
+    ],
+    "rubric": {
+      "pool": "111은 수영장 포함,222는 미확인으로 구별한다.",
+      "bbq": "111은 바비큐 포함,222는 미확인으로 구별한다.",
+      "record": "111의 레코드플레이어는 미확인,222는 포함이다.",
+      "washer": "111의 세탁기는 미확인,222는 명시적 미제공이다.",
+      "cancellation": "두 숙소 취소규정을 모두 미확인으로 남긴다.",
+      "no_invention": "추가 시설·가격·주소 등 제공하지 않은 사실을 만들지 않는다.",
+      "no_contradiction": "표·본문·결론에 위 구분을 뒤집는 모순이 없다.",
+      "citations": "숙소별 시설 주장에 그 숙소의 올바른 MCP 출처를 연결한다."
+    }
+  },
+  {
+    "id": "conditions",
+    "query": "숙박비 상한만 두 사람1박 합계30만원으로 낮출게. 날짜와 인원은 그대로야.111과222의 가격 원문과 그 가격이 어떤 요청 조건에서 나온 건지 비교해줘. 예약 가능·결제 총액·추가요금·취소규정까지 확인된 건지도 근거를 인용해서 구분해줘.",
+    "history": [
+      {
+        "role": "user",
+        "content": "11월14~15일 성인2명이고 숙박비 상한40만원으로 알아보고 있었어."
+      },
+      {
+        "role": "user",
+        "content": "다음은 테스트용 합성 숙소 자료다. 실제 숙소나 실시간 예약 정보가 아니다."
+      },
+      {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "fixture-0",
+            "function": {
+              "name": "mcp_openbnb_airbnb_search",
+              "arguments": {
+                "checkin": "2026-11-14",
+                "checkout": "2026-11-15",
+                "adults": 2
+              }
+            }
+          }
+        ]
+      },
+      {
+        "role": "tool",
+        "tool_name": "mcp_openbnb_airbnb_search",
+        "tool_call_id": "fixture-0",
+        "content": "{\"id\":\"mcp:1111111111111111\",\"server\":\"openbnb\",\"remote_tool\":\"airbnb_search\",\"request_context\":{\"checkin\":\"2026-11-14\",\"checkout\":\"2026-11-15\",\"adults\":2},\"observed_at\":\"2026-10-19T00:00:00+00:00\",\"verified_current\":false,\"data\":{\"source\":\"Airbnb public page\",\"price_conditions_verified\":false,\"price_status\":\"page_display_only\",\"results\":[{\"id\":\"111\",\"url\":\"https://www.airbnb.com/rooms/111\",\"name\":\"합성 숙소 111\",\"price\":{\"primaryLine\":{\"accessibilityLabel\":\"₩190,000 total\"}}}],\"omitted_count\":0}}"
+      },
+      {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "fixture-1",
+            "function": {
+              "name": "mcp_openbnb_airbnb_search",
+              "arguments": {
+                "checkin": "2026-12-14",
+                "checkout": "2026-12-15",
+                "adults": 4
+              }
+            }
+          }
+        ]
+      },
+      {
+        "role": "tool",
+        "tool_name": "mcp_openbnb_airbnb_search",
+        "tool_call_id": "fixture-1",
+        "content": "{\"id\":\"mcp:2222222222222222\",\"server\":\"openbnb\",\"remote_tool\":\"airbnb_search\",\"request_context\":{\"checkin\":\"2026-12-14\",\"checkout\":\"2026-12-15\",\"adults\":4},\"observed_at\":\"2026-10-19T00:00:00+00:00\",\"verified_current\":false,\"data\":{\"source\":\"Airbnb public page\",\"price_conditions_verified\":false,\"price_status\":\"page_display_only\",\"results\":[{\"id\":\"111\",\"url\":\"https://www.airbnb.com/rooms/111\",\"name\":\"합성 숙소 111\",\"price\":{\"primaryLine\":{\"accessibilityLabel\":\"₩260,000 total\"}}}],\"omitted_count\":0}}"
+      },
+      {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "fixture-2",
+            "function": {
+              "name": "mcp_openbnb_airbnb_search",
+              "arguments": {
+                "checkin": "2026-11-14",
+                "checkout": "2026-11-15",
+                "adults": 2
+              }
+            }
+          }
+        ]
+      },
+      {
+        "role": "tool",
+        "tool_name": "mcp_openbnb_airbnb_search",
+        "tool_call_id": "fixture-2",
+        "content": "{\"id\":\"mcp:3333333333333333\",\"server\":\"openbnb\",\"remote_tool\":\"airbnb_search\",\"request_context\":{\"checkin\":\"2026-11-14\",\"checkout\":\"2026-11-15\",\"adults\":2},\"observed_at\":\"2026-10-19T00:00:00+00:00\",\"verified_current\":false,\"data\":{\"source\":\"Airbnb public page\",\"price_conditions_verified\":false,\"price_status\":\"page_display_only\",\"results\":[{\"id\":\"222\",\"url\":\"https://www.airbnb.com/rooms/222\",\"name\":\"합성 숙소 222\",\"price\":{\"primaryLine\":{\"accessibilityLabel\":\"₩310,000 total\"}}}],\"omitted_count\":0}}"
+      }
+    ],
+    "mcp_sources": [
+      {
+        "id": "mcp:1111111111111111"
+      },
+      {
+        "id": "mcp:2222222222222222"
+      },
+      {
+        "id": "mcp:3333333333333333"
+      }
+    ],
+    "rubric": {
+      "dates_party": "유지할 조건을2026-11-14~15·성인2명으로 명시한다.",
+      "budget": "최신 숙박비 상한30만원을 명시한다.",
+      "matching_price": "111의현재요청에대응하는표시가격을₩190,000 total로 정확히 인용한다.",
+      "other_conditions": "₩260,000 total은12월14~15일4명 조건으로 구별하거나 현재견적에서 제외한다.",
+      "over_budget": "222의₩310,000 total을현재상한초과로판단한다.",
+      "unverified": "요청날짜·인원을요금조건검증으로승격하지않고결제총액·재고미확인을밝힌다.",
+      "unknown_policies": "추가요금·취소규정은모두미확인으로남긴다.",
+      "citations": "각가격·조건의원래출처ID를맞게인용한다."
+    }
+  },
+  {
+    "id": "compacted-memory",
+    "query": "아까 봤던333과444중 가평군 숙소는 어디야? 두 곳의 실제 주소 근거와 수영장 여부를 다시 비교해줘. 이름이나 검색 지역으로 추측하지 말고 과거 원문을 확인해서 출처도 붙여줘.",
+    "summary": "이전에333·444라는 합성 숙소를 조사했다. 상세 도구 메시지는 요약에서 빠졌다. 두 곳을 같은 지역이라고 단정할 근거는 요약에 없다.",
+    "events": [
+      {
+        "event_id": "tool-333",
+        "turn_id": "older-turn",
+        "timestamp": "2026-10-19T00:00:00+00:00",
+        "role": "tool",
+        "tool_name": "mcp_openbnb_airbnb_listing_details",
+        "content": "{\"id\": \"mcp:4444444444444444\", \"server\": \"openbnb\", \"remote_tool\": \"airbnb_listing_details\", \"model_adapter\": \"openbnb\", \"request_context\": {\"checkin\": \"2026-11-14\", \"checkout\": \"2026-11-15\", \"adults\": 2}, \"observed_at\": \"2026-10-19T00:00:00+00:00\", \"text\": \"{\\\"listingUrl\\\": \\\"https://www.airbnb.com/rooms/333\\\", \\\"details\\\": [{\\\"id\\\": \\\"LOCATION_DEFAULT\\\", \\\"address\\\": \\\"경기 가평군 가평읍 합성로 10\\\"}, {\\\"id\\\": \\\"AMENITIES_DEFAULT\\\", \\\"seeAllAmenitiesGroups\\\": {\\\"Not included\\\": \\\"Pool\\\"}}]}\"}"
+      },
+      {
+        "event_id": "tool-444",
+        "turn_id": "older-turn",
+        "timestamp": "2026-10-19T00:00:00+00:00",
+        "role": "tool",
+        "tool_name": "mcp_openbnb_airbnb_listing_details",
+        "content": "{\"id\": \"mcp:5555555555555555\", \"server\": \"openbnb\", \"remote_tool\": \"airbnb_listing_details\", \"model_adapter\": \"openbnb\", \"request_context\": {\"checkin\": \"2026-11-14\", \"checkout\": \"2026-11-15\", \"adults\": 2}, \"observed_at\": \"2026-10-19T00:00:00+00:00\", \"text\": \"{\\\"listingUrl\\\": \\\"https://www.airbnb.com/rooms/444\\\", \\\"details\\\": [{\\\"id\\\": \\\"LOCATION_DEFAULT\\\", \\\"address\\\": \\\"경기 양평군 합성면 합성로 20\\\"}, {\\\"id\\\": \\\"AMENITIES_DEFAULT\\\", \\\"seeAllAmenitiesGroups\\\": {\\\"Outdoor\\\": \\\"Pool\\\"}}]}\"}"
+      }
+    ],
+    "rubric": {
+      "retrieve": "실제메모리또는숙소근거도구를호출해누락된원문을확인한다.",
+      "gapyeong": "333은페이지주소기준가평군후보로구별한다.",
+      "yangpyeong": "444는페이지주소기준양평군이며가평군숙소로추천하지않는다.",
+      "pool333": "333의수영장을명시적미제공으로구별한다.",
+      "pool444": "444의수영장을제공으로구별한다.",
+      "not_current": "과거페이지정보이지현재운영·예약가능성의독립검증은아님을밝힌다.",
+      "no_invention": "새가격·시설·이동시간등제공하지않은사실을만들지않는다.",
+      "citations": "각숙소주장에원래MCP또는해당원문메모리출처를연결한다."
+    }
+  },
+  {
+    "id": "page-followup",
+    "query": "제공된 출처의 합성 펜션 객실111을2명이 이용하려고 해. 기본요금, 예약 확정 후 환불액,1인 추가요금을 문서에서 확인하고 각각 근거를 인용해줘. 본문에서 찾지 못한 정보는 추측하지 말고 미확인으로 남겨줘.",
+    "page": {
+      "source": {
+        "id": "web:6666666666666666",
+        "title": "합성 펜션 객실 안내",
+        "url": "https://example.invalid/room111"
+      },
+      "html": "<html><head><title>합성 펜션 객실 안내</title></head><body><main><h1>합성 펜션 객실 안내</h1><p>예약 정책은 객실별로 다릅니다. 객실111 기본요금은90,000원입니다.</p><p>취소 안내1: 결제 전 객실별 특약을 확인하세요.</p><p>취소 안내2: 일반 취소정책보다 객실별 계약조건이 우선합니다.</p><p>취소 안내3: 상담센터는09시부터18시까지 운영합니다.</p><h2>객실111 계약조건</h2><p>약관고지0항 약관고지1항 약관고지2항 약관고지3항 약관고지4항 약관고지5항 약관고지6항 약관고지7항 약관고지8항 약관고지9항 약관고지10항 약관고지11항 약관고지12항 약관고지13항 약관고지14항 약관고지15항 약관고지16항 약관고지17항 약관고지18항 약관고지19항 약관고지20항 약관고지21항 약관고지22항 약관고지23항 약관고지24항 약관고지25항 약관고지26항 약관고지27항 약관고지28항 약관고지29항 약관고지30항 약관고지31항 약관고지32항 약관고지33항 약관고지34항 약관고지35항 약관고지36항 약관고지37항 약관고지38항 약관고지39항 약관고지40항 약관고지41항 약관고지42항 약관고지43항 약관고지44항 약관고지45항 약관고지46항 약관고지47항 약관고지48항 약관고지49항 약관고지50항 약관고지51항 약관고지52항 약관고지53항 약관고지54항 약관고지55항 약관고지56항 약관고지57항 약관고지58항 약관고지59항 약관고지60항 약관고지61항 약관고지62항 약관고지63항 약관고지64항 약관고지65항 약관고지66항 약관고지67항 약관고지68항 약관고지69항 약관고지70항 약관고지71항 약관고지72항 약관고지73항 약관고지74항 약관고지75항 약관고지76항 약관고지77항 약관고지78항 약관고지79항 약관고지80항 약관고지81항 약관고지82항 약관고지83항 약관고지84항 약관고지85항 약관고지86항 약관고지87항 약관고지88항 약관고지89항 약관고지90항 약관고지91항 약관고지92항 약관고지93항 약관고지94항 약관고지95항 약관고지96항 약관고지97항 약관고지98항 약관고지99항 약관고지100항 약관고지101항 약관고지102항 약관고지103항 약관고지104항 약관고지105항 약관고지106항 약관고지107항 약관고지108항 약관고지109항 약관고지110항 약관고지111항 약관고지112항 약관고지113항 약관고지114항 이 객실의 예약 확정 후 환불액은 0원이며 인원 추가요금은 1인당 23,000원이다.</p><p>합성 평가 문서이며 실제 숙소의 예약 안내가 아닙니다.</p></main></body></html>"
+    },
+    "rubric": {
+      "read": "web_read를실제로호출한다.",
+      "base_price": "기본요금90,000원을정확히전달한다.",
+      "refund": "예약확정후환불액0원을원문에서확보해전달한다.",
+      "extra_fee": "1인추가요금23,000원을원문에서확보해전달한다.",
+      "evidence_seen": "환불액·추가요금을답한경우해당내용이실제모델입력도구결과에존재한다.",
+      "no_wrong_free": "무료취소가능또는추가요금무료라고꾸미지않는다.",
+      "not_booking": "2명전체결제총액·재고·예약완료를꾸미지않는다.",
+      "citations": "실제확보한문서사실을해당web출처로인용한다."
+    },
+    "scope_note": "긴단일문단이기존발췌600자경계를넘는의도적인경계사례다.일반검색대표성은없다."
+  }
+]

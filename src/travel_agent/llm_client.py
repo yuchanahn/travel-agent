@@ -1,5 +1,6 @@
 """Provider boundary; keep native tool calls and never silently change models."""
 import json
+from copy import deepcopy
 import os
 import time
 from pathlib import Path
@@ -60,11 +61,26 @@ def openai_messages(messages):
     return result
 
 
+def ollama_messages(messages):
+    """Translate saved OpenAI tool arguments without mutating conversation history."""
+    result = deepcopy(messages)
+    for message in result:
+        for call in message.get('tool_calls') or []:
+            function = call['function']
+            arguments = function.get('arguments')
+            if isinstance(arguments, str):
+                arguments = json.loads(arguments)
+            if not isinstance(arguments, dict):
+                raise ValueError('Ollama tool arguments must decode to a JSON object')
+            function['arguments'] = arguments
+    return result
+
+
 def chat(messages, *, model, base_url, timeout, tools):
     config = settings()
     options = generation_options()
     if config['provider'] == 'ollama':
-        body = {'model': model, 'messages': messages, 'tools': tools, 'stream': False,
+        body = {'model': model, 'messages': ollama_messages(messages), 'tools': tools, 'stream': False,
                 'think': False, 'options': options}
         endpoint = '/api/chat'
     else:

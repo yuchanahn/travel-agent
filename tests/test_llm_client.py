@@ -7,10 +7,46 @@ from pathlib import Path
 from unittest.mock import patch
 from urllib.error import HTTPError
 
-from travel_agent.llm_client import chat, openai_messages, settings
+from travel_agent.llm_client import chat, openai_messages, ollama_messages, settings
 
 
 class ProviderTests(unittest.TestCase):
+    def test_ollama_decodes_mixed_saved_arguments_without_changing_original_history(self):
+        messages=[{'role':'assistant','content':'','tool_calls':[
+            {'id':'a','type':'function','function':{'name':'search','arguments':'{"query":"가평","adults":2}'}},
+            {'id':'b','function':{'name':'other','arguments':{'items':[1,2]}}}]},
+            {'role':'tool','tool_call_id':'b','tool_name':'other','content':'{"unchanged":true}'},
+            {'role':'tool','tool_call_id':'a','tool_name':'search','content':'결과'}]
+        original=json.dumps(messages,ensure_ascii=False)
+        result=ollama_messages(messages)
+        self.assertEqual(result[0]['tool_calls'][0]['function']['arguments'],{'query':'가평','adults':2})
+        self.assertEqual(result[1],messages[1])
+        result[0]['tool_calls'][1]['function']['arguments']['items'].append(3)
+        self.assertEqual(json.dumps(messages,ensure_ascii=False),original)
+        self.assertEqual(openai_messages(ollama_messages(messages))[2]['tool_call_id'],'a')
+
+    def test_ollama_request_serializes_saved_openai_arguments_as_objects(self):
+        history=[{'role':'assistant','content':'','tool_calls':[{'id':'a','function':{'name':'lookup','arguments':'{"adults":2}'}}]}]
+        with patch.dict(os.environ,{'LLM_PROVIDER':'ollama','LLM_API_KEY_FILE':''}), \
+                patch('travel_agent.llm_client.urlopen',return_value=io.BytesIO(b'{"message":{"role":"assistant","content":"OK"}}')) as network:
+            chat(history,model='local',base_url='http://localhost:11434',timeout=3,tools=[])
+        request=network.call_args.args[0]
+        self.assertTrue(request.full_url.endswith('/api/chat'))
+        body=json.loads(request.data)
+        self.assertEqual(body['messages'][0]['tool_calls'][0]['function']['arguments'],{'adults':2})
+        self.assertEqual(body['options']['num_ctx'],65536)
+        self.assertEqual(body['options']['num_predict'],4096)
+        self.assertFalse(body['think'])
+
+    def test_invalid_saved_arguments_are_rejected_before_ollama_network_request(self):
+        for arguments in ('broken','[]','null','true',[],None):
+            with self.subTest(arguments=arguments),patch.dict(os.environ,{'LLM_PROVIDER':'ollama'}), \
+                    patch('travel_agent.llm_client.urlopen') as network:
+                with self.assertRaises(ValueError):
+                    chat([{'role':'assistant','tool_calls':[{'function':{'name':'x','arguments':arguments}}]}],
+                        model='local',base_url='http://localhost:11434',timeout=3,tools=[])
+                network.assert_not_called()
+
     def test_legacy_parallel_call_ids_are_matched_in_reverse_result_order(self):
         messages = [{'role': 'assistant', 'content': '', 'tool_calls': [
             {'function': {'name': name, 'arguments': {'query': name}}} for name in ['a', 'b']]},

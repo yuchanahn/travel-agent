@@ -1,0 +1,525 @@
+{
+  "baseline": "5e9c79c8db2f05aa632961e82f53d0c442632f46",
+  "current": "8945ebf12c1df80d1191878ba84e34246df6cd48",
+  "summaries": {
+    "same_route_pairs": {
+      "planned_runs": 24,
+      "executed_runs": 24,
+      "complete_pairs": 1,
+      "reviewed_pairs": 0,
+      "versions": {
+        "baseline": {
+          "attempts": 12,
+          "completed": 4,
+          "errors": 8,
+          "model_calls": 14,
+          "tool_calls": 2,
+          "prompt_tokens": 11254,
+          "output_tokens": 2975
+        },
+        "current": {
+          "attempts": 12,
+          "completed": 1,
+          "errors": 11,
+          "model_calls": 15,
+          "tool_calls": 3,
+          "prompt_tokens": 8977,
+          "output_tokens": 1207
+        }
+      },
+      "pairs": [],
+      "routing_excluded_pairs": 1,
+      "require_route_match": true,
+      "paired_scores": {
+        "baseline": 0,
+        "current": 0
+      },
+      "paired_maximum": 0,
+      "wins": 0,
+      "ties": 0,
+      "losses": 0,
+      "evaluation_complete": false,
+      "execution_complete": true
+    },
+    "all_completed_pairs": {
+      "planned_runs": 24,
+      "executed_runs": 24,
+      "complete_pairs": 1,
+      "reviewed_pairs": 1,
+      "versions": {
+        "baseline": {
+          "attempts": 12,
+          "completed": 4,
+          "errors": 8,
+          "model_calls": 14,
+          "tool_calls": 2,
+          "prompt_tokens": 11254,
+          "output_tokens": 2975
+        },
+        "current": {
+          "attempts": 12,
+          "completed": 1,
+          "errors": 11,
+          "model_calls": 15,
+          "tool_calls": 3,
+          "prompt_tokens": 8977,
+          "output_tokens": 1207
+        }
+      },
+      "pairs": [
+        {
+          "case_id": "facilities",
+          "repeat": 0,
+          "maximum": 8,
+          "baseline": 8,
+          "current": 8,
+          "delta": 0
+        }
+      ],
+      "routing_excluded_pairs": 0,
+      "require_route_match": false,
+      "paired_scores": {
+        "baseline": 8,
+        "current": 8
+      },
+      "paired_maximum": 8,
+      "wins": 0,
+      "ties": 1,
+      "losses": 0,
+      "evaluation_complete": false,
+      "execution_complete": true
+    }
+  },
+  "reviewer": "implementation agent; manual, not independent or blinded",
+  "runs": [
+    {
+      "case_id": "facilities",
+      "repeat": 0,
+      "version": "baseline",
+      "review": {
+        "pool": {
+          "pass": true,
+          "reason": "표에서111 수영장 제공,222 미확인으로 구별했다."
+        },
+        "bbq": {
+          "pass": true,
+          "reason": "111 바비큐 제공,222 미확인으로 구별했다."
+        },
+        "record": {
+          "pass": true,
+          "reason": "111 레코드플레이어 미확인,222 제공으로 구별했다."
+        },
+        "washer": {
+          "pass": true,
+          "reason": "111 미확인,222 Not included를 미제공으로 구별했다."
+        },
+        "cancellation": {
+          "pass": true,
+          "reason": "두 곳 모두 POLICIES_DEFAULT 누락·미확인이라고 썼다."
+        },
+        "no_invention": {
+          "pass": true,
+          "reason": "표와 설명에 추가 가격·주소·시설을 만들지 않았다."
+        },
+        "no_contradiction": {
+          "pass": true,
+          "reason": "표와 설명에 제공/미확인/미제공을 뒤집는 모순이 없다."
+        },
+        "citations": {
+          "pass": true,
+          "reason": "111은 mcp:aaaaaaaaaaaaaaaa,222는 mcp:bbbbbbbbbbbbbbbb에 올바르게 연결했다."
+        }
+      },
+      "status": "completed",
+      "error": null,
+      "model_calls": 1,
+      "tool_calls": 0,
+      "scratch_memory_deleted": true
+    },
+    {
+      "case_id": "facilities",
+      "repeat": 0,
+      "version": "current",
+      "review": {
+        "pool": {
+          "pass": true,
+          "reason": "표에서111 수영장 제공,222 미확인으로 구별했다."
+        },
+        "bbq": {
+          "pass": true,
+          "reason": "111 바비큐 제공,222 미확인으로 구별했다."
+        },
+        "record": {
+          "pass": true,
+          "reason": "111 레코드플레이어 미확인,222 제공으로 구별했다."
+        },
+        "washer": {
+          "pass": true,
+          "reason": "111 미확인,222 Not included를 미제공으로 구별했다."
+        },
+        "cancellation": {
+          "pass": true,
+          "reason": "두 곳 모두 POLICIES_DEFAULT 누락·미확인이라고 썼다."
+        },
+        "no_invention": {
+          "pass": true,
+          "reason": "표와 설명에 추가 가격·주소·시설을 만들지 않았다."
+        },
+        "no_contradiction": {
+          "pass": true,
+          "reason": "표와 설명에 제공/미확인/미제공을 뒤집는 모순이 없다."
+        },
+        "citations": {
+          "pass": true,
+          "reason": "111은 mcp:aaaaaaaaaaaaaaaa,222는 mcp:bbbbbbbbbbbbbbbb에 올바르게 연결했다."
+        }
+      },
+      "status": "completed",
+      "error": null,
+      "model_calls": 1,
+      "tool_calls": 0,
+      "scratch_memory_deleted": true
+    },
+    {
+      "case_id": "conditions",
+      "repeat": 0,
+      "version": "current",
+      "review": {},
+      "status": "model_error",
+      "error": "HTTP Error 429: Too Many Requests",
+      "model_calls": 1,
+      "tool_calls": 0,
+      "scratch_memory_deleted": true
+    },
+    {
+      "case_id": "conditions",
+      "repeat": 0,
+      "version": "baseline",
+      "review": {},
+      "status": "model_error",
+      "error": "HTTP Error 502: Bad Gateway",
+      "model_calls": 1,
+      "tool_calls": 0,
+      "scratch_memory_deleted": true
+    },
+    {
+      "case_id": "compacted-memory",
+      "repeat": 0,
+      "version": "baseline",
+      "review": {},
+      "status": "model_error",
+      "error": "HTTP Error 429: Too Many Requests",
+      "model_calls": 1,
+      "tool_calls": 0,
+      "scratch_memory_deleted": true
+    },
+    {
+      "case_id": "compacted-memory",
+      "repeat": 0,
+      "version": "current",
+      "review": {},
+      "status": "model_error",
+      "error": "HTTP Error 429: Too Many Requests",
+      "model_calls": 1,
+      "tool_calls": 0,
+      "scratch_memory_deleted": true
+    },
+    {
+      "case_id": "page-followup",
+      "repeat": 0,
+      "version": "current",
+      "review": {},
+      "status": "model_error",
+      "error": "HTTP Error 429: Too Many Requests",
+      "model_calls": 1,
+      "tool_calls": 0,
+      "scratch_memory_deleted": true
+    },
+    {
+      "case_id": "page-followup",
+      "repeat": 0,
+      "version": "baseline",
+      "review": {},
+      "status": "model_error",
+      "error": "HTTP Error 429: Too Many Requests",
+      "model_calls": 1,
+      "tool_calls": 0,
+      "scratch_memory_deleted": true
+    },
+    {
+      "case_id": "facilities",
+      "repeat": 1,
+      "version": "current",
+      "review": {},
+      "status": "model_error",
+      "error": "HTTP Error 429: Too Many Requests",
+      "model_calls": 1,
+      "tool_calls": 0,
+      "scratch_memory_deleted": true
+    },
+    {
+      "case_id": "facilities",
+      "repeat": 1,
+      "version": "baseline",
+      "review": {
+        "pool": {
+          "pass": true,
+          "reason": "표에서111 수영장 제공,222 미확인으로 구별했다."
+        },
+        "bbq": {
+          "pass": true,
+          "reason": "111 바비큐 제공,222 미확인으로 구별했다."
+        },
+        "record": {
+          "pass": true,
+          "reason": "111 레코드플레이어 미확인,222 제공으로 구별했다."
+        },
+        "washer": {
+          "pass": true,
+          "reason": "111 미확인,222 Not included를 미제공으로 구별했다."
+        },
+        "cancellation": {
+          "pass": true,
+          "reason": "두 곳 모두 POLICIES_DEFAULT 누락·미확인이라고 썼다."
+        },
+        "no_invention": {
+          "pass": true,
+          "reason": "표와 설명에 추가 가격·주소·시설을 만들지 않았다."
+        },
+        "no_contradiction": {
+          "pass": true,
+          "reason": "표와 설명에 제공/미확인/미제공을 뒤집는 모순이 없다."
+        },
+        "citations": {
+          "pass": true,
+          "reason": "111은 mcp:aaaaaaaaaaaaaaaa,222는 mcp:bbbbbbbbbbbbbbbb에 올바르게 연결했다."
+        }
+      },
+      "status": "completed",
+      "error": null,
+      "model_calls": 1,
+      "tool_calls": 0,
+      "scratch_memory_deleted": true
+    },
+    {
+      "case_id": "conditions",
+      "repeat": 1,
+      "version": "baseline",
+      "review": {
+        "dates_party": {
+          "pass": true,
+          "reason": "표에서2026-11-14~15·성인2명 조건을 유지했다."
+        },
+        "budget": {
+          "pass": true,
+          "reason": "요약에서예산300,000원을적용했다."
+        },
+        "matching_price": {
+          "pass": true,
+          "reason": "111 가격원문“₩190,000 total”을현재날짜2명행에제시했다."
+        },
+        "other_conditions": {
+          "pass": true,
+          "reason": "12월4명₩260,000 total을현재조건표에서제외했다.이는사전기준에서허용한현재견적제외에해당한다."
+        },
+        "over_budget": {
+          "pass": true,
+          "reason": "222의310,000원을예산초과로판단했다."
+        },
+        "unverified": {
+          "pass": true,
+          "reason": "price_conditions_verified=false를표시하고예약가능·최종결제금액은미확인이라밝혔다."
+        },
+        "unknown_policies": {
+          "pass": true,
+          "reason": "추가요금·취소환불규정의검증정보가없다고명시했다."
+        },
+        "citations": {
+          "pass": true,
+          "reason": "190,000은mcp:1111111111111111,310,000은mcp:3333333333333333을인용했다."
+        }
+      },
+      "status": "completed",
+      "error": null,
+      "model_calls": 1,
+      "tool_calls": 0,
+      "scratch_memory_deleted": true
+    },
+    {
+      "case_id": "conditions",
+      "repeat": 1,
+      "version": "current",
+      "review": {},
+      "status": "model_error",
+      "error": "HTTP Error 429: Too Many Requests",
+      "model_calls": 2,
+      "tool_calls": 1,
+      "scratch_memory_deleted": true
+    },
+    {
+      "case_id": "compacted-memory",
+      "repeat": 1,
+      "version": "current",
+      "review": {},
+      "status": "model_error",
+      "error": "HTTP Error 429: Too Many Requests",
+      "model_calls": 1,
+      "tool_calls": 0,
+      "scratch_memory_deleted": true
+    },
+    {
+      "case_id": "compacted-memory",
+      "repeat": 1,
+      "version": "baseline",
+      "review": {},
+      "status": "model_error",
+      "error": "HTTP Error 429: Too Many Requests",
+      "model_calls": 2,
+      "tool_calls": 1,
+      "scratch_memory_deleted": true
+    },
+    {
+      "case_id": "page-followup",
+      "repeat": 1,
+      "version": "baseline",
+      "review": {},
+      "status": "model_error",
+      "error": "HTTP Error 429: Too Many Requests",
+      "model_calls": 2,
+      "tool_calls": 1,
+      "scratch_memory_deleted": true
+    },
+    {
+      "case_id": "page-followup",
+      "repeat": 1,
+      "version": "current",
+      "review": {},
+      "status": "model_error",
+      "error": "HTTP Error 429: Too Many Requests",
+      "model_calls": 1,
+      "tool_calls": 0,
+      "scratch_memory_deleted": true
+    },
+    {
+      "case_id": "facilities",
+      "repeat": 2,
+      "version": "baseline",
+      "review": {
+        "pool": {
+          "pass": true,
+          "reason": "표에서111 수영장 제공,222 미확인으로 구별했다."
+        },
+        "bbq": {
+          "pass": true,
+          "reason": "111 바비큐 제공,222 미확인으로 구별했다."
+        },
+        "record": {
+          "pass": true,
+          "reason": "111 레코드플레이어 미확인,222 제공으로 구별했다."
+        },
+        "washer": {
+          "pass": true,
+          "reason": "111 미확인,222 Not included를 미제공으로 구별했다."
+        },
+        "cancellation": {
+          "pass": true,
+          "reason": "두 곳 모두 POLICIES_DEFAULT 누락·미확인이라고 썼다."
+        },
+        "no_invention": {
+          "pass": true,
+          "reason": "표와 설명에 추가 가격·주소·시설을 만들지 않았다."
+        },
+        "no_contradiction": {
+          "pass": true,
+          "reason": "표와 설명에 제공/미확인/미제공을 뒤집는 모순이 없다."
+        },
+        "citations": {
+          "pass": true,
+          "reason": "111은 mcp:aaaaaaaaaaaaaaaa,222는 mcp:bbbbbbbbbbbbbbbb에 올바르게 연결했다."
+        }
+      },
+      "status": "completed",
+      "error": null,
+      "model_calls": 1,
+      "tool_calls": 0,
+      "scratch_memory_deleted": true
+    },
+    {
+      "case_id": "facilities",
+      "repeat": 2,
+      "version": "current",
+      "review": {},
+      "status": "model_error",
+      "error": "HTTP Error 429: Too Many Requests",
+      "model_calls": 1,
+      "tool_calls": 0,
+      "scratch_memory_deleted": true
+    },
+    {
+      "case_id": "conditions",
+      "repeat": 2,
+      "version": "current",
+      "review": {},
+      "status": "model_error",
+      "error": "HTTP Error 429: Too Many Requests",
+      "model_calls": 1,
+      "tool_calls": 0,
+      "scratch_memory_deleted": true
+    },
+    {
+      "case_id": "conditions",
+      "repeat": 2,
+      "version": "baseline",
+      "review": {},
+      "status": "model_error",
+      "error": "HTTP Error 429: Too Many Requests",
+      "model_calls": 1,
+      "tool_calls": 0,
+      "scratch_memory_deleted": true
+    },
+    {
+      "case_id": "compacted-memory",
+      "repeat": 2,
+      "version": "baseline",
+      "review": {},
+      "status": "model_error",
+      "error": "HTTP Error 429: Too Many Requests",
+      "model_calls": 1,
+      "tool_calls": 0,
+      "scratch_memory_deleted": true
+    },
+    {
+      "case_id": "compacted-memory",
+      "repeat": 2,
+      "version": "current",
+      "review": {},
+      "status": "model_error",
+      "error": "HTTP Error 429: Too Many Requests",
+      "model_calls": 1,
+      "tool_calls": 0,
+      "scratch_memory_deleted": true
+    },
+    {
+      "case_id": "page-followup",
+      "repeat": 2,
+      "version": "current",
+      "review": {},
+      "status": "model_error",
+      "error": "HTTP Error 429: Too Many Requests",
+      "model_calls": 3,
+      "tool_calls": 2,
+      "scratch_memory_deleted": true
+    },
+    {
+      "case_id": "page-followup",
+      "repeat": 2,
+      "version": "baseline",
+      "review": {},
+      "status": "model_error",
+      "error": "HTTP Error 429: Too Many Requests",
+      "model_calls": 1,
+      "tool_calls": 0,
+      "scratch_memory_deleted": true
+    }
+  ]
+}
