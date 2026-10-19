@@ -111,7 +111,7 @@ class RunManager:
                 raise ValueError('대화 길이 한도에 도달했습니다. 새 대화를 시작해주세요.')
             seen.add(job['id'])
             turns.append({'id':job['id'],'query':job['query'],
-                          'answer':job.get('result',{}).get('answer',''),'state':job['state']})
+                          'answer':job.get('result',{}).get('answer') or job.get('result',{}).get('partial_answer',''),'state':job['state']})
             job=self._job(job['parent_id']) if job.get('parent_id') else None
         return list(reversed(turns))
 
@@ -130,14 +130,23 @@ class RunManager:
         return [m for m in messages if m['role']!='system']+[
             {'role':'assistant','content':parent['result']['answer']}]
 
+    def can_continue(self, job):
+        # Execution success and having a usable conversation checkpoint differ.
+        if job['state'] != 'done':
+            return False
+        try:
+            return bool(self.continuation(job))
+        except (OSError, ValueError, KeyError, TypeError):
+            return False
+
     def submit(self,query,enable_web,parent_id=None):
         if not isinstance(query,str) or not query.strip() or len(query)>4000 or type(enable_web) is not bool:
             raise ValueError('질문은1~4000자, 웹검색 설정은 true/false여야 합니다.')
         if parent_id is not None:
             with self.lock:
                 parent=self._job(parent_id)
-                if parent['state']!='done' or parent.get('result',{}).get('status')!='completed':
-                    raise ValueError('이전 답변이 정상 완료된 뒤 이어서 질문해주세요.')
+                if not self.can_continue(parent):
+                    raise ValueError('이전 실행이 끝나고 대화 문맥이 저장된 뒤 이어서 질문해주세요.')
                 if len(self.conversation(parent))>=100:
                     raise ValueError('대화 길이 한도에 도달했습니다. 새 대화를 시작해주세요.')
                 self.continuation(parent)
@@ -228,8 +237,14 @@ class RunManager:
 
     def summaries(self):
         with self.lock:
-            return [{k:j[k] for k in ('id','query','state','created_at')}
-                    for j in sorted(self.jobs.values(),key=lambda j:j['created_at'],reverse=True)]
+            chats = {}
+            for job in sorted(self.jobs.values(),key=lambda j:j['created_at'],reverse=True):
+                turns = self.conversation(job)
+                root = turns[0]
+                if root['id'] not in chats:
+                    chats[root['id']] = {**{k:job[k] for k in ('id','state','created_at')},
+                        'query':root['query'], 'conversation_id':root['id'], 'turn_count':len(turns)}
+            return list(chats.values())
 
     def snapshot(self,run_id,after=0):
         with self.lock:
@@ -251,6 +266,7 @@ class RunManager:
                         events.append(projected)
         result.update(events=events,next_sequence=sequence)
         result['conversation']=self.conversation(result)
+        result['can_continue']=self.can_continue(result)
         return result
 
 

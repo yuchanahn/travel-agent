@@ -28,6 +28,9 @@
 
 ## 실행
 
+065에서 도구 기본20회·모델 기본24회로 확대했다. 웹180초·출력4096·병렬3개는 유지한다. done 결과가 한도·모델 오류여도 복원할 문맥이 있으면 can_continue=true로 이어간다. UI는 문맥 로드 실패 시 전송을 막으며 새 대화 버튼만 부모를 해제한다. 목록은 루트별 최신 턴으로 묶는다. 수정 호스트는 http://127.0.0.1:50732/ 이며 start_web_host.ps1 기본값도50732다.50731·50730·Docker·ngrok은 이번에 갱신하지 않았다.214개 Python 검사·실제 JS 핸들러 검사·과거 tool_limit 대화의 실제 Nexus 후속 응답을 확인했다. 서버 자체 error·interrupted이거나 저장 문맥이 없으면 이어갈 수 없다. 상세는065와 docs/web-interface.md를 따른다.
+
+
 064에서 호스트 웹의 LLM을 Nexus FreeLLMAPI OpenAI 호환 경로로 전환했다. 새 화면은 http://127.0.0.1:50731/ 이고 50730 프로세스 재시작은 자동 승인 검토에서 차단되어 기존 공급자로 남았다. Docker50729·ngrok은 이번에 바꾸지 않았다. 비공개 llm-config.json을 LLM_CONFIG_FILE로 지정하며 start_web_host.ps1도 파일이 있으면 읽는다. 요청 모델 gpt-oss-120b, 응답 모델 표기 gpt-oss:120b이며 실제 추론은 외부 공급자에서 수행한다. Agentic·웹 요약·CLI 2-Step이 llm_client를 공유한다. 기본 Ollama·명시적 복귀는 유지하고 실패 시 자동 대체하지 않는다. 210개 테스트·합성 도구 왕복·웹 최근 대화2턴을 확인했다. 실제 여행 검색은 모델9회·도구8회 후 tool_limit, 본문 조회 실패·중복 호출이 남았으므로 품질 개선으로 기록하지 않는다. 상세는 docs/llm-providers.md와064를 따른다.
 
 

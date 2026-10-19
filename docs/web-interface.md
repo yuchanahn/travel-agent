@@ -1,6 +1,8 @@
 # 로컬 에이전트 실험 화면
 
-063의 OpenBnB 적용 화면은 호스트 http://127.0.0.1:50730/ 이다. scripts/start_web_host.ps1로 실행하며 data/private/web-host에 별도 기록한다. 기존 Docker50729·ngrok 공유 인스턴스는 디스크 부족으로 업데이트하지 못해 OpenBnB가 없다. Docker 저장소의 input/output error를 해결한 뒤 재배포해야 한다.
+065 적용 화면은 호스트 http://127.0.0.1:50732/ 이다. Nexus FreeLLMAPI 연결을 사용하며 도구20회·모델24회·웹180초가 기본이다. `scripts/start_web_host.ps1 -Port 50732`로 실행하고 기존 data/private/web-host 기록을 이어 쓴다. 이전50731·50730과 Docker50729·ngrok은 이번 수정이 적용된 서버가 아니다. [공급자 설정](llm-providers.md)을 따른다.
+
+정상 종료뿐 아니라 tool_limit·step_limit·output_limit·timeout·model_error 등으로 끝나도 저장된 문맥이 있으면 이어서 질문할 수 있다. 서버가 can_continue를 반환하고 화면은 이 값을 따른다. 문맥을 불러오지 못했을 때는 전송을 막고 새 대화로 몰래 바꾸지 않는다. 실행 중이거나 서버 수준의 error·interrupted로 끝난 대화는 현재 이어가기 대상이 아니다. 왼쪽 목록은 원래 대화 ID별로 묶고 마지막 턴으로 연결한다. 내부 요청별 run ID는 실행 추적용으로 계속 생성되며 같은 대화의 메모리 범위는 유지된다.
 
 060에서 TourAPI 도입을 취소했다. 아래059의 키 발급·관광 MCP 연결은 과거 계획이다. 현재 웹검색과 MCP 연결 기반은 유지하며 신규 기관 API 가입을 전제로 두지 않는다.
 

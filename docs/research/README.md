@@ -4,6 +4,10 @@
 
 노션 허브: https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f
 
+- [065: 한도 확대·대화 이어가기 복구](2026-10-19-065-chat-continuation-and-budgets.md) — 도구20·모델24, 한도 종료 문맥 유지·대화별 목록·214개 검사와 실제 후속 응답
+
+065 노션 동기화 완료: https://app.notion.com/p/3fed058c022e816f8a7ee1aadad17c5c
+
 - [064: Nexus FreeLLMAPI 공급자 전환](2026-10-19-064-nexus-llm-provider.md) — OpenAI 호환 도구 왕복·210개 테스트·실제 검색 한도 종료와 대화 이어가기, 새 호스트50731
 
 064 노션 동기화 완료: https://app.notion.com/p/3fed058c022e8120ab56d08d0200d3cd

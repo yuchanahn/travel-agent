@@ -242,7 +242,7 @@ def execute_batch(calls, *, store, user, session, mode, rerank, seen, enable_web
 
 @with_mcp
 def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=False,
-              max_steps=12, max_tool_calls=8, timeout=120, max_input_bytes=None,
+              max_steps=24, max_tool_calls=20, timeout=120, max_input_bytes=None,
               trace_dir="data/private/traces", enable_web=True, tool_workers=3,
               web_tool_format=None, enable_read=True, history=None, prior_sources=None,
               completion_protocol="native", recalled_memory=None, context_info=None, prior_memory_ids=None,
@@ -251,8 +251,8 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
         raise ValueError("Query must be non-empty")
     if completion_protocol not in {"native", "explicit", "legacy"}:
         raise ValueError("completion_protocol must be native, explicit or legacy")
-    if not 1 <= max_steps <= 12 or not 1 <= max_tool_calls <= 20 or not 0 < timeout <= 600:
-        raise ValueError("Limits: max_steps 1..12, max_tool_calls 1..20, timeout 0..600 seconds")
+    if not 1 <= max_steps <= 24 or not 1 <= max_tool_calls <= 20 or not 0 < timeout <= 600:
+        raise ValueError("Limits: max_steps 1..24, max_tool_calls 1..20, timeout 0..600 seconds")
     max_input_bytes = input_byte_limit() if max_input_bytes is None else max_input_bytes
     if type(max_input_bytes) is not int or not 1000 <= max_input_bytes <= 1048576 or mode not in {"bm25", "dense", "hybrid"}:
         raise ValueError("Invalid mode or input byte budget (1000..1048576)")

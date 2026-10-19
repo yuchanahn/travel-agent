@@ -15,13 +15,21 @@ def reply(content='',calls=None,reason='stop'):
 
 
 class CompletionTests(unittest.TestCase):
-    def test_default_allows_seventh_call_and_stops_at_twelve(self):
+    def test_default_supports_twenty_sequential_tools_then_finalizes(self):
+        calls=[reply(calls=[{'id':f'call-{i}','function':{'name':'web_search',
+                     'arguments':{'query':f'public fixture {i}','top_k':1}}}]) for i in range(20)]
+        with patch('travel_agent.agent.execute_tool',return_value={'hits':[]}):
+            result=self.run_fixture(calls+[reply('확인된 범위만 정리합니다.')],completion_protocol='native')
+        self.assertEqual((result['tool_calls'],result['model_calls'],result['status']),(20,21,'tool_limit'))
+        self.assertEqual(self.events[0]['limits']['max_tool_calls'],20)
+
+    def test_default_allows_seventh_call_and_stops_at_twenty_four(self):
         r=self.run_fixture([reply('진행합니다.')]*6+[reply('<final>일곱 번째 호출에서 완료.</final>')])
         self.assertEqual((r['status'],r['model_calls']),('completed',7))
         self.assertFalse(r['finalization_for_budget'])
         limited=self.run_fixture(reply('진행합니다.'))
-        self.assertEqual((limited['status'],limited['model_calls']),('step_limit',12))
-        self.assertEqual(self.events[0]['limits']['max_steps'],12)
+        self.assertEqual((limited['status'],limited['model_calls']),('step_limit',24))
+        self.assertEqual(self.events[0]['limits']['max_steps'],24)
 
     def test_same_progress_text_finishes_legacy_but_not_explicit(self):
         old=self.run_fixture(reply('검색을 진행하겠습니다.'),completion_protocol='legacy')

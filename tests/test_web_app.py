@@ -118,6 +118,55 @@ class WebAppTests(unittest.TestCase):
         finally:
             restored.pool.shutdown()
 
+    def test_budget_and_model_failures_keep_parent_context(self):
+        for number, reason in enumerate(['tool_limit','step_limit','output_limit','timeout','model_error','protocol_error','context_limit']):
+            with self.subTest(reason=reason):
+                parent_id=f'{number+1:032x}'
+                folder=Path(self.temp.name)/parent_id
+                folder.mkdir()
+                history=[{'role':'user','content':'Synthetic party of two'},
+                         {'role':'assistant','content':'Partial known facts'}]
+                (folder/'context.json').write_text(json.dumps({'history':history,'summary':'','session':parent_id}),encoding='utf-8')
+                parent={'id':parent_id,'query':'Synthetic party of two','state':'done',
+                        'created_at':'2026-10-19T01:00:00+00:00',
+                        'result':{'status':reason,'partial_answer':'Partial known facts'}}
+                self.manager._save(parent)
+                with patch('travel_agent.web_app.run_agent',return_value={'status':'completed','answer':'Two people'}) as agent:
+                    status,body,_=self.request('POST','/api/runs',{'query':'How many people?','parent_id':parent_id})
+                    self.assertEqual(status,202)
+                    run_id=json.loads(body)['id']
+                    self.manager.pool.submit(lambda:None).result(timeout=3)
+                self.assertEqual(agent.call_args.kwargs['history'],history)
+                snapshot=self.manager.snapshot(run_id)
+                self.assertEqual(snapshot['parent_id'],parent_id)
+                self.assertTrue(snapshot['can_continue'])
+                self.assertEqual(snapshot['conversation'][0]['answer'],'Partial known facts')
+                self.assertEqual(len(snapshot['conversation']),2)
+
+    def test_history_groups_turns_by_root_and_opens_latest_turn(self):
+        root='1'*32;child='2'*32;latest='3'*32;other='4'*32
+        for i,(identity,parent) in enumerate([(root,None),(child,root),(latest,child),(other,None)]):
+            job={'id':identity,'query':'same title' if parent is None else 'followup',
+                 'state':'done','created_at':f'2026-10-19T01:00:0{i}+00:00',
+                 'result':{'status':'tool_limit','answer':'fixture'}}
+            if parent:job['parent_id']=parent
+            self.manager.jobs[identity]=job
+            self.manager._save(job)
+        status,body,_=self.request('GET','/api/runs')
+        chats=json.loads(body)['runs']
+        self.assertEqual(status,200)
+        self.assertEqual(len(chats),2)
+        grouped=next(chat for chat in chats if chat['conversation_id']==root)
+        self.assertEqual((grouped['id'],grouped['query'],grouped['turn_count']),(latest,'same title',3))
+
+    def test_running_or_missing_context_cannot_silently_continue(self):
+        for state in ['running','queued','done','interrupted','error']:
+            parent={'id':'9'*32,'query':'fixture','state':state,'created_at':'test',
+                    'result':{'status':'tool_limit'}}
+            self.manager.jobs[parent['id']]=parent
+            self.assertFalse(self.manager.snapshot(parent['id'])['can_continue'])
+            self.assertEqual(self.request('POST','/api/runs',{'query':'next','parent_id':parent['id']})[0],400)
+
     def test_three_slots_are_bounded_and_inference_is_serial(self):
         release=Event();started=Event();ids=[]
         def agent(*args,**kwargs):
