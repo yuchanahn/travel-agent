@@ -1,5 +1,7 @@
 """Read selected public search sources; HTML stays outside the model context."""
 import gzip
+import hashlib
+from threading import Lock
 from http.client import HTTPConnection, HTTPSConnection, HTTPException
 from datetime import datetime, timezone
 from io import BytesIO
@@ -12,10 +14,42 @@ from trafilatura import extract
 
 from .memory import canonical
 from .web import WebSearchError, _clean_url
-from .evidence_text import bounded_blocks, body_signal
+from .evidence_text import bounded_blocks, bounded_prefix, body_signal
 from .structured_lodging import lodging_metadata
 
 MAX_PAGE_BYTES = 2 * 1024 * 1024
+
+
+class PageCache:
+    """One agent invocation only. Parallel reads share an immutable extracted page."""
+    def __init__(self, max_bytes=8 * 1024 * 1024):
+        self.pages = {}
+        self.max_bytes = max_bytes
+        self.used_bytes = 0
+        self.lock = Lock()
+        self.source_locks = {}
+
+    def load(self, source, timeout, token=None):
+        with self.lock:
+            source_lock = self.source_locks.setdefault(source['id'], Lock())
+        with source_lock:
+            cached = self.pages.get(source['id'])
+            if token is not None and (cached is None or cached['document_token'] != token):
+                raise ValueError('Document token is not cached in this run; first read source_id with query only')
+            if cached is not None:
+                return cached, True
+            body, info = fetch_public_page(source['url'], timeout)
+            text = extract_page(body, source['url'])
+            size = len(text.encode())
+            cached = {'text': text, 'info': info, 'download_bytes': len(body),
+                'fetched_at': datetime.now(timezone.utc).isoformat(),
+                'document_token': hashlib.sha256((source['id'] + text).encode()).hexdigest()[:16]}
+            with self.lock:
+                if self.used_bytes + size > self.max_bytes:
+                    raise ValueError('Page cache byte budget reached; cached documents remain readable')
+                self.pages[source['id']] = cached
+                self.used_bytes += size
+            return cached, False
 
 
 def fetch_public_page(url, timeout=12):
@@ -88,18 +122,50 @@ def select_excerpt(text, query, max_bytes):
     return excerpt, selected, len(bounded_blocks(text,600,max_bytes))
 
 
-def web_read(source, query, *, timeout=12, max_bytes=3500):
+def web_read(source, query, *, timeout=12, max_bytes=3500, cache=None, document_token=None, start_index=None):
     started = time.perf_counter()
-    body, info = fetch_public_page(source['url'], timeout)
-    text = extract_page(body, source['url'])
+    if (document_token is None) != (start_index is None):
+        raise ValueError('Pagination requires both document_token and start_index')
+    if document_token is not None and cache is None:
+        raise ValueError('Pagination requires a run-scoped page cache')
+    if cache is not None:
+        page, hit = cache.load(source, timeout, document_token)
+        text, info = page['text'], page['info']
+    else:
+        body, info = fetch_public_page(source['url'], timeout)
+        text = extract_page(body, source['url'])
     result = {'id':source['id'], 'title':source['title'], 'url':source['url'],
               'content_kind':'page_excerpt', 'page_fetched':True, 'format':'markdown',
               'verified_current':False, 'selection_query':query, 'text':'',
               'body_signal':body_signal(text),
               'truncated':True, 'selected_blocks':[], 'total_blocks':0,
-              'download_bytes':len(body), **info}
-    result['fetched_at'] = datetime.now(timezone.utc).isoformat()
+              'download_bytes':page['download_bytes'] if cache is not None else len(body), **info}
+    result['fetched_at'] = page['fetched_at'] if cache is not None else datetime.now(timezone.utc).isoformat()
+    if cache is not None:
+        result.update(document_token=page['document_token'], cache_hit=hit,
+            total_chars=len(text), start_index=start_index, next_start_index=None,
+            reading_mode='sequential' if start_index is not None else 'query_excerpt')
+    if start_index is not None and (type(start_index) is not int or not 0 <= start_index < len(text)):
+        raise ValueError('start_index is outside the cached extracted document')
     available = max_bytes - len(canonical(result).encode('utf-8')) - 160
+    if start_index is not None:
+        # Preserve exact character offsets, including whitespace. Query selection is bypassed.
+        result.update(text_is_fragment=True, boundary_split=False)
+        while available > 0:
+            excerpt = bounded_prefix(text[start_index:], available)
+            split = not bool(excerpt)
+            if split:
+                # JSON-LD and long tokens may have no sentence/word boundary.
+                # Explicitly label the fragment instead of dropping its contents.
+                excerpt = text[start_index:].encode()[:available].decode('utf-8', errors='ignore')
+            end = start_index + len(excerpt)
+            result.update(text=excerpt, truncated=end < len(text),
+                boundary_split=split, next_start_index=end if end < len(text) else None)
+            if excerpt and len(canonical(result).encode()) <= max_bytes:
+                result['elapsed_ms'] = round((time.perf_counter()-started)*1000)
+                return result
+            available -= 100
+        raise WebSearchError('No sequential text fits output budget', details={'reason':'output_budget_too_small'})
     excerpt, selected, total = select_excerpt(text, query, max(0, available))
     result.update(text=excerpt, selected_blocks=selected, total_blocks=total,
                   truncated=excerpt!=text, elapsed_ms=round((time.perf_counter()-started)*1000))
@@ -110,5 +176,11 @@ def web_read(source, query, *, timeout=12, max_bytes=3500):
         excerpt, selected, _ = select_excerpt(text, query, available)
         result.update(text=excerpt, selected_blocks=selected, truncated=True)
     if not result['text']:
-        raise WebSearchError('No page excerpt fits output budget', details={'reason':'output_budget_too_small'})
+        if cache is None:
+            raise WebSearchError('No page excerpt fits output budget', details={'reason':'output_budget_too_small'})
+        result['excerpt_unavailable_reason'] = 'No matching bounded excerpt; use document_token and start_index=0 to read extracted text'
+    if cache is not None and result['truncated']:
+        result['next_start_index'] = 0
+    if len(canonical(result).encode()) > max_bytes:
+        raise WebSearchError('Page metadata exceeds output budget', details={'reason':'output_budget_too_small'})
     return result

@@ -14,7 +14,8 @@ from .memory import canonical, search
 from .llm_config import generation_options, input_byte_limit
 from .trace import Trace
 from .web import WebSearchError, web_search
-from .web_read import web_read
+from .web_read import web_read, PageCache
+from .lodging_evidence import LodgingEvidence
 from .web_context import FORMATS, format_web_result
 from .mcp_client import with_mcp, model_result as mcp_model_result
 
@@ -22,6 +23,12 @@ WEB_TOOLS = {"web_search", "web_read"}
 
 
 TOOLS = [
+    {"type": "function", "function": {
+        "name": "lodging_evidence",
+        "description": "조회한 OpenBnB 숙소별 근거를 다시 확인한다. 인자 없이 숙소 키 목록, listing_key로 해당 숙소의 출처별 시설·요금 조건·누락 정보를 읽는다. 새 검색·예약·사실 검증이 아니다.",
+        "parameters": {"type": "object", "properties": {
+            "listing_key": {"type": "string", "description": "반환된 airbnb:숫자 숙소 키"}},
+            "additionalProperties": False}}},
     {"type": "function", "function": {
         "name": "memory_search",
         "description": "과거 여행 대화·도구 기록 검색. 질문에 필요한 짧은 검색어를 사용한다. 현재 정보 조회가 아니다.",
@@ -43,10 +50,12 @@ TOOLS = [
             "required": ["query"], "additionalProperties": False}}},
     {"type": "function", "function": {
         "name": "web_read",
-        "description": "이 요청에서 검색한 출처 ID의 페이지를 읽어 질문에 맞는 본문 발췌를 가져온다. 전체 원문·실시간 사실 검증이 아니며 실패·잘림이 있을 수 있다.",
+        "description": "검색 출처의 본문을 읽는다. query만 주면 관련 발췌. 잘렸으면 반환 document_token과 next_start_index를 함께 넣어 동일 저장 문서를 순서대로 추가 읽는다. 첫 발췌의 다음 인덱스 0은 원문 처음부터 읽기다. 새 실행에서는 query만으로 먼저 읽는다. 실시간 가격 검증이 아니다.",
         "parameters": {"type": "object", "properties": {
             "source_id": {"type": "string", "description": "앞선 web_search가 제공한 web: 출처 ID"},
-            "query": {"type": "string", "description": "본문에서 확인할 내용: 교통·관람시간·휴관일 등"}},
+            "query": {"type": "string", "description": "본문에서 확인할 내용: 교통·관람시간·휴관일 등"},
+            "document_token": {"type": "string", "description": "같은 실행의 web_read가 반환한 문서 토큰"},
+            "start_index": {"type": "integer", "minimum": 0, "description": "반환 next_start_index 문자 위치. 토큰과 함께 사용"}},
             "required": ["source_id", "query"], "additionalProperties": False}}},
 
 ]
@@ -67,6 +76,8 @@ def final_answer(content):
     return match[1].strip()
 
 SYSTEM = """너는 여행 준비를 돕는 한국어 에이전트다.
+숙소 시설·요금·지역의 근거는 해당 숙소에만 적용한다. 이름이 비슷하거나 검색 지역이 같아도 다른 숙소의 시설을 옮기지 않는다. OpenBnB 결과의 listing_key가 숙소 식별자다. 여러 숙소를 비교할 때 필요하면 lodging_evidence로 해당 키의 출처별 근거를 다시 읽는다. 누락된 시설은 미확인이고 Not included는 미제공이다. 출처별 요청 날짜·인원을 합치거나 과거 표시가를 현재 견적으로 바꾸지 않는다.
+web_read 발췌에 필요한 내용이 빠졌으면 같은 출처에 더 구체적인 query를 쓰거나 document_token·next_start_index로 저장 문서의 다른 구간을 읽을 수 있다. query_excerpt의 next_start_index=0은 발췌의 다음 위치가 아니라 원문 처음부터 순차 읽기를 뜻한다. 순차 결과의 text_is_fragment는 문서 일부이며 boundary_split=true이면 단어·문장이 중간에서 나뉜 조각이다. 앞뒤 구간을 읽기 전에 완결된 사실로 해석하지 않는다. 캐시는 현재 실행에만 유효하고 읽은 본문도 독립적인 사실 검증은 아니다.
 사용자가 요청한 조사·비교·추천 결과를 제공하는 것이 목표다. 필요한 확인을 현재 도구로 수행할 수 있으면 '검색하겠다'는 예고나 사용자에게 대신 확인하라는 안내로 끝내지 말고 실제 tool_calls로 실행한다.
 도구 결과를 받은 뒤 사용자 조건에 필요한 근거가 충분한지 판단한다. 부족한 근거를 다른 검색어나 출처 읽기로 확보할 수 있으면 다음 도구 행동을 선택한다. 같은 조회를 무조건 반복하지 않는다.
 날짜·인원 등 사용자만 정할 수 있는 필수 조건이 빠졌으면 필요한 질문을 한다. 접근 실패·새 근거 없음·도구의 한계로 확인할 수 없으면 확보한 결과와 미확인 이유를 설명한다. 모든 항목을 확인할 때까지 무한 조사하지 않는다.
@@ -105,7 +116,7 @@ def validate_call(call, mcp_registry=None):
         raise ValueError("Malformed tool call")
     function = call["function"]
     name, args = function.get("name"), function.get("arguments")
-    if name not in {"memory_search", "memory_show", *WEB_TOOLS} and not (mcp_registry and name in mcp_registry.routes):
+    if name not in {"memory_search", "memory_show", "lodging_evidence", *WEB_TOOLS} and not (mcp_registry and name in mcp_registry.routes):
         raise ValueError("Unknown tool")
     if isinstance(args, str):
         args = json.loads(args)
@@ -114,7 +125,10 @@ def validate_call(call, mcp_registry=None):
     if mcp_registry and name in mcp_registry.routes:
         mcp_registry.validate(name,args)
         return name,args
-    if name in {"memory_search", "web_search"}:
+    if name == 'lodging_evidence':
+        if set(args) - {'listing_key'} or ('listing_key' in args and (not isinstance(args['listing_key'], str) or not re.fullmatch(r'airbnb:\d{1,30}', args['listing_key']))):
+            raise ValueError('lodging_evidence accepts only an optional returned listing_key')
+    elif name in {"memory_search", "web_search"}:
         if set(args) - {"query", "top_k"} or not isinstance(args.get("query"), str) or not 0 < len(args["query"].strip()) <= 500:
             raise ValueError("Search requires query (1..500 characters); only query/top_k allowed")
         top_k = args.get("top_k", 3)
@@ -122,18 +136,23 @@ def validate_call(call, mcp_registry=None):
             raise ValueError("top_k must be an integer 1..5")
         args = {"query": args["query"].strip(), "top_k": top_k}
     elif name == "web_read":
-        if set(args) != {"source_id", "query"} or not isinstance(args.get("source_id"), str) or not re.fullmatch(r"(?:web:)?[a-f0-9]{16}", args["source_id"]):
+        if not {'source_id','query'} <= set(args) or set(args) - {'source_id','query','document_token','start_index'} or not isinstance(args.get("source_id"), str) or not re.fullmatch(r"(?:web:)?[a-f0-9]{16}", args["source_id"]):
             raise ValueError("web_read requires a returned source_id and query")
         if not isinstance(args.get("query"), str) or not 0 < len(args["query"].strip()) <= 500:
             raise ValueError("web_read query must contain 1..500 characters")
         source_id = args["source_id"] if args["source_id"].startswith("web:") else "web:"+args["source_id"]
-        args = {"source_id": source_id, "query": args["query"].strip()}
+        extra = {}
+        if 'document_token' in args or 'start_index' in args:
+            if not isinstance(args.get('document_token'), str) or not re.fullmatch(r'[a-f0-9]{16}', args['document_token']) or type(args.get('start_index')) is not int or args['start_index'] < 0:
+                raise ValueError('Pagination requires document_token and a nonnegative integer start_index')
+            extra = {key:args[key] for key in ('document_token','start_index')}
+        args = {"source_id": source_id, "query": args["query"].strip(), **extra}
     elif set(args) != {"event_id"} or not isinstance(args["event_id"], str) or not 0 < len(args["event_id"].strip()) <= 128:
         raise ValueError("memory_show requires only event_id (1..128 characters)")
     return name, args
 
 
-def execute_tool(store, user, session, name, args, *, mode, rerank, max_bytes=3500, timeout=15, allowed_sources=None, mcp_registry=None):
+def execute_tool(store, user, session, name, args, *, mode, rerank, max_bytes=3500, timeout=15, allowed_sources=None, mcp_registry=None, page_cache=None, lodging=None):
     """Scope is supplied by the host, never by model-generated arguments."""
     if mcp_registry and name in mcp_registry.routes:
         return mcp_registry.call(name,args,timeout=timeout)
@@ -142,7 +161,14 @@ def execute_tool(store, user, session, name, args, *, mode, rerank, max_bytes=35
     if name == "web_read":
         if not allowed_sources or args["source_id"] not in allowed_sources:
             raise ValueError("Source ID was not returned by an earlier search in this request")
-        return web_read(allowed_sources[args["source_id"]], args["query"], timeout=timeout, max_bytes=max_bytes)
+        extra = {key:args[key] for key in ('document_token','start_index') if key in args}
+        if page_cache is not None:
+            extra['cache'] = page_cache
+        return web_read(allowed_sources[args["source_id"]], args["query"], timeout=timeout, max_bytes=max_bytes, **extra)
+    if name == 'lodging_evidence':
+        if lodging is None:
+            raise ValueError('No run-scoped lodging evidence available')
+        return lodging.read(args.get('listing_key'))
     if name == "memory_show":
         row = store.db.execute("SELECT payload FROM events WHERE user_id=? AND session_id=? AND event_id=?",
                                (user, session, args["event_id"])).fetchone()
@@ -169,7 +195,7 @@ def execute_tool(store, user, session, name, args, *, mode, rerank, max_bytes=35
 
 
 def execute_batch(calls, *, store, user, session, mode, rerank, seen, enable_web,
-                  deadline, trace, step, workers, allowed_sources=None, enable_read=True, mcp_registry=None):
+                  deadline, trace, step, workers, allowed_sources=None, enable_read=True, mcp_registry=None, page_cache=None, lodging=None):
     """Web/MCP I/O runs in workers; SQLite/ML stay on the owning thread."""
     results = [None] * len(calls)
     jobs = []
@@ -194,7 +220,7 @@ def execute_batch(calls, *, store, user, session, mode, rerank, seen, enable_web
                 raise ValueError("Web search is disabled for this request")
             if name == "web_read" and not enable_read:
                 raise ValueError("Page reading is disabled for this request")
-            key = canonical([name, args])
+            key = canonical([name, args, lodging.revision] if name == 'lodging_evidence' and lodging is not None else [name, args])
             if key in seen:
                 raise ValueError("Identical tool call already attempted; change query or answer from available evidence")
             seen.add(key)
@@ -216,6 +242,8 @@ def execute_batch(calls, *, store, user, session, mode, rerank, seen, enable_web
                 raise TimeoutError("Request deadline reached before tool execution")
             result = execute_tool(None if name in network_tools else store, user, session, name, args,
                                   mode=mode, rerank=rerank, timeout=min(15, remaining), allowed_sources=allowed_sources,
+                                  **({'page_cache':page_cache} if page_cache is not None else {}),
+                                  **({'lodging':lodging} if lodging is not None else {}),
                                   **({'mcp_registry':mcp_registry} if mcp_registry else {}))
             kind = "tool_error" if result.get('is_error') else "tool_end"
         except (ValueError, TypeError, sqlite3.Error, OSError, ImportError, RuntimeError) as exc:
@@ -293,6 +321,14 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
         system += '\n현재 요약에는 누락·오류가 있을 수 있다. 과거 원문과 최신 사용자 정정을 우선하고, 과거 assistant 발언을 검증된 사실로 취급하지 않는다.'
     messages = [{"role": "system", "content": system}, *(history or []),
                 {"role": "user", "content": f"현재 요약:\n{summary}{recall_text}\n질문:\n{query}"}]
+    page_cache = PageCache()
+    recorded_pages = set()
+    lodging = LodgingEvidence(store.events(user, session))
+    for message in history or []:
+        if message.get('role') == 'tool':
+            lodging.ingest(message.get('content', ''))
+    if not lodging.records and not any(adapter == 'openbnb' for adapter in getattr(mcp_registry, 'adapters', {}).values()):
+        tools = [tool for tool in tools if tool['function']['name'] != 'lodging_evidence']
     deadline = time.perf_counter() + timeout
     model_calls = tool_calls = 0
     citation_repairs = 0
@@ -302,6 +338,7 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
     mcp_sources = {source['id']:dict(source) for source in (prior_mcp_sources or [])}
     evidence_ids = set(web_sources)
     evidence_ids.update(mcp_sources)
+    evidence_ids.update(source_id for item in lodging.records.values() for source_id in item['observations'])
     evidence_ids.update(prior_memory_ids or [])
     evidence_ids.update(hit['id'] for hit in recalled_memory.get('hits', []))
     web_attempted = web_performed = False
@@ -461,8 +498,13 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
         results, attempted = execute_batch(calls, store=store, user=user, session=session,
                                           mode=mode, rerank=rerank, seen=seen, enable_web=enable_web,
                                           deadline=deadline, trace=trace, step=step, workers=tool_workers,
-                                          allowed_sources=dict(web_sources), enable_read=enable_read, mcp_registry=mcp_registry)
+                                          allowed_sources=dict(web_sources), enable_read=enable_read, mcp_registry=mcp_registry,
+                                          page_cache=page_cache, lodging=lodging)
         web_attempted |= attempted
+        for source_id, page in page_cache.pages.items():
+            if source_id not in recorded_pages:
+                trace.emit('page_snapshot', source_id=source_id, **page)
+                recorded_pages.add(source_id)
         for index, call in enumerate(calls):
             name, result = results[index]
             span = f"{step}.{index + 1}"
@@ -477,6 +519,8 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
                         trace.emit("retrieval_index", step=step, span=span, snapshot=row[0], config=json.loads(row[1]))
                 elif name == "memory_show":
                     evidence_ids.add(result["id"])
+                elif name == 'lodging_evidence':
+                    pass  # Reuses original MCP citations; this lookup is not a new source.
                 elif name == "web_read":
                     source = web_sources[result["id"]]
                     source.update(page_fetched=True, content_kind="page_excerpt", fetched_at=result.get("fetched_at"),
@@ -494,6 +538,8 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
                                 ("page_fetched", "content_kind", "fetched_at", "excerpt_truncated") if key in prior_source})
             is_mcp = mcp_registry and name in mcp_registry.routes
             content = mcp_model_result(result) if is_mcp else format_web_result(result, web_tool_format) if name in WEB_TOOLS else canonical(result)
+            if is_mcp:
+                lodging.ingest(content)
             trace.emit("tool_message_prepared", step=step, span=span, name=name,
                        format='mcp_compact_json' if is_mcp else web_tool_format if name in WEB_TOOLS else "full_json",
                        full_result_bytes=len(canonical(result).encode("utf-8")), model_content_bytes=len(content.encode("utf-8")))

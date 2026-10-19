@@ -9,7 +9,10 @@ def compact_result(result):
         return result
     if result.get('content_kind') == 'page_excerpt':
         return {key: result[key] for key in ('id','title','url','content_kind','page_fetched','verified_current',
-                                            'selection_query','truncated','fetched_at','text','body_signal') if key in result}
+                                            'selection_query','truncated','fetched_at','text','body_signal',
+                                            'document_token','cache_hit','total_chars','start_index',
+                                            'next_start_index','reading_mode','text_is_fragment','boundary_split',
+                                            'excerpt_unavailable_reason') if key in result}
     return {key: value for key, value in {
         'status':result.get('status'), 'content_kind':result.get('content_kind'),
         'page_fetched':result.get('page_fetched'), 'searched_at':result.get('searched_at'),

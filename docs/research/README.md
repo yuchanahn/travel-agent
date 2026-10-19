@@ -4,6 +4,10 @@
 
 노션 허브: https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f
 
+- [069: 숙소별 근거 분리·동일 추출문 추가 읽기](2026-10-19-069-scoped-evidence-and-page-reading.md) —246개 Python·JS3종, 실제 모델 근거 조회·공개 페이지1HTTP/12구간 재조립, 인용 누락·품질 한계 유지
+
+069 노션 동기화 완료: https://app.notion.com/p/3fed058c022e812484cce6ca0306ca76
+
 - [068: 여행 완료 흐름 검증·숙박 API/검색 조사](2026-10-19-068-acceptance-and-lodging.md) — 실제6턴·보완3턴 완주지만 품질fail,229개 검사·JSON-LD 주소 보존·테스트6세션 삭제
 
 068 노션 동기화 완료: https://app.notion.com/p/3fed058c022e813ab982d496205f58ba

@@ -2,6 +2,7 @@
 import json
 from datetime import date
 from .memory import canonical
+from .lodging_evidence import listing_key
 
 
 GUIDANCE = ('OpenBnB는 Airbnb 공개 페이지의 숙소 후보 검색·상세 조회다. 국내 지역은 가능하면 '
@@ -16,7 +17,7 @@ GUIDANCE = ('OpenBnB는 Airbnb 공개 페이지의 숙소 후보 검색·상세 
 
 
 def pack_result(result, max_bytes):
-    outer = {k:v for k,v in result.items() if k not in {'raw_result','text','model_adapter'}}
+    outer = {k:v for k,v in result.items() if k not in {'raw_result','text'}}
     outer['citation']='['+str(result.get('id',''))+']'
     try:
         payload = json.loads(result.get('text',''))
@@ -47,7 +48,7 @@ def pack_result(result, max_bytes):
                     omitted_count=len(rows),page_cursors=cursors)
         for row in rows:
             listing=row.get('demandStayListing',{})
-            item={'id':row.get('id'),'url':row.get('url'),
+            item={'id':row.get('id'),'url':row.get('url'),'listing_key':listing_key(row.get('url')),
                   'name':listing.get('description',{}).get('name',{}).get('localizedStringWithTranslationPreference'),
                   'coordinates':listing.get('location',{}).get('coordinate'),
                   'price':row.get('structuredDisplayPrice') if dates_known else None, 'rating':row.get('avgRatingA11yLabel'),
@@ -62,7 +63,7 @@ def pack_result(result, max_bytes):
         expected={'LOCATION_DEFAULT','POLICIES_DEFAULT','HIGHLIGHTS_DEFAULT','DESCRIPTION_DEFAULT','AMENITIES_DEFAULT'}
         missing={s.get('id') for s in sections if not any(v for k,v in s.items() if k!='id')}
         missing.update(expected-{s.get('id') for s in sections})
-        data.update(listing_url=payload.get('listingUrl'),sections=[],
+        data.update(listing_url=payload.get('listingUrl'),listing_key=listing_key(payload.get('listingUrl')),sections=[],
                     missing_sections=sorted(missing),
                     omitted_sections=[])
         for section in sections:
