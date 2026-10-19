@@ -1,4 +1,4 @@
-param([int]$Port = 50732)
+param([int]$Port = 50733)
 $ErrorActionPreference = 'Stop'
 Push-Location (Split-Path -Parent $PSScriptRoot)
 try {

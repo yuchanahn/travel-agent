@@ -159,6 +159,62 @@ class WebAppTests(unittest.TestCase):
         grouped=next(chat for chat in chats if chat['conversation_id']==root)
         self.assertEqual((grouped['id'],grouped['query'],grouped['turn_count']),(latest,'same title',3))
 
+    def deletion_fixture(self, identity, parent=None, state='done', cached=True):
+        job={'id':identity,'query':'Synthetic deletion fixture','state':state,
+             'created_at':'2026-10-19T01:00:00+00:00','result':{'status':'completed','answer':'fixture'}}
+        if parent:job['parent_id']=parent
+        self.manager._save(job)
+        (self.manager.directory/identity/'memory.sqlite3').write_text('synthetic memory')
+        logs=self.manager.directory/identity/'traces'
+        logs.mkdir();(logs/'trace.jsonl').write_text('synthetic trace')
+        if cached:self.manager.jobs[identity]=job
+        return job
+
+    def test_delete_removes_whole_conversation_branches_and_uncached_descendants(self):
+        root='1'*32;child='2'*32;branch='3'*32;other='4'*32
+        self.deletion_fixture(root)
+        self.deletion_fixture(child,root)
+        self.deletion_fixture(branch,root,cached=False)
+        self.deletion_fixture(other)
+        status,body,_=self.request('DELETE','/api/conversations/'+child)
+        result=json.loads(body)
+        self.assertEqual(status,200)
+        self.assertEqual(set(result['deleted_ids']),{root,child,branch})
+        for identity in [root,child,branch]:
+            self.assertFalse((self.manager.directory/identity).exists())
+            self.assertNotIn(identity,self.manager.jobs)
+            self.assertEqual(self.request('GET','/api/runs/'+identity)[0],404)
+        self.assertTrue((self.manager.directory/other/'memory.sqlite3').exists())
+        restored=RunManager(self.temp.name)
+        try:self.assertEqual([j['conversation_id'] for j in restored.summaries()],[other])
+        finally:restored.pool.shutdown()
+
+    def test_delete_rejects_active_descendant_foreign_origin_and_bad_path(self):
+        root='1'*32;child='2'*32
+        self.deletion_fixture(root)
+        self.deletion_fixture(child,root,state='running',cached=False)
+        self.assertEqual(self.request('DELETE','/api/conversations/'+root)[0],409)
+        self.assertTrue((self.manager.directory/root).exists())
+        self.assertEqual(self.request('DELETE','/api/conversations/'+root,headers={'Origin':'https://attacker.invalid'})[0],403)
+        self.assertEqual(self.request('DELETE','/api/conversations/../secret')[0],404)
+        self.assertEqual(self.request('DELETE','/api/conversations/'+'f'*32)[0],404)
+
+    def test_delete_checks_paths_before_any_removal(self):
+        root='1'*32
+        self.deletion_fixture(root)
+        with patch('pathlib.Path.is_symlink',return_value=True):
+            self.assertEqual(self.request('DELETE','/api/conversations/'+root)[0],404)
+        self.assertTrue((self.manager.directory/root/'memory.sqlite3').exists())
+
+    def test_delete_locked_leaf_keeps_root_and_is_retryable(self):
+        root='1'*32;child='2'*32
+        self.deletion_fixture(root);self.deletion_fixture(child,root)
+        with patch('travel_agent.web_app.shutil.rmtree',side_effect=PermissionError('locked')):
+            self.assertEqual(self.request('DELETE','/api/conversations/'+root)[0],500)
+        self.assertTrue((self.manager.directory/root).exists())
+        self.assertTrue((self.manager.directory/child).exists())
+        self.assertEqual(self.request('DELETE','/api/conversations/'+root)[0],200)
+
     def test_running_or_missing_context_cannot_silently_continue(self):
         for state in ['running','queued','done','interrupted','error']:
             parent={'id':'9'*32,'query':'fixture','state':state,'created_at':'test',

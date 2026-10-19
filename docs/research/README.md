@@ -4,6 +4,10 @@
 
 노션 허브: https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f
 
+- [066: 대화 삭제·검증 세션 정리](2026-10-19-066-session-deletion.md) — 전체 분기·DB·로그 삭제, 실행 중 보호·218개 검사, 실제2턴 자동 삭제 및 기존 테스트 정리
+
+066 노션 동기화 완료: https://app.notion.com/p/3fed058c022e8118b3afff2ff9c375f8
+
 - [065: 한도 확대·대화 이어가기 복구](2026-10-19-065-chat-continuation-and-budgets.md) — 도구20·모델24, 한도 종료 문맥 유지·대화별 목록·214개 검사와 실제 후속 응답
 
 065 노션 동기화 완료: https://app.notion.com/p/3fed058c022e816f8a7ee1aadad17c5c

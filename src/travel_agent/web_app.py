@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 from threading import BoundedSemaphore, Lock
 from urllib.parse import parse_qs, urlsplit
 from urllib.request import urlopen
@@ -246,6 +247,55 @@ class RunManager:
                         'query':root['query'], 'conversation_id':root['id'], 'turn_count':len(turns)}
             return list(chats.values())
 
+    def delete_conversation(self, run_id):
+        """Delete a whole root and its branches, including uncached disk records."""
+        with self.lock:
+            root_id=self.conversation(self._job(run_id))[0]['id']
+            records={}
+            for path in self.directory.glob('*/run.json'):
+                if not RUN_ID.fullmatch(path.parent.name):
+                    continue
+                try:
+                    record=json.loads(path.read_text(encoding='utf-8'))
+                    if record.get('id')==path.parent.name:
+                        records[record['id']]=record
+                except (OSError,ValueError):
+                    continue
+            records.update(self.jobs)
+            selected={root_id}
+            while True:
+                descendants={key for key,job in records.items() if job.get('parent_id') in selected}
+                expanded=selected|descendants
+                if expanded==selected:
+                    break
+                selected=expanded
+            if any(records.get(key,{}).get('state') in {'queued','running'} for key in selected):
+                raise RuntimeError('실행 중이거나 대기 중인 질문이 있습니다. 종료 후 삭제해주세요.')
+            root=self.directory.resolve()
+            targets=[]
+            def depth(key):
+                ancestors=set()
+                while key!=root_id:
+                    if key in ancestors:
+                        raise ValueError('Invalid conversation chain')
+                    ancestors.add(key)
+                    key=records[key]['parent_id']
+                return len(ancestors)
+            # Leaves first: if a locked file interrupts deletion, surviving
+            # records still have their ancestors and the operation can be retried.
+            for key in sorted(selected,key=depth,reverse=True):
+                if not RUN_ID.fullmatch(key):
+                    raise ValueError('Invalid conversation record')
+                target=self.directory/key
+                if target.is_symlink() or target.is_junction() or target.resolve().parent!=root:
+                    raise ValueError('Unsafe conversation path')
+                targets.append(target)
+            for target in targets:
+                if target.exists():
+                    shutil.rmtree(target)
+                self.jobs.pop(target.name,None)
+            return {'conversation_id':root_id,'deleted_ids':sorted(selected),'deleted_count':len(selected)}
+
     def snapshot(self,run_id,after=0):
         with self.lock:
             if run_id not in self.jobs:
@@ -374,6 +424,22 @@ def handler_for(manager):
                 return self._send(400,{'error':'질문과 웹검색 설정을 확인해주세요.'})
             except RuntimeError as exc:
                 return self._send(429,{'error':str(exc)})
+
+        def do_DELETE(self):
+            if not self._allowed():
+                return self._send(403,{'error':'로컬 화면에서만 삭제할 수 있습니다.'})
+            path=urlsplit(self.path).path
+            prefix='/api/conversations/'
+            if not path.startswith(prefix) or not RUN_ID.fullmatch(path[len(prefix):]):
+                return self._send(404,{'error':'대화를 찾을 수 없습니다.'})
+            try:
+                return self._send(200,manager.delete_conversation(path[len(prefix):]))
+            except ValueError:
+                return self._send(404,{'error':'삭제할 대화를 찾을 수 없습니다.'})
+            except RuntimeError as exc:
+                return self._send(409,{'error':str(exc)})
+            except OSError:
+                return self._send(500,{'error':'파일을 삭제하지 못했습니다. 잠시 후 다시 시도해주세요.'})
     return Handler
 
 

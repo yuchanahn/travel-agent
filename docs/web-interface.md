@@ -1,5 +1,10 @@
 # 로컬 에이전트 실험 화면
 
+066의 현재 화면은 http://127.0.0.1:50733/ 이다. 왼쪽 대화의 × 버튼으로 모든 하위 질문·분기·원문·요약·메모리 DB·로그를 함께 지운다. 삭제 전 확인하며 실행·대기 중인 질문이 있으면 삭제를 보류한다. 현재 대화를 삭제하면 새 대화 화면으로 돌아간다. 이 화면은 기존 web-host 저장소와 Nexus 공급자를 사용한다. start_web_host.ps1 기본 포트도50733이다. 아래50732는065 이력이다.
+
+라이브 검증은 `.venv/Scripts/python.exe scripts/smoke_web_session.py --base-url http://127.0.0.1:50733`으로 실행할 수 있다. 합성2턴 검증 후 finally에서 자기 루트만 삭제한다. 삭제 API는 `DELETE /api/conversations/{root_id}`이며 확인된 개발 테스트만 정리하고 일반 사용자 대화는 자동 삭제하지 않는다.
+
+
 065 적용 화면은 호스트 http://127.0.0.1:50732/ 이다. Nexus FreeLLMAPI 연결을 사용하며 도구20회·모델24회·웹180초가 기본이다. `scripts/start_web_host.ps1 -Port 50732`로 실행하고 기존 data/private/web-host 기록을 이어 쓴다. 이전50731·50730과 Docker50729·ngrok은 이번 수정이 적용된 서버가 아니다. [공급자 설정](llm-providers.md)을 따른다.
 
 정상 종료뿐 아니라 tool_limit·step_limit·output_limit·timeout·model_error 등으로 끝나도 저장된 문맥이 있으면 이어서 질문할 수 있다. 서버가 can_continue를 반환하고 화면은 이 값을 따른다. 문맥을 불러오지 못했을 때는 전송을 막고 새 대화로 몰래 바꾸지 않는다. 실행 중이거나 서버 수준의 error·interrupted로 끝난 대화는 현재 이어가기 대상이 아니다. 왼쪽 목록은 원래 대화 ID별로 묶고 마지막 턴으로 연결한다. 내부 요청별 run ID는 실행 추적용으로 계속 생성되며 같은 대화의 메모리 범위는 유지된다.
