@@ -1,6 +1,12 @@
 # 웹검색 도구
 
-## 현재 기본 공급자: Brave Search API (042)
+## 에이전트의 현재 검색 경로 (074)
+
+호스트 에이전트는 공식 `@brave/brave-search-mcp-server` 2.1.4의 `brave_web_search`를 MCP로 호출한다. `adapter=brave_search`가 설정되면 기존 직접 API 검색 도구는 노출하지 않는다. 연결 실패 시 직접 API로 몰래 대체하지 않는다. 제목·URL·대표 요약·추가 발췌를 항목 단위로 보존하며 기본 모델 전달 한도는48000 UTF-8바이트다. 넣지 못한 항목 수를 표시하고 문장·JSON 중간을 자르지 않는다. 검색 발췌는 원사이트 본문 조회가 아니다.
+
+전달된 각 검색 항목은 `web:` 출처 ID를 받아 기존 `web_read`로 본문을 읽을 수 있다. OpenBnB는 숙소 검색·상세 MCP로 별도 유지한다. 연결 예시는 `examples/mcp-brave.example.json`, 키는 비공개 파일에서 읽는다. 아래042의 직접 API 방식은 독립 `web search`·`web research` 명령과 이전 실험에 남아 있다. 두 경로를 현재 에이전트가 동시에 사용하는 것으로 해석하지 않는다.
+
+## 직접 검색 CLI와 이전 에이전트 경로: Brave Search API (042)
 
 Brave Web Search API에서 제목·URL·요약을 받아 기존 출처 ID·출력 제한·추적 형식으로 반환한다. Claude MCP에서 사용하던 키를 재사용하되 Python에서 API를 직접 호출한다. Node MCP 프로세스를 띄우거나 Claude를 호출하지 않는다. 기존 에이전트 web_search와 독립 web research의 검색 공급자가 모두 기본 brave로 바뀌었다. 연구 파이프라인의 전체 수집·발췌 구조를 에이전트 도구로 교체한 것은 아니다.
 

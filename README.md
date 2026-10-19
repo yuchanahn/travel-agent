@@ -28,7 +28,7 @@
 - Qwen3.5 4B Q4_K_M 한국어 응답과 가상 도구 호출 왕복 검증
 - 대화 원문 저장·BM25/dense/hybrid 검색·검색 근거 기반 답변 CLI
 - LLM이 메모리 검색·원문 조회를 선택하는 Agentic RAG와 요청별 실행 추적
-- Brave Search API 기본 연결과 선택적 web_read: 검색 후보·출처, 본문 추출·제한된 발췌, 간결한 모델 입력과 실행 추적. 키는 환경 변수 또는 Git 제외 로컬 파일에 둔다.
+- 호스트 에이전트는 공식 Brave 웹검색 MCP와 web_read를 연결한다. 추가 검색 발췌를 완전한 항목 단위로 보존하고 전달한 출처의 본문을 읽는다. OpenBnB는 숙소 조회 MCP로 유지한다. 직접 API 검색은 독립 검색 CLI·이전 비교에 남긴다. 키는 Git 제외 로컬 파일에서 읽는다. [연결 방법](docs/mcp.md)
 - 독립 검색 파이프라인: 후보 수집 → 중복 제거·BM25Plus 재정렬 → 본문 읽기 → 제한된 발췌. Bing 직접 HTTP는 명시적 비교 경로로 남기며 자동 대체하지 않는다. [현재 실행법](docs/web-search.md)
 - 선택형 webserp Google·Yahoo 연구 경로: Google은 미해결, DuckDuckGo/Yahoo 조합에서 공식 주소 조회와 실제 에이전트 답변 확인 (연구일지019)
 - Google HTTP 직접 구현: `python -m travel_agent.google_http "Python official website"`. 쿠키 파일 저장·재사용, HTML 결과 파서, 선택형 QuickJS 확인 스크립트 실험. 브라우저 방식은 폐기했다. 실제 검색은 아직 실패하며 에이전트 연결 전이다. [HTTP 구현 기록](docs/research/2026-10-18-022-google-http-session.md)

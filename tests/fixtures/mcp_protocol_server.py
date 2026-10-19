@@ -6,6 +6,14 @@ from pydantic import BaseModel
 server = MCPServer('synthetic-travel-fixture',version='1',log_level='ERROR')
 
 
+@server.tool()
+def brave_web_search(query: str) -> str:
+    """Synthetic Brave-shaped result; no real web request."""
+    import json
+    return json.dumps({'title': '합성 공식 안내', 'url': 'https://example.com/visit',
+        'description': '합성 검색 요약.', 'extra_snippets': ['추가 근거가 완전한 문장으로 유지됩니다.']}, ensure_ascii=False)
+
+
 class Place(BaseModel):
     synthetic: bool
     name: str

@@ -119,6 +119,7 @@ def main():
     parser.add_argument('--output', type=Path)
     parser.add_argument('--entrypoint', type=Path)
     parser.add_argument('--resume', action='store_true', help='Keep completed slots and retain interrupted directories')
+    parser.add_argument('--harness', choices=['both','travel','claude'], default='both')
     args = parser.parse_args()
     if args.relay:
         relay(args.relay.resolve())
@@ -139,17 +140,18 @@ def main():
     if any(m['name'] == PROFILE for m in tags):
         raise ValueError('Temporary model profile already exists')
     protocol = {'source_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
-        'cases': cases, 'repeats': 1, 'order': ['travel', 'claude', 'claude', 'travel'],
+        'cases': cases, 'repeats': 1, 'order': [h for h in ['travel', 'claude', 'claude', 'travel'] if args.harness in {'both', h}],
+        'harness_selection': args.harness,
         'model': common.SOURCE, 'profile': PROFILE, 'context': 65536, 'output': 4096,
         'temperature': 0, 'thinking': False, 'model_limit': 24, 'tool_limit': 20, 'timeout': 180,
         'claude': {'version': subprocess.check_output(['claude', '--version'], text=True).strip(),
             'package': '@brave/brave-search-mcp-server', 'package_version': version,
             'only_tool': 'brave_web_search', 'source': 'existing Claude settings entry'},
-        'travel': 'Existing web_search + web_read + configured OpenBnB; empty new memory',
+        'travel': 'Configured production travel tools + web_read; empty new memory. Exact schemas in trace.',
         'scope': 'End-to-end stacks; different real tools, not a pure harness causal comparison'}
     if args.resume:
         frozen = json.loads((folder/'protocol.json').read_text(encoding='utf-8'))
-        if frozen['cases'] != cases or frozen['model'] != common.SOURCE:
+        if frozen['cases'] != cases or frozen['model'] != common.SOURCE or frozen.get('harness_selection','both') != args.harness:
             raise ValueError('Resume must preserve cases and model')
         report = json.loads((folder/'report.json').read_text(encoding='utf-8'))
     else:
@@ -169,6 +171,8 @@ def main():
         os.environ['BRAVE_API_KEY_FILE'] = str(ROOT/'data/private/brave-api-key')
         for i, case in enumerate(cases):
             for harness in (['travel', 'claude'] if i % 2 == 0 else ['claude', 'travel']):
+                if args.harness not in {'both', harness}:
+                    continue
                 if any(r['case'] == case['id'] and r['harness'] == harness for r in report):
                     continue
                 run = folder/f'{case["id"]}-{harness}'

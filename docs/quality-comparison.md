@@ -1,5 +1,7 @@
 # 개선 전후 품질 비교 — 070
 
+공식 MCP 도입과 반복 읽기 보완의 최신 평가는 [074](research/2026-10-20-074-official-brave-mcp.md)다. 첫 도입4실행의 실패도 보존하고 읽기 선택지를 고친 우리2실행을 추가했다. 펜션의 중복 오류는9회에서0회였지만 추천·출처 내용은 엄격 기준 미통과다. `compare_live_harnesses.py --harness travel`로 우리 쪽만 별도 재실행할 수 있다. 검색 결과가 매번 달라 단일 변경의 일반 효과로 표현하지 않는다.
+
 사용자가 요청한 실제 검색 도구 활용 비교는 [073 연구일지](research/2026-10-20-073-live-harness-comparison.md)를 따른다. `compare_live_harnesses.py`는 기존 여행 도구와 Claude Code에 등록된 실제 Brave MCP만을 사용한다. `summarize_live_harnesses.py`는 모델 도구 ID·MCP RPC ID·다음 모델 tool_result를 연결한다. 합성 결과를 주입하지 않으며 실제 검색·반환 자료·최종 답변을 보존한다. 이는 서로 다른 실제 구성의 비교이고, 도구·locale·프롬프트 차이를 제거한 순수 하네스 인과 실험은 아니다. 072는 합성 도구 예비 실험으로 범위를 정정했다.
 
 [072 연구일지](research/2026-10-19-072-qwen-harness-comparison.md)는 과거 합성 도구 예비 비교다. `scripts/compare_harnesses.py`와 `research/072-harness-results.json`은 그 재현·결과 확인용으로 보존한다. 실제 웹검색 비교를 대체하지 않으며, 070의 버전 전후 평가나 073 결과와 합산하지 않는다.

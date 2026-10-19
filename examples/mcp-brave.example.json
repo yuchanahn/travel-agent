@@ -1,0 +1,9 @@
+{
+  "servers": [{
+    "id": "brave", "transport": "stdio", "enabled": true, "adapter": "brave_search",
+    "command": "node",
+    "args": ["/absolute/path/to/@brave/brave-search-mcp-server/dist/index.js", "--transport", "stdio", "--enabled-tools", "brave_web_search"],
+    "allowed_tools": ["brave_web_search"],
+    "env_files": {"BRAVE_API_KEY": "/absolute/path/to/brave-api-key"}
+  }]
+}
