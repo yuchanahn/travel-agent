@@ -4,6 +4,10 @@
 
 노션 허브: https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f
 
+- [072: 같은 Qwen으로 두 하네스 비교](2026-10-19-072-qwen-harness-comparison.md) — 일반 모드4실행·동일 MCP 자료·실제64K, 시설 둘 다 통과·Claude 가격 조건/산술 오류, 우열 일반화 보류
+
+072 노션 동기화 완료: https://app.notion.com/p/3fed058c022e81208478cd3abe395b46
+
 - [071: Ollama 복귀·기존 툴 기록 호환](2026-10-19-071-return-to-ollama.md) —50733·Qwen4B Q4_K_M·64K/4096, 문자열 인자400 재현·객체 변환 후 실제 응답, 웹2턴 삭제·253개 검사
 
 071 노션 동기화 완료: https://app.notion.com/p/3fed058c022e8134b5e2d03ecaf91ecf
