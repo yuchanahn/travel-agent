@@ -4,6 +4,10 @@
 
 노션 허브: https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f
 
+- [075: 검색과 본문 읽기 범위 확대](2026-10-20-075-search-capacity.md) — 20개 결과 전달·본문12000바이트·모델40/도구36/360초,265개 검사 통과. 실제 실행은 반복 읽기23오류·360초 시간 초과로 품질 미통과.
+
+075 노션 동기화 완료: https://app.notion.com/p/3fed058c022e81f4afdbd4a46e692d65
+
 - [074: 공식 Brave MCP 연결과 재평가](2026-10-20-074-official-brave-mcp.md) — 추가 발췌·본문 읽기 연결, 첫 중복 실패 후 읽기 선택지 보완·6실행·264개 검사, 추천·출처 품질은 여전히 미통과
 
 074 노션 동기화 완료: https://app.notion.com/p/3fed058c022e81bfb076edae81365656

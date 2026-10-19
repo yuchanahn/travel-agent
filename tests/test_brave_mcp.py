@@ -24,6 +24,17 @@ class BraveMCPTests(unittest.TestCase):
         self.assertEqual(read['function']['parameters']['properties']['source_id']['enum'],['web:2222222222222222'])
         original=next(t for t in TOOLS if t['function']['name']=='web_read')
         self.assertNotIn('enum',original['function']['parameters']['properties']['source_id'])
+    def test_twenty_rich_results_fit_expanded_budget_without_losing_extras(self):
+        raw=result([{'title':str(i),'url':f'https://example.com/{i}',
+                     'extra_snippets':['검증 문장. '*180]} for i in range(20)])
+        previous=json.loads(model_result(raw,max_bytes=48000))
+        expanded=json.loads(model_result(raw))
+        self.assertLess(previous['returned_results'],20)
+        self.assertEqual(expanded['returned_results'],20)
+        self.assertEqual(expanded['omitted_results'],0)
+        self.assertEqual(expanded['hits'][-1]['extra_snippets'],['검증 문장. '*180])
+        self.assertLessEqual(len(model_result(raw).encode()),96000)
+
     def test_complete_records_and_extra_snippets_survive_default_packet(self):
         sentence='문장 전체를 보존합니다. '*500
         raw=result([{'title':'안내','url':'https://example.com/visit','description':'요약','extra_snippets':[sentence]}])
@@ -65,6 +76,7 @@ class BraveMCPTests(unittest.TestCase):
             return {'message':{'role':'assistant','content':'조회 완료'}}
         def read(source,query,**kw):
             self.assertEqual(source['url'],'https://example.com/visit')
+            self.assertEqual(kw['max_bytes'],12000)
             return {**source,'text':'합성 본문','truncated':False,'page_fetched':True,'content_kind':'page_excerpt'}
         with TemporaryDirectory() as folder, MemoryStore(Path(folder)/'db') as store, MCPRegistry([config]) as registry:
             with patch('travel_agent.agent.chat',side_effect=model),patch('travel_agent.agent.web_read',side_effect=read):

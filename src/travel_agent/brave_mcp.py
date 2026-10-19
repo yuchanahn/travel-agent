@@ -5,12 +5,14 @@ from .memory import canonical
 from .web import _clean_url
 
 GUIDANCE = ('일반 여행·펜션 후보 탐색은 이 웹검색을 우선한다. 한국 지명은 사용자의 한국어 표기를 유지한다. '
-            '처음에는 후보를 넓게 찾고, 이후 후보 이름으로 필요한 주소·시설·공식 안내를 확인한다. '
+            '숙소 비교의 첫 검색은 count=20으로 넓게 수집하고, 부족하면 다른 검색어나 offset으로 추가 탐색한다. '
+            '검색 결과 수는 숙소 수가 아니다. 같은 숙소의 여러 링크를 묶고, 처음 보인 3곳에 바로 고정하지 않는다. '
+            '후보 이름으로 주소·시설·공식 안내를 추가 검색하며 예약 사이트와 공식 사이트를 함께 활용한다. '
             '한국 여행 검색은 country=KR, search_lang=ko, ui_lang=ko-KR를 명시한다. '
             '반환 hits의 web: ID로 web_read를 사용할 수 있다. 검색 발췌는 본문 확인이 아니다.')
 
 
-def pack_result(result, max_bytes=48000):
+def pack_result(result, max_bytes=96000):
     if max_bytes < 256:
         raise ValueError('Search packet budget must be at least 256 bytes')
     wire = result.get('raw_result', {})

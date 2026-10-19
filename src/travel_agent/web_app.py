@@ -208,7 +208,7 @@ class RunManager:
                                  prior_memory_ids=[i for i in parent['result'].get('evidence_ids',[]) if i.startswith(('m-','event:'))] if parent else [],
                                  prior_mcp_sources=parent['result'].get('mcp_sources',[]) if parent else [],
                                  recalled_memory=recalled,context_info=context,
-                                 enable_web=job['enable_web'],trace_dir=folder/'traces',timeout=180)
+                                 enable_web=job['enable_web'],trace_dir=folder/'traces',timeout=360)
                 finished = {**job,'finished_at':now(),'result':result}
                 inserted = store.add('local-web',session,turn_events(self.directory,finished))
                 after_index = build_bm25_index(store,'local-web',session)

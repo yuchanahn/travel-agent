@@ -233,7 +233,7 @@ class MCPRegistry:
 def model_result(result,max_bytes=None):
     """Bound the model packet while keeping the full result in private trace."""
     if max_bytes is None:
-        max_bytes=48000 if result.get('model_adapter')=='brave_search' else 6000
+        max_bytes=96000 if result.get('model_adapter')=='brave_search' else 6000
     if max_bytes < 256:
         raise ValueError('MCP packet budget must be at least 256 bytes')
     if result.get('model_adapter')=='brave_search':

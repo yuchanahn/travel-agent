@@ -77,6 +77,9 @@ def final_answer(content):
     return match[1].strip()
 
 SYSTEM = """너는 여행 준비를 돕는 한국어 에이전트다.
+숙소 비교 요청에서는 먼저 넓은 후보 목록을 수집한다. 첫 검색만으로 최종 3곳을 확정하지 말고, 후보 이름별 추가 검색이나 다른 관점의 검색으로 조건을 대조한다.
+최종 추천보다 넓은 후보군을 살펴본 뒤 사용자 조건·주소·시설 근거로 채택과 제외 이유를 판단한다. 검색 순위를 추천 순위로 바꾸지 않는다. 예약 사이트 검색 결과도 활용하며 공식 사이트만 고집해 다른 근거를 버리지 않는다.
+선정한 후보의 필수 조건이 미확인이면 후보 이름과 빠진 조건으로 추가 검색하거나 다른 후보를 검토한다. 실제로 확보할 수 없을 때만 미확인으로 마무리한다. 최종 답변에는 후보별 조건·출처와 선택 이유를 비교하기 쉬운 표로 정리한다.
 일반 펜션 후보·시설·관광 정보를 찾을 때는 웹검색으로 시작한다. OpenBnB는 Airbnb 숙소 목록이나 예약 조건을 조회할 필요가 있을 때 선택한다.
 사용자의 한국어 지명을 임의 영문으로 바꾸거나, 필요 없는 행정구역·좌표·매매 검색으로 벗어나지 않는다. 처음에는 후보를 넓게 찾고 이후 후보 고유 이름과 부족한 정보로 검색한다. 검색문을 고정된 질문 대본으로 반복하지 않는다.
 최종 답변에는 후보별 이름·주소·조건 충족 여부·실제 출처 링크를 한 번에 정리한다. 확인하지 못한 칸은 미확인으로 표시한다. '이제 비교하겠습니다' 같은 작업 예고만으로 마무리하지 않는다.
@@ -267,6 +270,7 @@ def execute_batch(calls, *, store, user, session, mode, rerank, seen, enable_web
                 raise TimeoutError("Request deadline reached before tool execution")
             result = execute_tool(None if name in network_tools else store, user, session, name, args,
                                   mode=mode, rerank=rerank, timeout=min(15, remaining), allowed_sources=allowed_sources,
+                                  max_bytes=12000 if name == 'web_read' else 3500,
                                   **({'page_cache':page_cache} if page_cache is not None else {}),
                                   **({'lodging':lodging} if lodging is not None else {}),
                                   **({'mcp_registry':mcp_registry} if mcp_registry else {}))
@@ -299,7 +303,7 @@ def execute_batch(calls, *, store, user, session, mode, rerank, seen, enable_web
 
 @with_mcp
 def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=False,
-              max_steps=24, max_tool_calls=20, timeout=120, max_input_bytes=None,
+              max_steps=40, max_tool_calls=36, timeout=360, max_input_bytes=None,
               trace_dir="data/private/traces", enable_web=True, tool_workers=3,
               web_tool_format=None, enable_read=True, history=None, prior_sources=None,
               completion_protocol="native", recalled_memory=None, context_info=None, prior_memory_ids=None,
@@ -308,8 +312,8 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
         raise ValueError("Query must be non-empty")
     if completion_protocol not in {"native", "explicit", "legacy"}:
         raise ValueError("completion_protocol must be native, explicit or legacy")
-    if not 1 <= max_steps <= 24 or not 1 <= max_tool_calls <= 20 or not 0 < timeout <= 600:
-        raise ValueError("Limits: max_steps 1..24, max_tool_calls 1..20, timeout 0..600 seconds")
+    if not 1 <= max_steps <= 40 or not 1 <= max_tool_calls <= 36 or not 0 < timeout <= 600:
+        raise ValueError("Limits: max_steps 1..40, max_tool_calls 1..36, timeout 0..600 seconds")
     max_input_bytes = input_byte_limit() if max_input_bytes is None else max_input_bytes
     if type(max_input_bytes) is not int or not 1000 <= max_input_bytes <= 1048576 or mode not in {"bm25", "dense", "hybrid"}:
         raise ValueError("Invalid mode or input byte budget (1000..1048576)")

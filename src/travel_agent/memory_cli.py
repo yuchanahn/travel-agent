@@ -33,9 +33,9 @@ def add_parser(subparsers):
         if command in {"answer", "agent"}:
             action.add_argument("--summary", type=Path, help="Optional current compressed summary; original memory remains separate")
         if command == "agent":
-            action.add_argument("--max-steps", type=int, default=24, help="Maximum model calls including final answer")
-            action.add_argument("--max-tool-calls", type=int, default=20)
-            action.add_argument("--timeout", type=float, default=120)
+            action.add_argument("--max-steps", type=int, default=40, help="Maximum model calls including final answer")
+            action.add_argument("--max-tool-calls", type=int, default=36)
+            action.add_argument("--timeout", type=float, default=360)
             action.add_argument("--max-input-bytes", type=int, default=None,
                                 help="UTF-8 byte guard; default AGENT_MAX_INPUT_BYTES or 196608")
             action.add_argument("--trace-dir", type=Path, default=Path("data/private/traces"))
