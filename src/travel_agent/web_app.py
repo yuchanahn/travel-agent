@@ -14,6 +14,7 @@ from uuid import uuid4
 
 from .agent import run_agent, execute_tool
 from .brave_provider import api_key
+from .llm_client import settings as llm_settings, headers as llm_headers
 from .llm_config import generation_options
 from .memory import MemoryStore, build_bm25_index
 from .session_context import compact_context, trace_events, turn_events, write_json
@@ -186,8 +187,8 @@ class RunManager:
                     store.add('local-web',session,turn_events(self.directory,ancestor))
                 before_index = build_bm25_index(store,'local-web',session)
                 history, summary, context = compact_context(history,summary,folder=folder,
-                    model=os.environ.get('OLLAMA_MODEL','qwen3.5:4b-q4_K_M'),
-                    base_url=os.environ.get('OLLAMA_BASE_URL','http://127.0.0.1:11434').rstrip('/'))
+                    model=llm_settings()['model'],
+                    base_url=llm_settings()['base_url'])
                 recalled = execute_tool(store,'local-web',session,'memory_search',
                     {'query':job['query'],'top_k':3},mode='bm25',rerank=False,max_bytes=6000) if summary and before_index['chunks'] else {'hits':[]}
                 context.update(memory_events=before_index['events'],memory_chunks=before_index['chunks'],
@@ -254,12 +255,15 @@ class RunManager:
 
 
 def health():
-    model=os.environ.get('OLLAMA_MODEL','qwen3.5:4b-q4_K_M')
+    config=llm_settings()
+    model=config['model']
     try:
-        host=os.environ.get('OLLAMA_BASE_URL','http://127.0.0.1:11434').rstrip('/')
-        with urlopen(host+'/api/tags',timeout=3) as response:
+        host=config['base_url']
+        from urllib.request import Request
+        endpoint='/api/tags' if config['provider']=='ollama' else '/models'
+        with urlopen(Request(host+endpoint,headers=llm_headers(config)),timeout=3) as response:
             data=json.load(response)
-        ollama={'connected':True,'model_installed':any(m.get('name')==model for m in data.get('models',[]))}
+        ollama={'connected':True,'model_installed':any((m.get('name')==model or m.get('id')==model) for m in data.get('models',data.get('data',[])))}
     except Exception:
         ollama={'connected':False,'model_installed':False}
     try:
@@ -267,7 +271,7 @@ def health():
         configured=True
     except Exception:
         configured=False
-    return {'status':'ok','model':model,'ollama':ollama,'brave_configured':configured,
+    return {'status':'ok','model':model,'provider':config['provider'],'llm':ollama,'ollama':ollama if config['provider']=='ollama' else {'connected':False,'model_installed':False},'brave_configured':configured,
             'options':generation_options(),'independent_requests':False}
 
 

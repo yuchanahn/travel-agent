@@ -69,20 +69,20 @@ class RecallTests(unittest.TestCase):
                 "text": "과거 assistant의 미검증 제안", "events": [{"event_id": "e1", "role": "assistant", "timestamp": "2026-10-17T10:00:00+09:00", "source_url": None}]}
 
     def test_no_evidence_does_not_call_model(self):
-        with patch("travel_agent.memory_cli.urlopen") as network:
+        with patch("travel_agent.llm_client.urlopen") as network:
             result = recall_answer("과거 이유?", [])
         network.assert_not_called()
         self.assertEqual(result["evidence_ids"], [])
 
     def test_oversized_summary_rejected_before_network(self):
-        with patch.dict(os.environ, {"AGENT_MAX_INPUT_BYTES": "3000"}), patch("travel_agent.memory_cli.urlopen") as network:
+        with patch.dict(os.environ, {"AGENT_MAX_INPUT_BYTES": "3000"}), patch("travel_agent.llm_client.urlopen") as network:
             with self.assertRaises(ValueError):
                 recall_answer("질문", [self.hit()], "가" * 3000)
         network.assert_not_called()
 
     def test_original_roles_reach_model_and_citation_is_checked(self):
         response = io.BytesIO(json.dumps({"message": {"content": "과거 제안입니다. [m-abcdef]"}, "done_reason": "stop"}).encode())
-        with patch("travel_agent.memory_cli.urlopen", return_value=response) as network:
+        with patch("travel_agent.llm_client.urlopen", return_value=response) as network:
             result = recall_answer("무슨 제안이었지?", [self.hit()])
         request = json.loads(network.call_args.args[0].data)
         self.assertIn('"role":"assistant"', request["messages"][1]["content"])
@@ -91,7 +91,7 @@ class RecallTests(unittest.TestCase):
 
     def test_invented_citation_is_not_marked_valid(self):
         response = io.BytesIO(json.dumps({"message": {"content": "[m-deadbeef]"}}).encode())
-        with patch("travel_agent.memory_cli.urlopen", return_value=response):
+        with patch("travel_agent.llm_client.urlopen", return_value=response):
             result = recall_answer("질문", [self.hit()])
         self.assertFalse(result["citation_ids_valid"])
 

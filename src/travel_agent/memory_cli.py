@@ -6,8 +6,8 @@ import re
 import time
 from datetime import datetime
 from pathlib import Path
-from urllib.request import Request, urlopen
 
+from .llm_client import chat as provider_chat, settings as llm_settings
 from .memory import MemoryStore, build_index, canonical, search
 from .llm_config import generation_options, input_byte_limit
 
@@ -74,14 +74,11 @@ def recall_answer(query, hits, summary=""):
     # Present temporal evidence in chronological order, not relevance order.
     selected.sort(key=lambda hit: datetime.fromisoformat(hit["timestamp"].replace("Z", "+00:00")))
     messages[1]["content"] = base_user + "".join(canonical({"id": hit["chunk_id"], "text": hit["text"], "events": hit["events"]}) + "\n" for hit in selected)
-    base = os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
-    body = {"model": os.environ.get("OLLAMA_MODEL", "qwen3.5:4b-q4_K_M"), "messages": messages, "stream": False, "think": False, "options": generation_options()}
-    request = Request(base + "/api/chat", data=json.dumps(body, ensure_ascii=False).encode("utf-8"), headers={"Content-Type": "application/json"})
-    with urlopen(request, timeout=180) as response:
-        reply = json.load(response)
+    config = llm_settings()
+    reply = provider_chat(messages, model=config['model'], base_url=config['base_url'], timeout=180, tools=[])
     content = reply.get("message", {}).get("content", "")
     if not content.strip():
-        raise ValueError("Ollama returned no answer")
+        raise ValueError("Model returned no answer")
     evidence_ids = [hit["chunk_id"] for hit in selected]
     citations = re.findall(r"\[(m-[a-f0-9]+)\]", content)
     return {"answer": content, "evidence_ids": [hit["chunk_id"] for hit in selected], "historical_only": True, "web_search_performed": False,

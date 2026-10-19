@@ -11,6 +11,7 @@
 ## 현재 가능한 것
 
 - Ollama 로컬 공급자 연결 및 설치·실행 모델 상태 확인
+- 선택형 Nexus FreeLLMAPI/OpenAI 호환 공급자 연결: 도구 호출·웹·요약·2-Step 메모리 공통 경로. [공급자 설정](docs/llm-providers.md)
 - Qwen3.5 4B Q4_K_M 한국어 응답과 가상 도구 호출 왕복 검증
 - 대화 원문 저장·BM25/dense/hybrid 검색·검색 근거 기반 답변 CLI
 - LLM이 메모리 검색·원문 조회를 선택하는 Agentic RAG와 요청별 실행 추적

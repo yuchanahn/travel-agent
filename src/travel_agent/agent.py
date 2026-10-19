@@ -1,4 +1,4 @@
-"""Bounded Ollama tool loop for scoped memory retrieval and public web search."""
+"""Bounded provider-neutral tool loop for scoped memory retrieval and public web search."""
 
 import json
 import os
@@ -8,8 +8,8 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 from urllib.error import URLError
-from urllib.request import Request, urlopen
 
+from .llm_client import chat as provider_chat, settings as llm_settings
 from .memory import canonical, search
 from .llm_config import generation_options, input_byte_limit
 from .trace import Trace
@@ -92,12 +92,8 @@ SYSTEM = """너는 여행 준비를 돕는 한국어 에이전트다.
 
 
 def chat(messages, *, model, base_url, timeout, tools=None):
-    body = {"model": model, "messages": messages, "tools": TOOLS if tools is None else tools, "stream": False, "think": False,
-            "options": generation_options()}
-    request = Request(base_url + "/api/chat", data=json.dumps(body, ensure_ascii=False).encode("utf-8"),
-                      headers={"Content-Type": "application/json"})
-    with urlopen(request, timeout=timeout) as response:
-        return json.load(response)
+    return provider_chat(messages, model=model, base_url=base_url, timeout=timeout,
+                         tools=TOOLS if tools is None else tools)
 
 
 def validate_call(call, mcp_registry=None):
@@ -264,8 +260,8 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
     if type(tool_workers) is not int or not 1 <= tool_workers <= 4:
         raise ValueError("tool_workers must be an integer 1..4")
     trace = Trace(trace_dir)
-    model = os.environ.get("OLLAMA_MODEL", "qwen3.5:4b-q4_K_M")
-    base_url = os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
+    config = llm_settings()
+    model, base_url = config["model"], config["base_url"]
     web_tool_format = web_tool_format or os.environ.get("WEB_TOOL_FORMAT", "compact_md")
     if web_tool_format not in FORMATS:
         raise ValueError("Invalid web tool format")
@@ -311,12 +307,12 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
     completion_signal_received = False
     budget_stop = None
     trace.emit("run_start", user=user, session=session, query=query, summary=summary,
-               model=model, base_url=base_url, mode=mode, rerank=rerank, tools=tools, enable_web=enable_web,
+               model=model, base_url=base_url, provider=config["provider"], mode=mode, rerank=rerank, tools=tools, enable_web=enable_web,
                web_provider=os.environ.get("WEB_SEARCH_PROVIDER", "brave"),
                web_tool_format=web_tool_format, web_backend=os.environ.get("WEB_SEARCH_BACKEND", {"webserp":"google","http":"bing"}.get(os.environ.get("WEB_SEARCH_PROVIDER"),"brave")),
                limits={"max_steps": max_steps, "max_tool_calls": max_tool_calls,
                        "timeout": timeout, "max_input_bytes": max_input_bytes, "tool_workers": tool_workers},
-               options={**options, "think": False}, completion_protocol=completion_protocol)
+               options=({**options, "think": False} if config["provider"] == "ollama" else {"max_tokens": options["num_predict"], "temperature": options["temperature"]}), completion_protocol=completion_protocol)
     if context_info is not None:
         trace.emit('context_prepared', **context_info)
     if mcp_registry and mcp_registry.status:
@@ -381,7 +377,7 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
         except (URLError, OSError, TimeoutError, ValueError, TypeError, AttributeError) as exc:
             trace.emit("model_error", step=step, error=str(exc), error_type=type(exc).__name__)
             return finish("model_error", error=str(exc))
-        assistant = {"role": "assistant", "content": message.get("content", "")}
+        assistant = {"role": "assistant", "content": message.get("content") or ""}
         if calls:
             assistant["tool_calls"] = calls
         # Deliberately omit message.thinking: observable actions are sufficient.
@@ -389,6 +385,7 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
         output_tokens += reply.get("eval_count") or 0
         trace.emit("model_end", step=step, message=assistant, done_reason=reply.get("done_reason"),
                    elapsed_seconds_call=round(time.perf_counter() - started, 6),
+                   provider=config["provider"], response_model=reply.get("response_model", model),
                    prompt_tokens=reply.get("prompt_eval_count"), output_tokens=reply.get("eval_count"),
                    ollama_total_seconds=(reply.get("total_duration") or 0) / 1e9)
         if time.perf_counter() >= deadline:

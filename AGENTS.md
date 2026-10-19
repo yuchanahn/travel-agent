@@ -28,6 +28,9 @@
 
 ## 실행
 
+064에서 호스트 웹의 LLM을 Nexus FreeLLMAPI OpenAI 호환 경로로 전환했다. 새 화면은 http://127.0.0.1:50731/ 이고 50730 프로세스 재시작은 자동 승인 검토에서 차단되어 기존 공급자로 남았다. Docker50729·ngrok은 이번에 바꾸지 않았다. 비공개 llm-config.json을 LLM_CONFIG_FILE로 지정하며 start_web_host.ps1도 파일이 있으면 읽는다. 요청 모델 gpt-oss-120b, 응답 모델 표기 gpt-oss:120b이며 실제 추론은 외부 공급자에서 수행한다. Agentic·웹 요약·CLI 2-Step이 llm_client를 공유한다. 기본 Ollama·명시적 복귀는 유지하고 실패 시 자동 대체하지 않는다. 210개 테스트·합성 도구 왕복·웹 최근 대화2턴을 확인했다. 실제 여행 검색은 모델9회·도구8회 후 tool_limit, 본문 조회 실패·중복 호출이 남았으므로 품질 개선으로 기록하지 않는다. 상세는 docs/llm-providers.md와064를 따른다.
+
+
 063에서 사용자가 OpenBnB 도입을 승인해 호스트 MCP와 호스트 웹50730에 검색·상세2개를 활성화했다. adapter=openbnb는 완결된 항목 단위6000바이트 패킷·가격 원문·페이지 커서·omitted_count·missing_sections를 사용한다. robots 검사 제외는 호스트 실행 인자이며 모델은 ignoreRobotsText를 정하지 못한다.205개 테스트·실제 웹 모델 호출을 확인했으나 양평 이름 후보를 가평 숙소로 묶는 지역 오류는 남았다. Docker50729·ngrok은 C: 디스크 부족·저장소 I/O 오류로 재배포하지 못해 이전 버전이다. 현재 사용 가능한 새 화면은 http://127.0.0.1:50730/ 이며 scripts/start_web_host.ps1·data/private/web-host를 따른다.063 연구일지의 완료·미완료 범위를 구분한다.
 
 062에서 OpenBnB 고정 커밋d5a8f18을 Node24.19.0으로 독립 검증했다. 기본 robots 검사3건은 자체 중단, ignoreRobotsText=true 진단에서는 가평·서울 검색18개씩과 가격필터·페이지 조회가 됐다. 상세3건은 편의시설만 채워지고4개 섹션이 빈 상태였으며 한국어 가평의 지오코딩은 아파트를 선택했다. 범용 MCP model_result가 긴 내부 JSON을 중간에서 자르는 것도 확인했다. 활성 MCP는 계속0개다. 사용자 도입 결정 전 상시 연결하지 않으며 기능 성공·상세 완전성·실제 예약/답변 품질을 구분한다.

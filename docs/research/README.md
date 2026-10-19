@@ -4,6 +4,10 @@
 
 노션 허브: https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f
 
+- [064: Nexus FreeLLMAPI 공급자 전환](2026-10-19-064-nexus-llm-provider.md) — OpenAI 호환 도구 왕복·210개 테스트·실제 검색 한도 종료와 대화 이어가기, 새 호스트50731
+
+064 노션 동기화 완료: https://app.notion.com/p/3fed058c022e8120ab56d08d0200d3cd
+
 - [063: OpenBnB 도입·구조적 패킹·호스트 웹 검증](2026-10-19-063-openbnb-integration.md) — 205개 테스트, 호스트50730에서 실제 MCP·가격·인용 확인; 지역 오류 잔존·디스크 부족으로 Docker/공유 배포 미완료
 
 063 노션 동기화 완료: https://app.notion.com/p/3fed058c022e811b94edc268d50cf5c4
