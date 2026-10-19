@@ -16,10 +16,10 @@ function showConversation(job){const turns=(job.conversation||[]).slice(0,-1),si
 function node(tag, text, className) { const n=document.createElement(tag); if(text!==undefined)n.textContent=text; if(className)n.className=className; return n; }
 function safeLink(label,url,className) { try { const parsed=new URL(url); if(!['http:','https:'].includes(parsed.protocol))return node('span',label); const a=node('a',label,className);a.href=parsed.href;a.target='_blank';a.rel='noreferrer noopener';return a; } catch { return node('span',label); } }
 function inline(parent,text) {
-  const regex=/\*\*(.+?)\*\*|`([^`]+)`|\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(\[(?:web:[a-f0-9]+|mcp:[a-f0-9]+|m-[a-f0-9]+|event:[^\]\s]+)\])/g;
+  const regex=/\*\*(.+?)\*\*|`([^`]+)`|\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|([\[【][\u200b\ufeff]*(?:web:[a-f0-9]+|mcp:[a-f0-9]+|m-[a-f0-9]+|event:[^\]】\s]+)[\]】])|<?(https?:\/\/[^\s<>]+)>?/g;
   let end=0, match;
   function plain(value){const pieces=value.split(/<br\s*\/?>/i);pieces.forEach((piece,i)=>{if(i)parent.append(document.createElement('br'));parent.append(document.createTextNode(piece));});}
-  while((match=regex.exec(text))){plain(text.slice(end,match.index));if(match[1])parent.append(node('strong',match[1]));else if(match[2])parent.append(node('code',match[2]));else if(match[3])parent.append(safeLink(match[3],match[4]));else{const id=match[5].slice(1,-1);const source=sources.get(id);parent.append(source?safeLink(match[5],source.url,'citation'):node('span',match[5],'citation'));}end=regex.lastIndex;}
+  while((match=regex.exec(text))){plain(text.slice(end,match.index));if(match[1])parent.append(node('strong',match[1]));else if(match[2])parent.append(node('code',match[2]));else if(match[3])parent.append(safeLink(match[3],match[4]));else if(match[6]){parent.append(safeLink(match[6],match[6]));}else{const id=match[5].slice(1,-1).replace(/[\u200b\ufeff]/g,'');const source=sources.get(id);parent.append(source?safeLink(match[5],source.url,'citation'):node('span',match[5],'citation'));}end=regex.lastIndex;}
   plain(text.slice(end));
 }
 function markdown(element,text) {

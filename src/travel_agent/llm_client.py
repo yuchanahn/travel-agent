@@ -1,7 +1,9 @@
 """Provider boundary; keep native tool calls and never silently change models."""
 import json
 import os
+import time
 from pathlib import Path
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 from .llm_config import generation_options
@@ -72,8 +74,20 @@ def chat(messages, *, model, base_url, timeout, tools):
             body['tools'] = tools
         endpoint = '/chat/completions'
     request = Request(base_url + endpoint, data=json.dumps(body, ensure_ascii=False).encode('utf-8'), headers=headers(config))
-    with urlopen(request, timeout=timeout) as response:
-        data = json.load(response)
+    started=time.monotonic()
+    for attempt in (1,2):
+        try:
+            with urlopen(request, timeout=max(.001,timeout-(time.monotonic()-started))) as response:
+                data = json.load(response)
+            break
+        except HTTPError as exc:
+            # Retry only a transient model HTTP failure; no tools have executed.
+            # Keep the same model/provider and original wall-clock budget.
+            exc.llm_http_attempts=attempt
+            if config['provider']!='openai' or attempt==2 or exc.code not in {502,503,504} or timeout-(time.monotonic()-started)<=1:
+                raise
+            exc.close()
+            time.sleep(.5)
     if config['provider'] == 'ollama':
         return data
     try:
@@ -85,4 +99,4 @@ def chat(messages, *, model, base_url, timeout, tools):
     usage = data.get('usage') or {}
     return {'message': message, 'done_reason': choice.get('finish_reason'),
             'prompt_eval_count': usage.get('prompt_tokens'), 'eval_count': usage.get('completion_tokens'),
-            'response_model': data.get('model'), 'provider': 'openai'}
+            'response_model': data.get('model'), 'provider': 'openai','http_attempts':attempt}

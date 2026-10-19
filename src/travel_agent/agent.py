@@ -51,7 +51,7 @@ TOOLS = [
 
 ]
 
-CITATIONS = re.compile(r"\[(m-[a-f0-9]+|event:[^\]\s]+|web:[a-f0-9]+|mcp:[a-f0-9]+)\]")
+CITATIONS = re.compile(r"(?:\[|【)[\u200b\ufeff]*(m-[a-f0-9]+|event:[^\]】\s]+|web:[a-f0-9]+|mcp:[a-f0-9]+)(?:\]|】)")
 FINAL = re.compile(r'\s*<final>([\s\S]*?)</final>\s*')
 COMPLETION_CONTRACT = """\n종료 프로토콜: 도구 실행이 필요하면 실제 tool_calls로 요청한다.
 일반 텍스트는 진행 설명이며 실행을 종료하지 않는다. 최종 답변을 전달하기로 판단했을 때만 전체 응답을 <final>최종 답변</final>로 감싼다.
@@ -70,6 +70,10 @@ SYSTEM = """너는 여행 준비를 돕는 한국어 에이전트다.
 사용자가 요청한 조사·비교·추천 결과를 제공하는 것이 목표다. 필요한 확인을 현재 도구로 수행할 수 있으면 '검색하겠다'는 예고나 사용자에게 대신 확인하라는 안내로 끝내지 말고 실제 tool_calls로 실행한다.
 도구 결과를 받은 뒤 사용자 조건에 필요한 근거가 충분한지 판단한다. 부족한 근거를 다른 검색어나 출처 읽기로 확보할 수 있으면 다음 도구 행동을 선택한다. 같은 조회를 무조건 반복하지 않는다.
 날짜·인원 등 사용자만 정할 수 있는 필수 조건이 빠졌으면 필요한 질문을 한다. 접근 실패·새 근거 없음·도구의 한계로 확인할 수 없으면 확보한 결과와 미확인 이유를 설명한다. 모든 항목을 확인할 때까지 무한 조사하지 않는다.
+사용자가 여행 날짜를 아직 정하지 않았다고 하면 임의 날짜를 도구에 넣거나 1박 가격을 견적처럼 제시하지 않는다. 가격·예약 가능 여부를 비교하려면 사용자에게 날짜를 확인한다. 날짜 없는 일반 후보 탐색과 날짜가 정해진 요금 조회를 구분한다.
+숙소 이름·검색 지역·좌표만으로 행정구역 안이라고 확정하지 않는다. 실제 주소 근거가 없으면 지역 미확인 후보로 표시한다. 숙소 표시 가격은 원문의 통화·기간·인원·쿠폰 조건과 함께 전달하고, 요청한 날짜를 도구에 넣었다는 이유만으로 결제 총액·예약 재고가 검증됐다고 말하지 않는다.
+새로운 예산 조건은 이전 예산보다 우선한다. 최종 숙소 비교에는 유지되는 날짜·인원과 최신 숙박비 상한, 후보별 출처 링크·지역 근거·가격 조건·추가요금·취소규정의 확인 여부를 포함한다. 상세 근거가 없으면 미확인으로 남기고 예약 완료를 꾸미지 않는다.
+특정 예약 사이트 본문 읽기가 실패해도 같은 출처를 같은 인자로 반복하지 않는다. 다른 공개 출처나 사이트 한정 검색을 선택할 수 있다. 검색 요약·날짜 없는 공개 페이지의 가격은 해당 여행 날짜의 요금이 아니다.
 최종 답변이나 필요한 질문은 일반 답변으로 전달한다. 도구를 실행하지 않은 채 실행했다고 말하지 않는다.
 현재 질문과 제공된 요약으로 답할 수 있으면 바로 답한다. 인사·일반 설명에는 기억 검색이 필요 없다.
 과거에 정한 조건·이유·발언이 필요하고 현재 문맥에 없으면 memory_search를 사용한다.
@@ -375,7 +379,8 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
             if not isinstance(calls, list):
                 raise ValueError("tool_calls must be a list")
         except (URLError, OSError, TimeoutError, ValueError, TypeError, AttributeError) as exc:
-            trace.emit("model_error", step=step, error=str(exc), error_type=type(exc).__name__)
+            trace.emit("model_error", step=step, error=str(exc), error_type=type(exc).__name__,
+                       http_attempts=getattr(exc,'llm_http_attempts',1))
             return finish("model_error", error=str(exc))
         assistant = {"role": "assistant", "content": message.get("content") or ""}
         if calls:
@@ -386,6 +391,7 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
         trace.emit("model_end", step=step, message=assistant, done_reason=reply.get("done_reason"),
                    elapsed_seconds_call=round(time.perf_counter() - started, 6),
                    provider=config["provider"], response_model=reply.get("response_model", model),
+                   http_attempts=reply.get('http_attempts',1),
                    prompt_tokens=reply.get("prompt_eval_count"), output_tokens=reply.get("eval_count"),
                    ollama_total_seconds=(reply.get("total_duration") or 0) / 1e9)
         if time.perf_counter() >= deadline:

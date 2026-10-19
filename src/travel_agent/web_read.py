@@ -13,6 +13,7 @@ from trafilatura import extract
 from .memory import canonical
 from .web import WebSearchError, _clean_url
 from .evidence_text import bounded_blocks, body_signal
+from .structured_lodging import lodging_metadata
 
 MAX_PAGE_BYTES = 2 * 1024 * 1024
 
@@ -71,6 +72,10 @@ def extract_page(body, url, output_format='markdown'):
     """Extraction, not LLM summarization or execution of website JavaScript."""
     text = extract(body, url=url, output_format=output_format, include_comments=False,
                    include_tables=True, include_links=False, include_images=False)
+    metadata=lodging_metadata(body,url)
+    if metadata:
+        prefix='숙소 페이지 JSON-LD 주소 (페이지 제공 정보·독립 검증 아님):\n'+canonical(metadata)
+        text=prefix+('\n\n'+text if text else '')
     if not text or not text.strip():
         raise WebSearchError('No readable page text', details={'reason':'empty_extraction'})
     return text.strip()

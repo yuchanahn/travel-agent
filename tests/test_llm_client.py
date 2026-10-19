@@ -69,3 +69,26 @@ class ProviderTests(unittest.TestCase):
                 patch('travel_agent.llm_client.urlopen', return_value=io.BytesIO(b'{"choices":[]}')):
             with self.assertRaisesRegex(ValueError, 'Malformed'):
                 chat([], model='fixed', base_url='http://localhost/v1', timeout=1, tools=[])
+
+    def test_transient_502_retries_once_same_request_with_remaining_budget(self):
+        data={'choices':[{'message':{'role':'assistant','content':'recovered'},'finish_reason':'stop'}]}
+        with patch.dict(os.environ,{'LLM_PROVIDER':'openai','LLM_API_KEY_FILE':''}), \
+                patch('travel_agent.llm_client.time.sleep'), \
+                patch('travel_agent.llm_client.urlopen',side_effect=[HTTPError('url',502,'upstream',{},None),io.BytesIO(json.dumps(data).encode())]) as network:
+            result=chat([],model='fixed',base_url='http://localhost/v1',timeout=10,tools=[])
+        self.assertEqual(result['http_attempts'],2)
+        self.assertEqual(result['message']['content'],'recovered')
+        self.assertIs(network.call_args_list[0].args[0],network.call_args_list[1].args[0])
+        self.assertLessEqual(network.call_args_list[1].kwargs['timeout'],network.call_args_list[0].kwargs['timeout'])
+
+    def test_repeated_502_stops_at_two_attempts_and_short_budget_does_not_retry(self):
+        with patch.dict(os.environ,{'LLM_PROVIDER':'openai','LLM_API_KEY_FILE':''}), \
+                patch('travel_agent.llm_client.time.sleep'), \
+                patch('travel_agent.llm_client.urlopen',side_effect=lambda *a,**k: (_ for _ in ()).throw(HTTPError('url',502,'upstream',{},None))) as network:
+            with self.assertRaises(HTTPError) as failure:
+                chat([],model='fixed',base_url='http://localhost/v1',timeout=10,tools=[])
+            self.assertEqual(network.call_count,2)
+            self.assertEqual(failure.exception.llm_http_attempts,2)
+            network.reset_mock()
+            with self.assertRaises(HTTPError):chat([],model='fixed',base_url='http://localhost/v1',timeout=.5,tools=[])
+            self.assertEqual(network.call_count,1)

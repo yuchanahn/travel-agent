@@ -4,6 +4,10 @@
 
 노션 허브: https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f
 
+- [068: 여행 완료 흐름 검증·숙박 API/검색 조사](2026-10-19-068-acceptance-and-lodging.md) — 실제6턴·보완3턴 완주지만 품질fail,229개 검사·JSON-LD 주소 보존·테스트6세션 삭제
+
+068 노션 동기화 완료: https://app.notion.com/p/3fed058c022e813ab982d496205f58ba
+
 - [067: 공유 종료·단일 로컬 서버 재시작](2026-10-19-067-fixed-local-server.md) — 호스트50733 하나·Docker 웹2개 및 ngrok 중지·반복 시작과 같은 포트 재시작 검증
 
 067 노션 동기화 완료: https://app.notion.com/p/3fed058c022e818fb086d7315619bd6d

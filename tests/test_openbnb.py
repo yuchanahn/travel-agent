@@ -4,9 +4,10 @@ from travel_agent.mcp_client import model_result
 
 
 class OpenBnBPacketTests(unittest.TestCase):
-    def packet(self,payload,tool='airbnb_search',budget=6000):
+    def packet(self,payload,tool='airbnb_search',budget=6000,context=None):
         result={'id':'mcp:abcd','server':'openbnb','remote_tool':tool,'model_adapter':'openbnb',
-                'text':json.dumps(payload,ensure_ascii=False),'raw_result':{'private':'full'}}
+                'text':json.dumps(payload,ensure_ascii=False),'raw_result':{'private':'full'},
+                'request_context':context if context is not None else {'checkin':'2026-11-14','checkout':'2026-11-15','adults':2}}
         original=result['text']
         encoded=model_result(result,budget)
         self.assertLessEqual(len(encoded.encode()),budget)
@@ -34,6 +35,21 @@ class OpenBnBPacketTests(unittest.TestCase):
         self.assertIn('LOCATION_DEFAULT',p['data']['missing_sections'])
         self.assertIn('POLICIES_DEFAULT',p['data']['missing_sections'])
         self.assertEqual(p['data']['sections'][0]['seeAllAmenitiesGroups']['Not included'],'Washer, Dryer')
+
+    def test_undated_prices_are_withheld_and_requested_dates_are_not_verification(self):
+        payload={'searchResults':[{'id':'test','structuredDisplayPrice':{'primaryLine':{'accessibilityLabel':'₩150,000 total'}}}]}
+        for context in [{},{'checkin':'2026-11-14','adults':2},
+                        {'checkin':'2026-11-15','checkout':'2026-11-14','adults':2},
+                        {'checkin':'2026-11-14','checkout':'2026-11-15'}]:
+            with self.subTest(context=context):
+                packet=self.packet(payload,context=context)
+                self.assertIsNone(packet['data']['results'][0]['price'])
+                self.assertIsNotNone(packet['data']['price_withheld_reason'])
+        packet=self.packet(payload,context={'checkin':'2026-11-14','checkout':'2026-11-17','adults':2})
+        self.assertEqual(packet['data']['requested_nights'],3)
+        self.assertFalse(packet['data']['price_conditions_verified'])
+        self.assertEqual(packet['request_context']['checkout'],'2026-11-17')
+        self.assertEqual(packet['data']['results'][0]['price']['primaryLine']['accessibilityLabel'],'₩150,000 total')
 
     def test_oversized_section_is_omitted_whole_and_invalid_json_is_explicit(self):
         p=self.packet({'details':[{'id':'AMENITIES_DEFAULT','value':'x'*9000}]},'airbnb_listing_details')

@@ -217,7 +217,9 @@ class MCPRegistry:
                     'observed_at':datetime.now(timezone.utc).isoformat(),
                     'verified_current':False,'is_error':failed,
                     'text':text,'raw_result':wire,
-                    **({'model_adapter':'openbnb'} if self.adapters.get(name)=='openbnb' else {}),
+                    **({'model_adapter':'openbnb','request_context':{
+                        key:args[key] for key in ('location','checkin','checkout','adults','children','infants','minPrice','maxPrice') if key in args
+                    }} if self.adapters.get(name)=='openbnb' else {}),
                     **({'error':'MCP server error or unsupported input request'} if failed else {})}
         except Exception as exc:
             # Exception strings can contain request URLs or credentials.

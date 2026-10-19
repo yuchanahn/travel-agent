@@ -28,6 +28,9 @@
 
 ## 실행
 
+068에서 3턴 완료 흐름(날짜 미정→조건 확정→예산 변경)을 examples/acceptance-journey.json과 acceptance.run_journey로 추가했다. 실제 초기·보완6턴을 실행하고 세션6개는 finally에서 삭제했다. 보완3턴은completed지만 가격 적용 조건 과장·후보 간 시설 혼합·지역/이동시간 단정으로 수동 근거 검토fail이다. release_gate는 기계 검사와 명시적 근거 검토pass를 모두 요구하며 pending·fail은 CLI 종료1이다.229개 Python 검사와 링크·대화·삭제 JS 검사를 확인했다. 시스템 지침·OpenBnB request_context/요청 숙박일수·미검증 가격 표시·날짜/성인 인원 없는 가격 숨김, 모델 HTTP502/503/504 최대1회 같은 공급자 재시도(원래시간공유·429재시도없음), URL/인용 형식·현재페이지와 일치하는 숙박JSON-LD 주소 추출을 보완했다. 주소·링크 변경은 여행6턴 뒤 저장자료로 검사했으며 전체 답변 효과를 입증하지 않았다. 여기어때 표본은 직접HTTP200/기존web_read 성공, NOL 표본은403이었다. 호텔 단위YCS API와 일반NOL 숙소검색을 혼동하지 않는다. 신규가입·키발급·예약은 하지 않았다. 현재50733 한 서버로 재시작 배포했다. 자세한 기준·한계는 docs/acceptance-testing.md·docs/lodging-sources.md와068을 따른다.
+
+
 067에서 사용자는 공유 중단·이전 서버 전부 종료·로컬 주소 고정·같은 포트 재시작을 명시적으로 승인했다. 현재 여행 웹은 http://127.0.0.1:50733/ 하나다. start_web.ps1은 호스트 멱등 시작이며 Docker를 띄우지 않는다. 코드 변경 배포는 restart_web.ps1으로 같은 포트를 재사용한다. 새 포트·추가 서버로 우회하지 않는다. start_web.ps1 -Action stop으로 프로젝트 호스트만 중지한다. 소유 venv 경로·자식 관계·프로세스 생성 시각과 명령을 확인하고 시작은 mutex로 직렬화한다. Docker travel-agent-lab-web-1·travel-agent-share는 exited/restart=no, 프로젝트 ngrok도0개다. 공급자 Nexus·Ollama와 기존 데이터·볼륨은 유지했다. 실제 반복 시작의 PID 유지·재시작의 PID 교체·동일50733·다른 포트 거절을 확인했다. 이 작업에는 모델 호출과 새 테스트 대화가 없다. 이후 서버 재시작 권한이 없다고 추정해 예전 포트를 추가하지 않는다.
 
 

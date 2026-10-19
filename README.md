@@ -12,6 +12,10 @@
 
 주소는 http://127.0.0.1:50733/ 으로 고정한다. PowerShell에서 시작은 `.\scripts\start_web.ps1`, 코드 변경 후 재시작은 `.\scripts\restart_web.ps1`, 중지는 `.\scripts\start_web.ps1 -Action stop`을 사용한다. 시작을 반복해도 서버를 더 띄우지 않는다. 현재 공유 터널·Docker 웹은 중지했으며 [운영 방식](docs/web-interface.md)을 따른다.
 
+## 완료 흐름 검증
+
+[여행3턴 인수 테스트](docs/acceptance-testing.md)로 날짜 미정·조건 확정·예산 변경을 확인한다. 068의 보완 실행은3턴을 완주했지만 사실 근거 검토는fail이다. 실행 완료를 제품 품질 통과로 보지 않는다. [숙박 API·공개 페이지 조사](docs/lodging-sources.md)에는 여기어때 실제 읽기와 NOL403, YCS 호텔별 API 범위를 구분했다.
+
 ## 현재 가능한 것
 
 - Ollama 로컬 공급자 연결 및 설치·실행 모델 상태 확인
