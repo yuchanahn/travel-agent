@@ -4,6 +4,10 @@
 
 노션 허브: https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f
 
+- [063: OpenBnB 도입·구조적 패킹·호스트 웹 검증](2026-10-19-063-openbnb-integration.md) — 205개 테스트, 호스트50730에서 실제 MCP·가격·인용 확인; 지역 오류 잔존·디스크 부족으로 Docker/공유 배포 미완료
+
+063 노션 동기화 완료: https://app.notion.com/p/3fed058c022e811b94edc268d50cf5c4
+
 - [062: OpenBnB 국내 숙소 검색·상세·전달부 검증](2026-10-19-062-openbnb-validation.md) — 기본 robots 자체 중단, 진단 조건 검색·가격필터·페이지 성공; 상세 누락·한국어 지역 오인식·모델 패킷 잘림, 활성화 보류
 
 062 노션 동기화 완료: https://app.notion.com/p/3fdd058c022e81e58872d903d0493cfb

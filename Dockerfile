@@ -1,6 +1,20 @@
+FROM node:24-bookworm-slim AS openbnb
+RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /opt/openbnb
+RUN git init && git remote add origin https://github.com/openbnb-org/mcp-server-airbnb.git \
+    && git fetch --depth 1 origin d5a8f18f5978b0a33dea4b3ec130c389bad845cc \
+    && git checkout --detach FETCH_HEAD \
+    && npm ci --ignore-scripts --no-audit --no-fund && npm run build \
+    && npm prune --omit=dev --ignore-scripts --no-audit --no-fund \
+    && rm -rf .git
 FROM python:3.12-slim
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 WORKDIR /app
+COPY --from=openbnb /usr/local/bin/node /usr/local/bin/node
+COPY --from=openbnb /opt/openbnb /opt/openbnb
+COPY config/mcp-docker.json /app/config/mcp-docker.json
+ENV MCP_CONFIG_FILE=/app/config/mcp-docker.json
 COPY requirements-web.txt ./
 RUN pip install --no-cache-dir -r requirements-web.txt
 # The web runtime uses lexical-only memory indexing without embedding/torch.

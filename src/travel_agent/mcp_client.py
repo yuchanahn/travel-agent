@@ -73,6 +73,7 @@ class MCPRegistry:
         self.targets = targets or {}  # In-process SDK servers for protocol tests.
         self.tools = []
         self.routes = {}
+        self.adapters = {}
         self.status = []
         self._secrets = [value for s in self.servers for field in ('_env','_headers') for value in s.get(field,{}).values() if value]
         self._stack = ExitStack()
@@ -139,8 +140,17 @@ class MCPRegistry:
                         raise ValueError('MCP exposed tool limit is 24')
                     for alias,tool,schema in additions:
                         self.routes[alias] = (client,sid,tool.name,schema)
+                        self.adapters[alias] = server.get('adapter')
+                        if server.get('adapter')=='openbnb':
+                            import copy
+                            from .openbnb import GUIDANCE
+                            schema=copy.deepcopy(schema)
+                            schema.get('properties',{}).pop('ignoreRobotsText',None)
+                            description=GUIDANCE+' '+(tool.description or tool.name)
+                        else:
+                            description=tool.description or tool.name
                         self.tools.append({'type':'function','function':{'name':alias,
-                            'description':f'MCP server {sid}: '+(tool.description or tool.name),
+                            'description':f'MCP server {sid}: '+description,
                             'parameters':schema}})
                     self.status.append({'server':sid,'transport':server['transport'],'status':'connected',
                                         'discovered':len(found),'exposed':len(additions)})
@@ -170,6 +180,8 @@ class MCPRegistry:
         if name not in self.routes or not isinstance(args,dict):
             raise ValueError('Unknown MCP tool or malformed arguments')
         schema = self.routes[name][3]
+        if self.adapters.get(name)=='openbnb' and 'ignoreRobotsText' in args:
+            raise ValueError('OpenBnB request policy is configured by the host')
         try: validator_for(schema)(schema).validate(args)
         except Exception as exc: raise ValueError('MCP arguments do not match discovered schema') from exc
 
@@ -204,7 +216,9 @@ class MCPRegistry:
                     'server':sid,'remote_tool':remote,'content_kind':'mcp_result',
                     'observed_at':datetime.now(timezone.utc).isoformat(),
                     'verified_current':False,'is_error':failed,
-                    'text':text,'raw_result':wire,**({'error':'MCP server error or unsupported input request'} if failed else {})}
+                    'text':text,'raw_result':wire,
+                    **({'model_adapter':'openbnb'} if self.adapters.get(name)=='openbnb' else {}),
+                    **({'error':'MCP server error or unsupported input request'} if failed else {})}
         except Exception as exc:
             # Exception strings can contain request URLs or credentials.
             raise RuntimeError('MCP call failed: '+type(exc).__name__) from None
@@ -214,6 +228,9 @@ def model_result(result,max_bytes=6000):
     """Bound the model packet while keeping the full result in private trace."""
     if max_bytes < 256:
         raise ValueError('MCP packet budget must be at least 256 bytes')
+    if result.get('model_adapter')=='openbnb':
+        from .openbnb import pack_result
+        return pack_result(result,max_bytes)
     packed = {k:v for k,v in result.items() if k not in {'raw_result','text'}}
     overhead = len(canonical({**packed,'text':'','truncated':True}).encode())
     if overhead >= max_bytes:

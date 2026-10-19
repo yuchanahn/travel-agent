@@ -1,0 +1,9 @@
+{
+  "servers": [{
+    "id": "openbnb", "transport": "stdio", "enabled": true, "adapter": "openbnb",
+    "command": "/usr/local/bin/node",
+    "args": ["/opt/openbnb/dist/index.js", "--ignore-robots-txt"],
+    "cwd": "/opt/openbnb",
+    "allowed_tools": ["airbnb_search", "airbnb_listing_details"]
+  }]
+}
