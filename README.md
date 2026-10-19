@@ -8,6 +8,10 @@
 
 이 배경은 사용자가 겪은 경험이다. 전용 에이전트가 범용 에이전트보다 더 저렴하거나 정확하다는 것은 아직 입증하지 않았다. 구현과 평가로 확인할 가설이다.
 
+## 로컬 화면 실행
+
+주소는 http://127.0.0.1:50733/ 으로 고정한다. PowerShell에서 시작은 `.\scripts\start_web.ps1`, 코드 변경 후 재시작은 `.\scripts\restart_web.ps1`, 중지는 `.\scripts\start_web.ps1 -Action stop`을 사용한다. 시작을 반복해도 서버를 더 띄우지 않는다. 현재 공유 터널·Docker 웹은 중지했으며 [운영 방식](docs/web-interface.md)을 따른다.
+
 ## 현재 가능한 것
 
 - Ollama 로컬 공급자 연결 및 설치·실행 모델 상태 확인

@@ -4,6 +4,10 @@
 
 노션 허브: https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f
 
+- [067: 공유 종료·단일 로컬 서버 재시작](2026-10-19-067-fixed-local-server.md) — 호스트50733 하나·Docker 웹2개 및 ngrok 중지·반복 시작과 같은 포트 재시작 검증
+
+067 노션 동기화 완료: https://app.notion.com/p/3fed058c022e818fb086d7315619bd6d
+
 - [066: 대화 삭제·검증 세션 정리](2026-10-19-066-session-deletion.md) — 전체 분기·DB·로그 삭제, 실행 중 보호·218개 검사, 실제2턴 자동 삭제 및 기존 테스트 정리
 
 066 노션 동기화 완료: https://app.notion.com/p/3fed058c022e8118b3afff2ff9c375f8

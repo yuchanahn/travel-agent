@@ -1,5 +1,20 @@
 # 로컬 에이전트 실험 화면
 
+## 현재 운영 방식 — 067
+
+주소는 **http://127.0.0.1:50733/** 하나로 고정한다. 공유용 ngrok과 Docker 웹2개는 중지했고 컨테이너 자동 재시작도 해제했다. 현재는 호스트 웹 하나만 운영한다. Nexus·Ollama 공급자와 기존 대화·Docker 볼륨은 유지한다. 아래066 이전의 다른 포트·Docker 시작 안내는 과거 이력이다.
+
+```powershell
+.\scripts\start_web.ps1                # 이미 실행 중이면 그대로 사용
+.\scripts\restart_web.ps1              # 같은 주소로 종료 후 재시작
+.\scripts\start_web.ps1 -Action stop    # 이 프로젝트의 호스트 웹 중지
+```
+
+스크립트는 백그라운드로 실행하고 건강 응답을 확인한다. 시작을 반복해도 서버를 추가하지 않는다. 작업 공간의 venv 실행 파일과 자식 프로세스 관계로 소유권을 확인하며, 단순히 python이라는 이름으로 종료하지 않는다. 재시작은 실행 중 요청을 중단할 수 있다. 데이터 폴더는 삭제하지 않는다. 포트를 다른 프로그램이 사용하면 오류로 중단하고 다른 포트로 넘어가지 않는다. 동시에 시작·재시작 명령을 실행하면 작업 공간별 mutex로 직렬화한다.
+
+LLM 공급자는 비공개 llm-config.json 설정을 계속 사용한다. 실행 기록과 로그는 data/private/web-host, 관리 스크립트의 stdout·stderr·launcher PID는 data/private/web-runtime에 둔다. Docker 경로는 수동 실험을 위한 과거 구성으로 남겨두지만 기본 start_web.ps1은 Docker를 띄우지 않는다.
+
+
 066의 현재 화면은 http://127.0.0.1:50733/ 이다. 왼쪽 대화의 × 버튼으로 모든 하위 질문·분기·원문·요약·메모리 DB·로그를 함께 지운다. 삭제 전 확인하며 실행·대기 중인 질문이 있으면 삭제를 보류한다. 현재 대화를 삭제하면 새 대화 화면으로 돌아간다. 이 화면은 기존 web-host 저장소와 Nexus 공급자를 사용한다. start_web_host.ps1 기본 포트도50733이다. 아래50732는065 이력이다.
 
 라이브 검증은 `.venv/Scripts/python.exe scripts/smoke_web_session.py --base-url http://127.0.0.1:50733`으로 실행할 수 있다. 합성2턴 검증 후 finally에서 자기 루트만 삭제한다. 삭제 API는 `DELETE /api/conversations/{root_id}`이며 확인된 개발 테스트만 정리하고 일반 사용자 대화는 자동 삭제하지 않는다.
