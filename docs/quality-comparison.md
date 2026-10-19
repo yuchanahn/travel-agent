@@ -1,6 +1,8 @@
 # 개선 전후 품질 비교 — 070
 
-다른 하네스와의 비교는 [072 연구일지](research/2026-10-19-072-qwen-harness-comparison.md)를 따른다. `scripts/compare_harnesses.py`는 같은 로컬 Qwen 가중치·64K·출력4096·고정 합성 MCP 두 도구로 여행 실행기와 Claude Code 일반 모드를 비교한다. 두 질문 각1회이므로 우열을 일반화하지 않는다. 프롬프트·API 프로토콜·도구 어댑터는 서로 다르며 순수 루프 효과를 분리한 실험이 아니다. 실제 답변의 비민감 비교본은 `research/072-harness-results.json`에 있다. 기존070의 버전 전후 평가와 합산하지 않는다.
+사용자가 요청한 실제 검색 도구 활용 비교는 [073 연구일지](research/2026-10-20-073-live-harness-comparison.md)를 따른다. `compare_live_harnesses.py`는 기존 여행 도구와 Claude Code에 등록된 실제 Brave MCP만을 사용한다. `summarize_live_harnesses.py`는 모델 도구 ID·MCP RPC ID·다음 모델 tool_result를 연결한다. 합성 결과를 주입하지 않으며 실제 검색·반환 자료·최종 답변을 보존한다. 이는 서로 다른 실제 구성의 비교이고, 도구·locale·프롬프트 차이를 제거한 순수 하네스 인과 실험은 아니다. 072는 합성 도구 예비 실험으로 범위를 정정했다.
+
+[072 연구일지](research/2026-10-19-072-qwen-harness-comparison.md)는 과거 합성 도구 예비 비교다. `scripts/compare_harnesses.py`와 `research/072-harness-results.json`은 그 재현·결과 확인용으로 보존한다. 실제 웹검색 비교를 대체하지 않으며, 070의 버전 전후 평가나 073 결과와 합산하지 않는다.
 
 ## 평가할 질문
 

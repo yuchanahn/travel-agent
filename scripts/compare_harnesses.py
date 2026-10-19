@@ -157,8 +157,9 @@ def observed_endpoint(folder):
         thread.join(timeout=5)
 
 
-def run_claude(folder, case, command, *, minimal=False):
-    config = {'mcpServers': {'fixture': {'command': sys.executable, 'args': command}}}
+def run_claude(folder, case, command=None, *, minimal=False, mcp_config=None,
+               allowed_tools=None, timeout=180):
+    config = mcp_config or {'mcpServers': {'fixture': {'command': sys.executable, 'args': command}}}
     save(folder/'mcp.json', config)
     env = {k: v for k, v in os.environ.items() if not k.startswith(('ANTHROPIC_', 'CLAUDE_'))}
     env.update(ANTHROPIC_API_KEY='ollama', ANTHROPIC_AUTH_TOKEN='ollama',
@@ -168,7 +169,7 @@ def run_claude(folder, case, command, *, minimal=False):
         env['ANTHROPIC_BASE_URL'] = endpoint
         cmd = [shutil.which('claude'), *(['--bare'] if minimal else []), '--restricted', '--tools', '',
             '--strict-mcp-config', '--mcp-config', str(folder/'mcp.json'),
-            '--allowedTools', 'mcp__fixture__search_stays', 'mcp__fixture__read_stay',
+            '--allowedTools', *(allowed_tools or ['mcp__fixture__search_stays', 'mcp__fixture__read_stay']),
             '--permission-mode', 'dontAsk', '--disable-slash-commands', '--setting-sources', '',
             '--no-session-persistence', '--model', PROFILE, '--output-format', 'stream-json',
             '--verbose', '--max-turns', str(LIMIT), '-p', case['query']]
@@ -176,7 +177,7 @@ def run_claude(folder, case, command, *, minimal=False):
             stderr=subprocess.PIPE, text=True, encoding='utf-8',
             creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
         try:
-            stdout, stderr = process.communicate(timeout=180)
+            stdout, stderr = process.communicate(timeout=timeout)
             (folder/'stdout.jsonl').write_text(stdout, encoding='utf-8')
             (folder/'stderr.txt').write_text(stderr, encoding='utf-8')
             events = [json.loads(line) for line in stdout.splitlines() if line.startswith('{')]

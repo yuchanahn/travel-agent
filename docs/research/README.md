@@ -4,7 +4,11 @@
 
 노션 허브: https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f
 
-- [072: 같은 Qwen으로 두 하네스 비교](2026-10-19-072-qwen-harness-comparison.md) — 일반 모드4실행·동일 MCP 자료·실제64K, 시설 둘 다 통과·Claude 가격 조건/산술 오류, 우열 일반화 보류
+- [073: 실제 웹검색으로 두 구성 재비교](2026-10-20-073-live-harness-comparison.md) — 기존 여행 도구 vs Claude의 Brave MCP만, 실제4실행·모델/MCP/후속입력 연결·extra_snippets 차이·출처 과장과 미완료 확인
+
+073 노션 동기화 완료: https://app.notion.com/p/3fed058c022e8109a5afe1c580283459
+
+- [072: 합성 도구 예비 비교](2026-10-19-072-qwen-harness-comparison.md) — 같은 합성 MCP를 준 제한 실험. 실제 검색 비교를 충족하지 못해 범위를 정정했으며 후속073과 구분한다.
 
 072 노션 동기화 완료: https://app.notion.com/p/3fed058c022e81208478cd3abe395b46
 
