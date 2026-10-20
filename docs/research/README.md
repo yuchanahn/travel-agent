@@ -4,6 +4,10 @@
 
 노션 허브: https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f
 
+- [077: 재실행 실패 원인 독립 분석과 최종 검토](2026-10-20-077-rerun-failure-analysis.md) — 대화 이력 없이 서브에이전트 조사 후 원본 대조. 공백을 누락으로 표시한 버그·중복 복구와 시간 정리 부재 확인,076 설명 정정. 원인별 기여도는 미검증.
+
+077 노션 동기화 완료: https://app.notion.com/p/3ffd058c022e8167bff8fe5492ec199f
+
 - [076: 우리 에이전트 재실행과 이전 Claude 비교](2026-10-20-076-current-agent-vs-saved-claude.md) — 우리2질문만 새 실행·Claude074 재사용. 가평360초 중복26회 후 실패, 수목원58초 종료지만 공식 근거 미확인. 재부팅 전 완료 결과 복구·50733 재가동.
 
 076 노션 동기화 완료: https://app.notion.com/p/3ffd058c022e8106b57ddef319e09eb0
