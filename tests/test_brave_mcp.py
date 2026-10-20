@@ -17,6 +17,16 @@ def result(items):
 
 
 class BraveMCPTests(unittest.TestCase):
+    def test_document_catalog_omits_whole_oversized_records_and_has_no_body(self):
+        raw=result([{'title':'Root','url':'https://example.com/','description':'Search excerpt'}])
+        raw['document_collection']={'scope':'same_host_one_hop','documents':[
+            {'id':'web:1','title':'large','description':'x'*10000},
+            {'id':'web:2','title':'small','status':'ready','url':'https://example.com/pool'}]}
+        packet=json.loads(model_result(raw,max_bytes=1500))
+        self.assertEqual([d['title'] for d in packet['document_catalog']],['small'])
+        self.assertEqual(packet['document_catalog_omitted'],1)
+        self.assertLessEqual(len(model_result(raw,max_bytes=1500).encode()),1500)
+
     def test_read_schema_excludes_completed_pages_without_mutating_shared_tools(self):
         self.assertNotIn('web_read',[t['function']['name'] for t in readable_tools(TOOLS,{},set())])
         tools=readable_tools(TOOLS,{'web:1111111111111111':{},'web:2222222222222222':{}},{'web:1111111111111111'})
@@ -80,7 +90,7 @@ class BraveMCPTests(unittest.TestCase):
             return {**source,'text':'합성 본문','truncated':False,'page_fetched':True,'content_kind':'page_excerpt'}
         with TemporaryDirectory() as folder, MemoryStore(Path(folder)/'db') as store, MCPRegistry([config]) as registry:
             with patch('travel_agent.agent.chat',side_effect=model),patch('travel_agent.agent.web_read',side_effect=read):
-                answer=run_agent(store,'u','s','합성 질문',mcp_registry=registry,trace_dir=Path(folder)/'trace')
+                answer=run_agent(store,'u','s','합성 질문',mcp_registry=registry,trace_dir=Path(folder)/'trace',document_collection=False)
             self.assertEqual(answer['tool_calls'],2)
             self.assertTrue(answer['web_search_attempted'])
             self.assertTrue(answer['web_search_performed'])

@@ -9,7 +9,9 @@ GUIDANCE = ('일반 여행·펜션 후보 탐색은 이 웹검색을 우선한�
             '검색 결과 수는 숙소 수가 아니다. 같은 숙소의 여러 링크를 묶고, 처음 보인 3곳에 바로 고정하지 않는다. '
             '후보 이름으로 주소·시설·공식 안내를 추가 검색하며 예약 사이트와 공식 사이트를 함께 활용한다. '
             '한국 여행 검색은 country=KR, search_lang=ko, ui_lang=ko-KR를 명시한다. '
-            '반환 hits의 web: ID로 web_read를 사용할 수 있다. 검색 발췌는 본문 확인이 아니다.')
+            'document_catalog는 자동 수집한 주변 문서 목록이다. 제목·anchors·description·parents·status로 읽을 문서를 선택한다. '
+            'ready 문서의 web: ID를 web_read로 요청하면 저장된 본문을 읽는다. 목록 수신은 본문을 읽은 것이 아니다. '
+            '필요한 근거가 없으면 후보 이름으로 추가 검색할 수 있다. 검색 발췌는 본문 확인이 아니다.')
 
 
 def pack_result(result, max_bytes=96000):
@@ -54,4 +56,18 @@ def pack_result(result, max_bytes=96000):
     packet['omitted_results'] = len(hits)-len(packet['hits'])
     packet['returned_results'] = len(packet['hits'])
     packet['truncated'] = bool(packet['omitted_results'])
+    if 'document_collection' in result:
+        collection = result['document_collection']
+        metadata = {k:v for k,v in collection.items() if k != 'documents'}
+        trial = {**packet, 'document_collection': metadata, 'document_catalog': [], 'document_catalog_omitted': len(collection['documents'])}
+        if len(canonical(trial).encode()) <= max_bytes:
+            packet = trial
+            for doc in collection['documents']:
+                trial = {**packet, 'document_catalog': [*packet['document_catalog'], doc]}
+                if len(canonical(trial).encode()) <= max_bytes-64:
+                    packet['document_catalog'].append(doc)
+            packet['document_catalog_omitted'] = len(collection['documents'])-len(packet['document_catalog'])
+        else:
+            # Search hits retain precedence, but omission must remain visible.
+            packet['document_catalog_omitted'] = len(collection['documents'])
     return canonical(packet)
