@@ -4,6 +4,10 @@
 
 노션 허브: https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f
 
+- [076: 우리 에이전트 재실행과 이전 Claude 비교](2026-10-20-076-current-agent-vs-saved-claude.md) — 우리2질문만 새 실행·Claude074 재사용. 가평360초 중복26회 후 실패, 수목원58초 종료지만 공식 근거 미확인. 재부팅 전 완료 결과 복구·50733 재가동.
+
+076 노션 동기화 완료: https://app.notion.com/p/3ffd058c022e8106b57ddef319e09eb0
+
 - [075: 검색과 본문 읽기 범위 확대](2026-10-20-075-search-capacity.md) — 20개 결과 전달·본문12000바이트·모델40/도구36/360초,265개 검사 통과. 실제 실행은 반복 읽기23오류·360초 시간 초과로 품질 미통과.
 
 075 노션 동기화 완료: https://app.notion.com/p/3fed058c022e81f4afdbd4a46e692d65
