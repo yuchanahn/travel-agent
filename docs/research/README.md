@@ -4,6 +4,10 @@
 
 노션 허브: https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f
 
+- [080: 포트폴리오 초안과 AI 태그 연결](2026-10-20-080-portfolio-draft.md) — 기존 프로젝트 형식에 맞춰 실행기·메모리·추적·평가를 정리. [새 포트폴리오 페이지](https://app.notion.com/p/3ffd058c022e81fcad07e15f9e665cbe)를 기존 갤러리와 AI 보기에 추가. 사진·영상은 자리표시자.
+
+080 노션 동기화 완료: https://app.notion.com/p/3ffd058c022e8189bfbefcb029152d63
+
 - [079: 같은 질문으로 현재 에이전트 재검증](2026-10-20-079-fixed-query-validation.md) — 기존 두 질문 그대로·프롬프트 변경 없이 우리만 실행, 이전 Claude074 재사용. 둘 다 완료했지만 주소 생성·숙소 정보 혼합·공식 근거 오인으로 품질0/2. 고정 평가 실행기 추가.
 
 079 노션 동기화 완료: https://app.notion.com/p/3ffd058c022e8143a521f4ae83244936
