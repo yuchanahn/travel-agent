@@ -4,6 +4,10 @@
 
 노션 허브: https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f
 
+- [084: 문서 상태 정리와 로컬 검사 재확인](2026-10-23-084-portfolio-review.md) — README 호스트 실행 안내·포트폴리오 상태 통합·Notion 코드 블록 복구, Node24 기준 Python279·UI JS5종·과거 연구용JS8검사 통과. 브라우저 연결 불가로 실제 캡처 미완료, 여행 품질0/2 유지.
+
+084 노션 동기화 완료: https://app.notion.com/p/402d058c022e81cdbe9ef432449b03f4
+
 - [083: 실행 비교와 응답 지침 보완](2026-10-23-083-comparison-and-prompt.md) — 개별 실행 비교·SYSTEM 보완·동일 저장 입력4회 재생, 새 지침은 후속 도구 미실행으로 최종 품질 미확인. 검색 없는 실제Qwen3턴 조건정정·시험3개삭제,279개Python·JS5종 통과.
 
 083 노션 동기화 완료: https://app.notion.com/p/402d058c022e81d38d2ad15fa9ee6425

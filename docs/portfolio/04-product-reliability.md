@@ -36,17 +36,17 @@ flowchart LR
 <details>
 <summary>실제 코드 · 개별 턴 목록과 대화 목록 구분</summary>
 
-	`src/travel_agent/web_app.py` · `RunManager.executions` · 기준 cbaa4ea. 비교 화면은 대화의 최신 턴만 보여주는 목록과 별도로 모든 보존 턴을 선택할 수 있습니다.
+`src/travel_agent/web_app.py` · `RunManager.executions` · 기준 cbaa4ea. 비교 화면은 대화의 최신 턴만 보여주는 목록과 별도로 모든 보존 턴을 선택할 수 있습니다.
 
-	```python
-	def executions(self):
-	    """List retained individual turns, including earlier turns in a conversation."""
-	    with self.lock:
-	        return [{k:j.get(k) for k in ('id','query','state','created_at','parent_id')}
-	            for j in sorted(self.jobs.values(),key=lambda j:j['created_at'],reverse=True)]
-	```
+```python
+def executions(self):
+    """List retained individual turns, including earlier turns in a conversation."""
+    with self.lock:
+        return [{k:j.get(k) for k in ('id','query','state','created_at','parent_id')}
+            for j in sorted(self.jobs.values(),key=lambda j:j['created_at'],reverse=True)]
+```
 
-	[웹 실행·삭제 코드](https://github.com/yuchanahn/travel-agent/blob/cbaa4ea/src/travel_agent/web_app.py) · [조건 확인3턴 실행기](https://github.com/yuchanahn/travel-agent/blob/cbaa4ea/scripts/smoke_local_journey.py)
+[웹 실행·삭제 코드](https://github.com/yuchanahn/travel-agent/blob/cbaa4ea/src/travel_agent/web_app.py) · [조건 확인3턴 실행기](https://github.com/yuchanahn/travel-agent/blob/cbaa4ea/scripts/smoke_local_journey.py)
 </details>
 
 ## 현재 제품 경계

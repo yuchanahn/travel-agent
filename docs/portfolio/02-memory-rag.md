@@ -56,18 +56,19 @@ flowchart TD
 
 <details>
 <summary>실제 코드 · RRF가 순위를 결합하는 방법</summary>
-	`src/travel_agent/memory.py` · `rrf` · 기준07634dc. 점수 크기가 다른 두 검색의 원점수를 그대로 합산하지 않고 순위로 합칩니다.
-	```python
+
+`src/travel_agent/memory.py` · `rrf` · 기준07634dc. 점수 크기가 다른 두 검색의 원점수를 그대로 합산하지 않고 순위로 합칩니다.
+```python
 def rrf(rankings: list[list[int]], k=60) -> dict[int, float]:
     scores: dict[int, float] = {}
     for ranking in rankings:
         for rank, index in enumerate(ranking, 1):
             scores[index] = scores.get(index, 0.0) + 1 / (k + rank)
     return scores
-	```
-	[원문 저장·검색 코드](https://github.com/yuchanahn/travel-agent/blob/07634dc/src/travel_agent/memory.py)
-	[007 실제 질문·답변·검색 실행](https://github.com/yuchanahn/travel-agent/blob/07634dc/docs/research/2026-10-17-007-conversation-memory-rag.md)
-	[057 웹 연결과 대조의 한계](https://github.com/yuchanahn/travel-agent/blob/07634dc/docs/research/2026-10-19-057-web-session-memory.md)
+```
+[원문 저장·검색 코드](https://github.com/yuchanahn/travel-agent/blob/07634dc/src/travel_agent/memory.py)
+[007 실제 질문·답변·검색 실행](https://github.com/yuchanahn/travel-agent/blob/07634dc/docs/research/2026-10-17-007-conversation-memory-rag.md)
+[057 웹 연결과 대조의 한계](https://github.com/yuchanahn/travel-agent/blob/07634dc/docs/research/2026-10-19-057-web-session-memory.md)
 </details>
 
 ## 082 진행 결과

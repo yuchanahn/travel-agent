@@ -70,23 +70,24 @@ flowchart TD
 
 <details>
 <summary>코드 · 도구 요청과 모델 응답을 연결하는 실행 기록</summary>
-	요청 ID·단계·도구 호출 ID를 연결해, 모델이 요청한 인자와 실제 결과를 대조합니다. 자동 HTTP 수집은 모델의 별도 도구 요청과 구분합니다. 내부 사고 원문을 추적하는 기능은 아닙니다.
-	`src/travel_agent/agent.py` · `execute_batch.emit_start` · 기준07634dc:
-	```python
+
+요청 ID·단계·도구 호출 ID를 연결해, 모델이 요청한 인자와 실제 결과를 대조합니다. 자동 HTTP 수집은 모델의 별도 도구 요청과 구분합니다. 내부 사고 원문을 추적하는 기능은 아닙니다.
+`src/travel_agent/agent.py` · `execute_batch.emit_start` · 기준07634dc:
+```python
 def emit_start(index, name, call):
     trace.emit("tool_start", step=step, span=f"{step}.{index + 1}", name=name,
                call_index=index, tool_call_id=call.get("id"), arguments=call["function"].get("arguments"))
-	```
-	`src/travel_agent/trace.py` · `Trace._emit` · 같은 기준:
-	```python
+```
+`src/travel_agent/trace.py` · `Trace._emit` · 같은 기준:
+```python
 record = {"request_id": self.request_id, "sequence": self.sequence,
           "timestamp": datetime.now(timezone.utc).isoformat(),
           "elapsed_seconds": round(time.perf_counter() - self.started, 6),
           "kind": kind, **fields}
 with self.path.open("a", encoding="utf-8") as output:
     output.write(json.dumps(record, ensure_ascii=False) + "\n")
-	```
-	[도구 실행·기록 코드](https://github.com/yuchanahn/travel-agent/blob/07634dc/src/travel_agent/agent.py) · [Trace 코드](https://github.com/yuchanahn/travel-agent/blob/07634dc/src/travel_agent/trace.py)
+```
+[도구 실행·기록 코드](https://github.com/yuchanahn/travel-agent/blob/07634dc/src/travel_agent/agent.py) · [Trace 코드](https://github.com/yuchanahn/travel-agent/blob/07634dc/src/travel_agent/trace.py)
 </details>
 
 ### 요약에서 빠진 과거 근거를 다시 찾는 메모리
@@ -99,17 +100,18 @@ with self.path.open("a", encoding="utf-8") as output:
 
 <details>
 <summary>코드 · BM25와 임베딩 검색 순위 결합</summary>
-	두 검색 점수의 크기를 직접 더하는 대신 순위에 따라 합산합니다. 과거 발언을 찾는 기능이며, 저장된 내용의 사실성이나 최신성을 검증하는 것은 아닙니다.
-	`src/travel_agent/memory.py` · `rrf` · 기준07634dc:
-	```python
+
+두 검색 점수의 크기를 직접 더하는 대신 순위에 따라 합산합니다. 과거 발언을 찾는 기능이며, 저장된 내용의 사실성이나 최신성을 검증하는 것은 아닙니다.
+`src/travel_agent/memory.py` · `rrf` · 기준07634dc:
+```python
 def rrf(rankings: list[list[int]], k=60) -> dict[int, float]:
     scores: dict[int, float] = {}
     for ranking in rankings:
         for rank, index in enumerate(ranking, 1):
             scores[index] = scores.get(index, 0.0) + 1 / (k + rank)
     return scores
-	```
-	[검색·메모리 코드](https://github.com/yuchanahn/travel-agent/blob/07634dc/src/travel_agent/memory.py) · [웹/CLI 적용 범위](https://github.com/yuchanahn/travel-agent/blob/07634dc/docs/memory-rag.md)
+```
+[검색·메모리 코드](https://github.com/yuchanahn/travel-agent/blob/07634dc/src/travel_agent/memory.py) · [웹/CLI 적용 범위](https://github.com/yuchanahn/travel-agent/blob/07634dc/docs/memory-rag.md)
 </details>
 
 \[이전 조건을 기억하고 이어서 질문하는 화면 사진\]
@@ -134,14 +136,15 @@ flowchart LR
 
 <details>
 <summary>코드 · 저장된 본문의 다음 읽기 위치</summary>
-	공백이 달라졌는지 비교하는 대신 실제로 반환한 문자 위치와 전체 길이를 비교합니다. 본문 저장·전달이 정확한 것과 모델이 올바른 문서를 고르는 것은 별개로 검증했습니다.
-	`src/travel_agent/web_documents.py` · `DocumentCollection.read` · 기준07634dc:
-	```python
+
+공백이 달라졌는지 비교하는 대신 실제로 반환한 문자 위치와 전체 길이를 비교합니다. 본문 저장·전달이 정확한 것과 모델이 올바른 문서를 고르는 것은 별개로 검증했습니다.
+`src/travel_agent/web_documents.py` · `DocumentCollection.read` · 기준07634dc:
+```python
 end = start_index+len(fragment)
 out.update(text=fragment, truncated=end < len(text), next_start_index=end if end < len(text) else None,
            text_is_fragment=start_index > 0 or end < len(text))
-	```
-	[문서 수집·읽기 코드](https://github.com/yuchanahn/travel-agent/blob/07634dc/src/travel_agent/web_documents.py)
+```
+[문서 수집·읽기 코드](https://github.com/yuchanahn/travel-agent/blob/07634dc/src/travel_agent/web_documents.py)
 </details>
 
 \[검색 결과·주변 문서 목록·선택한 본문 사진\]
@@ -179,17 +182,19 @@ out.update(text=fragment, truncated=end < len(text), next_start_index=end if end
 
 <details>
 <summary>문제 분석 · 반복 읽기에서 무엇을 확인했나</summary>
-	이전076 펜션 실행은 검색1회·본문 성공3회 뒤 중복 거절26회를 기록하고360초에 실패했습니다. 검색 결과20개는 모델에 모두 전달됐으므로 단순한 검색 결과 유실은 아니었습니다.
-	본문 추출 전후 공백 차이를 내용 누락으로 표시하는 구현 문제를 확인했습니다. 그러나 전체 전달로 표시된 문서도 재요청해, 그 버그만 반복의 원인이라고 결론 내리지 않았습니다. 오류 뒤 새로운 검색으로 전환하지 못한 행동과, 시간 소진 전에 정리하지 못한 실행 흐름도 함께 분석했습니다.
-	최신079는 펜션 답변까지 종료했지만, 검색 결과와 도구 선택도 달라 한 가지 수정으로 해결됐다고 해석하지 않았습니다.
-	<mention-page url="https://app.notion.com/p/3ffd058c022e8167bff8fe5492ec199f">반복 실패 원인 분석</mention-page>
+
+이전076 펜션 실행은 검색1회·본문 성공3회 뒤 중복 거절26회를 기록하고360초에 실패했습니다. 검색 결과20개는 모델에 모두 전달됐으므로 단순한 검색 결과 유실은 아니었습니다.
+본문 추출 전후 공백 차이를 내용 누락으로 표시하는 구현 문제를 확인했습니다. 그러나 전체 전달로 표시된 문서도 재요청해, 그 버그만 반복의 원인이라고 결론 내리지 않았습니다. 오류 뒤 새로운 검색으로 전환하지 못한 행동과, 시간 소진 전에 정리하지 못한 실행 흐름도 함께 분석했습니다.
+최신079는 펜션 답변까지 종료했지만, 검색 결과와 도구 선택도 달라 한 가지 수정으로 해결됐다고 해석하지 않았습니다.
+<mention-page url="https://app.notion.com/p/3ffd058c022e8167bff8fe5492ec199f">반복 실패 원인 분석</mention-page>
 </details>
 
 <details>
 <summary>실제 도구 호출 발췌 · 검색과 저장 본문 선택</summary>
-	최신079 펜션 실행에서 모델이 요청한 실제 기록입니다. 전체 호출과 두 질문의 실제 답변은 아래 평가 기록에 있습니다.
-	**5.1 · 검색** · 요청2026-10-20T13:15:01.139509+00:00 → 결과 관측13:15:02.245347+00:00。도구: `mcp_brave_brave_web_search` · 호출 ID: `call_hk3zd2dg` · 결과 ID: `mcp:117000491cee1995`
-	```json
+
+최신079 펜션 실행에서 모델이 요청한 실제 기록입니다. 전체 호출과 두 질문의 실제 답변은 아래 평가 기록에 있습니다.
+**5.1 · 검색** · 요청2026-10-20T13:15:01.139509+00:00 → 결과 관측13:15:02.245347+00:00。도구: `mcp_brave_brave_web_search` · 호출 ID: `call_hk3zd2dg` · 결과 ID: `mcp:117000491cee1995`
+```json
 {
   "query": "가평 펜션 수영장 개별 바비큐 시설",
   "country": "KR",
@@ -197,17 +202,17 @@ out.update(text=fragment, truncated=end < len(text), next_start_index=end if end
   "ui_lang": "ko-KR",
   "count": 10
 }
-	```
-	검색 결과10개를 전달했고, 래퍼의 자동 HTTP 수집은6개 URL 중4개 ready·429 1개·403 1개였습니다. 자동 수집을 모델이 요청한 도구 호출6회로 세지 않았습니다.
-	**6.1 · 저장 본문 읽기** · 요청2026-10-20T13:15:13.909757+00:00。도구: `web_read` · 호출 ID: `call_92ph0it1`
-	```json
+```
+검색 결과10개를 전달했고, 래퍼의 자동 HTTP 수집은6개 URL 중4개 ready·429 1개·403 1개였습니다. 자동 수집을 모델이 요청한 도구 호출6회로 세지 않았습니다.
+**6.1 · 저장 본문 읽기** · 요청2026-10-20T13:15:13.909757+00:00。도구: `web_read` · 호출 ID: `call_92ph0it1`
+```json
 {
   "query": "수영장 개별 바비큐 시설",
   "source_id": "web:9bfb57a07ed32264"
 }
-	```
-	콜린 바비큐 본문358자를 저장소에서 읽었고 truncated=false였습니다. 실제 다음 모델 입력에 본문을 전달했습니다. 전체 문맥에 있었던 수영장 주변 문서는 선택하지 않았습니다. ‘목록에 제공됨’과 ‘실제 본문을 읽음’을 구분했습니다.
-	<mention-page url="https://app.notion.com/p/3ffd058c022e8143a521f4ae83244936">고정 질문·양쪽 실제 답변·전체 도구 기록</mention-page>
+```
+콜린 바비큐 본문358자를 저장소에서 읽었고 truncated=false였습니다. 실제 다음 모델 입력에 본문을 전달했습니다. 전체 문맥에 있었던 수영장 주변 문서는 선택하지 않았습니다. ‘목록에 제공됨’과 ‘실제 본문을 읽음’을 구분했습니다.
+<mention-page url="https://app.notion.com/p/3ffd058c022e8143a521f4ae83244936">고정 질문·양쪽 실제 답변·전체 도구 기록</mention-page>
 </details>
 
 \[같은 질문의 답변과 도구 기록을 비교한 사진\]
@@ -234,8 +239,9 @@ out.update(text=fragment, truncated=end < len(text), next_start_index=end if end
 
 <details>
 <summary>실행 영상</summary>
-	\[여행 조건 입력 → 검색·본문 선택 → 비교 답변 영상\]
-	\[후속 질문 → 메모리 참조 영상\]
+
+\[여행 조건 입력 → 검색·본문 선택 → 비교 답변 영상\]
+\[후속 질문 → 메모리 참조 영상\]
 </details>
 
 <callout icon="📝" color="gray_bg">

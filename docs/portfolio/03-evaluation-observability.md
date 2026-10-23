@@ -44,16 +44,16 @@ flowchart LR
 <details>
 <summary>실제 코드 · token이 일부만 보고된 경우</summary>
 
-	`src/travel_agent/observability.py` · `summarize` · 기준 cbaa4ea. 보고된 합계와 완전성을 함께 제공합니다.
+`src/travel_agent/observability.py` · `summarize` · 기준 cbaa4ea. 보고된 합계와 완전성을 함께 제공합니다.
 
-	```python
-	**{key: {'reported_sum': sum(v for v in values if v is not None) if any(v is not None for v in values) else None,
-	         'reported_calls': sum(v is not None for v in values), 'expected_calls': model_starts,
-	         'complete': len(values) == model_starts and all(v is not None for v in values)}
-	   for key, values in tokens.items()},
-	```
+```python
+**{key: {'reported_sum': sum(v for v in values if v is not None) if any(v is not None for v in values) else None,
+         'reported_calls': sum(v is not None for v in values), 'expected_calls': model_starts,
+         'complete': len(values) == model_starts and all(v is not None for v in values)}
+   for key, values in tokens.items()},
+```
 
-	[집계 코드](https://github.com/yuchanahn/travel-agent/blob/cbaa4ea/src/travel_agent/observability.py) · [비교 화면 코드](https://github.com/yuchanahn/travel-agent/blob/cbaa4ea/src/travel_agent/static/comparison.js)
+[집계 코드](https://github.com/yuchanahn/travel-agent/blob/cbaa4ea/src/travel_agent/observability.py) · [비교 화면 코드](https://github.com/yuchanahn/travel-agent/blob/cbaa4ea/src/travel_agent/static/comparison.js)
 </details>
 
 ## 성과로 설명할 범위

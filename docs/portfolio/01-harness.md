@@ -30,9 +30,10 @@ flowchart LR
 
 <details>
 <summary>코드와 구조 확인</summary>
-	기준07634dc의 `agent.execute_batch`, `validate_call`, `run_agent`와 `Trace`가 실행과 기록을 나눕니다. 실제 코드 조각은 상위 포트폴리오의 ‘도구 호출을 연결하고, 멈춘 이유를 남기기’에 있습니다.
-	[실행기 코드](https://github.com/yuchanahn/travel-agent/blob/07634dc/src/travel_agent/agent.py)
-	[병렬 계약 검사](https://github.com/yuchanahn/travel-agent/blob/07634dc/tests/test_parallel_tools.py)
+
+기준07634dc의 `agent.execute_batch`, `validate_call`, `run_agent`와 `Trace`가 실행과 기록을 나눕니다. 실제 코드 조각은 상위 포트폴리오의 ‘도구 호출을 연결하고, 멈춘 이유를 남기기’에 있습니다.
+[실행기 코드](https://github.com/yuchanahn/travel-agent/blob/07634dc/src/travel_agent/agent.py)
+[병렬 계약 검사](https://github.com/yuchanahn/travel-agent/blob/07634dc/tests/test_parallel_tools.py)
 </details>
 
 \[병렬 도구 호출과 오류 격리 화면 사진\]
