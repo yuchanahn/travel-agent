@@ -152,23 +152,31 @@ class BranchMemoryTests(unittest.TestCase):
         self.assertEqual(json.loads(tool['content']),entries[-1]['result'])
         self.assertNotIn('SECRET',json.dumps(originals))
 
-    def test_lossy_summary_is_supplemented_from_original_branch_memory(self):
+    def test_lossy_runtime_summary_is_supplemented_from_original_branch_memory(self):
+        from travel_agent.trace import Trace
+        from travel_agent.runtime_context import SUMMARY_PREFIX
+        import time
         seen=[]
         def agent(store,user,session,query,**kwargs):
-            seen.append(copy.deepcopy(kwargs))
+            messages=[{'role':'system','content':'rules'},*kwargs['history'],{'role':'user','content':query}]
+            if query=='다른 이야기':messages.append({'role':'assistant','content':'숙소 조사 중 '*500})
+            prepared,info=kwargs['context_manager'](messages,[],step=1,deadline=time.perf_counter()+30,max_bytes=196608)
+            seen.append({'messages':prepared,'recalled':copy.deepcopy(kwargs['recalled_memory'])})
+            Trace(kwargs['trace_dir']).emit('model_start',messages=prepared)
             return {'status':'completed','answer':'확인했습니다.'}
         with TemporaryDirectory() as folder, patch('travel_agent.web_app.run_agent',side_effect=agent), \
-             patch.dict(os.environ,{'WEB_CONTEXT_COMPACT_BYTES':'4000','WEB_CONTEXT_KEEP_TURNS':'1'}), \
-             patch('travel_agent.session_context.chat',return_value={'message':{'content':'여행 후보를 검토 중이다. 상세 제외 이유는 요약에서 빠졌다.'},'done_reason':'stop'}):
+             patch.dict(os.environ,{'AGENT_CONTEXT_TARGET_BYTES':'4000'}), \
+             patch('travel_agent.web_app.context_chat',return_value={'message':{'content':'여행 후보를 검토 중이다. 상세 제외 이유는 요약에서 빠졌다.'},'done_reason':'stop'}):
             manager=RunManager(folder)
             try:
                 parent=self.execute(manager,'강릉은 계단 때문에 제외했다.')
-                for _ in range(3):
-                    parent=self.execute(manager,'다른 이야기 '+('숙소 조건 검토 '*150),parent)
+                for _ in range(4):
+                    parent=self.execute(manager,'다른 이야기',parent)
                 self.execute(manager,'강릉 제외 이유 계단을 기억해?',parent)
                 context=seen[-1]
-                self.assertTrue(context['summary'])
-                self.assertNotIn('계단 때문에',context['summary'])
-                self.assertNotIn('계단 때문에',json.dumps(context['history'],ensure_ascii=False))
-                self.assertIn('계단 때문에',json.dumps(context['recalled_memory'],ensure_ascii=False))
+                self.assertTrue(any(m.get('content','').startswith(SUMMARY_PREFIX) for m in context['messages']))
+                summaries=[m['content'] for m in context['messages'] if m.get('content','').startswith(SUMMARY_PREFIX)]
+                self.assertNotIn('계단 때문에',''.join(summaries))
+                self.assertIn('계단 때문에',json.dumps(context['messages'],ensure_ascii=False))
+                self.assertIn('계단 때문에',json.dumps(context['recalled'],ensure_ascii=False))
             finally:manager.pool.shutdown()

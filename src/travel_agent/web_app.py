@@ -20,7 +20,9 @@ from .llm_client import settings as llm_settings, headers as llm_headers
 from .llm_config import generation_options
 from .memory import MemoryStore, build_bm25_index
 from .observability import summarize as summarize_trace
-from .session_context import compact_context, trace_events, turn_events, write_json
+from .session_context import trace_events, turn_events, write_json
+from .runtime_context import prepare as prepare_runtime_context, SUMMARY_PREFIX
+from .llm_client import chat as context_chat
 from .travel_plan import blank as blank_plan, mutate as mutate_plan, budget as plan_budget, markdown as plan_markdown
 
 STATIC = Path(__file__).with_name('static')
@@ -58,7 +60,7 @@ def visible_event(event):
         view.update(forced_by_budget=event.get('forced_by_budget'),stop_reason=event.get('stop_reason'))
     elif kind=='tool_budget_finalization':
         view.update(requested=event.get('requested'),remaining=event.get('remaining'))
-    elif kind=='context_prepared':
+    elif kind in {'context_prepared','context_checked'}:
         view.update({k:v for k,v in event.items() if k not in {'request_id','sequence','timestamp','kind'}})
     elif kind=='memory_recalled':
         view.update(query=event['query'], result=event['result'])
@@ -227,11 +229,24 @@ class RunManager:
                 for ancestor in ancestors:
                     store.add('local-web',session,turn_events(self.directory,ancestor))
                 before_index = build_bm25_index(store,'local-web',session)
-                history, summary, context = compact_context(history,summary,folder=folder,
-                    model=llm_settings()['model'],
-                    base_url=llm_settings()['base_url'])
+                context={'compacted':False,'policy':'per_model_call','compactions':0,
+                         'before_bytes':len(json.dumps(history,ensure_ascii=False).encode()),
+                         'summary_model_calls':0,'summary_input_tokens':0,'summary_output_tokens':0,'summary_usage_complete':True}
+                def context_manager(messages,tools,**limits):
+                    config=llm_settings()
+                    prepared,info=prepare_runtime_context(messages,tools,chat=context_chat,
+                        model=config['model'],base_url=config['base_url'],folder=folder/'context-checks',**limits)
+                    for key in ('summary_model_calls','summary_input_tokens','summary_output_tokens'):
+                        context[key]+=info.get(key,0)
+                    context['summary_usage_complete'] &= info.get('summary_usage_complete',True)
+                    if info['compacted']:
+                        context.update(compacted=True,compactions=context['compactions']+1)
+                        # Original tool results remain searchable in this run, too.
+                        store.add('local-web',session,turn_events(self.directory,job))
+                        build_bm25_index(store,'local-web',session)
+                    return prepared,info
                 recalled = execute_tool(store,'local-web',session,'memory_search',
-                    {'query':job['query'],'top_k':3},mode='bm25',rerank=False,max_bytes=6000) if summary and before_index['chunks'] else {'hits':[]}
+                    {'query':job['query'],'top_k':3},mode='bm25',rerank=False,max_bytes=6000) if (summary or any(m.get('content','').startswith(SUMMARY_PREFIX) for m in history)) and before_index['chunks'] else {'hits':[]}
                 context.update(memory_events=before_index['events'],memory_chunks=before_index['chunks'],
                                recalled_hits=len(recalled['hits']))
                 def plan_handler(name,args):
@@ -243,7 +258,8 @@ class RunManager:
                                  prior_memory_ids=[i for i in parent['result'].get('evidence_ids',[]) if i.startswith(('m-','event:'))] if parent else [],
                                  prior_mcp_sources=parent['result'].get('mcp_sources',[]) if parent else [],
                                  recalled_memory=recalled,context_info=context,
-                                 enable_web=job['enable_web'],trace_dir=folder/'traces',timeout=360,plan_handler=plan_handler)
+                                 enable_web=job['enable_web'],trace_dir=folder/'traces',timeout=360,plan_handler=plan_handler,
+                                 context_manager=context_manager)
                 finished = {**job,'finished_at':now(),'result':result}
                 inserted = store.add('local-web',session,turn_events(self.directory,finished))
                 after_index = build_bm25_index(store,'local-web',session)
@@ -252,7 +268,8 @@ class RunManager:
                     saved_history = [m for m in latest if m['role']!='system']
                     # The request wrapper contains summary/retrieval. Preserve the
                     # original user query in the rolling checkpoint instead.
-                    saved_history[len(history)] = {'role':'user','content':job['query']}
+                    user_index=next(i for i in range(len(saved_history)-1,-1,-1) if saved_history[i]['role']=='user')
+                    saved_history[user_index] = {'role':'user','content':job['query']}
                 else:
                     saved_history = history + [{'role':'user','content':job['query']}]
                 answer = result.get('answer') or result.get('partial_answer')
@@ -468,6 +485,18 @@ def handler_for(manager):
 
         def do_POST(self):
             if not self._allowed():
+                # Drain a bounded rejected body before closing; an unread POST
+                # can reset TCP before Windows receives the403 response.
+                previous_timeout=self.connection.gettimeout()
+                try:
+                    size=int(self.headers.get('Content-Length','0'))
+                    if 0<size<=65536:
+                        self.connection.settimeout(.25)
+                        self.rfile.read(size)
+                except (OSError,ValueError):
+                    pass
+                finally:
+                    self.connection.settimeout(previous_timeout)
                 return self._send(403,{'error':'로컬 화면에서만 요청할 수 있습니다.'})
             plan_match=re.fullmatch(r'/api/plans/([a-f0-9]{32})',self.path)
             if self.path!='/api/runs' and not plan_match:

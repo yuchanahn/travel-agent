@@ -69,7 +69,10 @@ def settings():
 
 
 def compact_context(history, summary, *, folder, model, base_url):
-    """Compact old complete user-turn groups; preserve recent tool-call pairs."""
+    """Historical 057 replay helper only. Live web uses runtime_context.prepare.
+
+    Retained for reproducing old experiments, not the current runtime policy.
+    """
     threshold, keep = settings()
     before = len(canonical({'history':history,'summary':summary}).encode())
     info = {'compacted':False, 'before_bytes':before, 'threshold_bytes':threshold,
