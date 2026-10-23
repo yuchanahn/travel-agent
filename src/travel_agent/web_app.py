@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
+import hashlib
 import os
 from pathlib import Path
 import re
@@ -248,6 +249,12 @@ class RunManager:
                         'query':root['query'], 'conversation_id':root['id'], 'turn_count':len(turns)}
             return list(chats.values())
 
+    def executions(self):
+        """List retained individual turns, including earlier turns in a conversation."""
+        with self.lock:
+            return [{k:j.get(k) for k in ('id','query','state','created_at','parent_id')}
+                for j in sorted(self.jobs.values(),key=lambda j:j['created_at'],reverse=True)]
+
     def delete_conversation(self, run_id):
         """Delete a whole root and its branches, including uncached disk records."""
         with self.lock:
@@ -319,6 +326,12 @@ class RunManager:
                         events.append(projected)
         result.update(events=events,next_sequence=sequence)
         result['execution_summary']=summarize_trace(observed)
+        start=next((e for e in observed if e.get('kind')=='run_start'),{})
+        result['execution_config']={k:start.get(k) for k in
+            ('model','provider','options','limits','completion_protocol','enable_web','mode')}
+        first=next((e for e in observed if e.get('kind')=='model_start'),{})
+        # Compare recorded inputs without exposing the system prompt or historical messages.
+        result['input_fingerprint']=hashlib.sha256(json.dumps(first['messages'],ensure_ascii=False,sort_keys=True).encode()).hexdigest() if 'messages' in first else None
         result['conversation']=self.conversation(result)
         result['can_continue']=self.can_continue(result)
         return result
@@ -390,6 +403,8 @@ def handler_for(manager):
                 return self._send(200,health())
             if path.path=='/api/runs':
                 return self._send(200,{'runs':manager.summaries()})
+            if path.path=='/api/executions':
+                return self._send(200,{'runs':manager.executions()})
             if path.path.startswith('/api/runs/'):
                 run_id=path.path.removeprefix('/api/runs/')
                 if not RUN_ID.fullmatch(run_id):
@@ -402,7 +417,7 @@ def handler_for(manager):
                     return self._send(400,{'error':'잘못된 조회 위치입니다.'})
                 except KeyError:
                     return self._send(404,{'error':'실행을 찾을 수 없습니다.'})
-            files={'/':('index.html','text/html; charset=utf-8'),'/app.js':('app.js','text/javascript; charset=utf-8'),'/style.css':('style.css','text/css; charset=utf-8'),'/theme.js':('theme.js','text/javascript; charset=utf-8'),'/theme.css':('theme.css','text/css; charset=utf-8')}
+            files={'/':('index.html','text/html; charset=utf-8'),'/app.js':('app.js','text/javascript; charset=utf-8'),'/comparison.js':('comparison.js','text/javascript; charset=utf-8'),'/style.css':('style.css','text/css; charset=utf-8'),'/theme.js':('theme.js','text/javascript; charset=utf-8'),'/theme.css':('theme.css','text/css; charset=utf-8')}
             if path.path in files:
                 name,kind=files[path.path]
                 return self._send(200,(STATIC/name).read_bytes(),kind)

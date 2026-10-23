@@ -258,3 +258,23 @@ class WebAppTests(unittest.TestCase):
         self.assertEqual(len(data['events']),1)
         self.assertEqual(data['next_sequence'],2)
         self.assertEqual(self.manager.snapshot(run_id,2)['events'],[])
+
+    def test_comparison_lists_individual_turns_and_hides_model_input(self):
+        for i,key in enumerate(('a'*32,'b'*32)):
+            self.manager.jobs[key]={'id':key,'state':'done','created_at':str(i),'query':'synthetic',
+                'parent_id':'a'*32 if i else None,'result':{'status':'completed','answer':'fixture'}}
+            folder=Path(self.temp.name)/key/'traces';folder.mkdir(parents=True)
+            events=[{'kind':'run_start','sequence':1,'model':'qwen','provider':'ollama','options':{'num_ctx':65536}},
+                {'kind':'model_start','sequence':2,'messages':[{'role':'system','content':'private system '+str(i)}]},
+                {'kind':'run_end','sequence':3,'result':{'status':'completed','elapsed_seconds':1}}]
+            (folder/'fixture.jsonl').write_text('\n'.join(json.dumps(e) for e in events),encoding='utf-8')
+        status,body,_=self.request('GET','/api/executions')
+        self.assertEqual(status,200)
+        self.assertEqual(len(json.loads(body)['runs']),2)
+        a=self.manager.snapshot('a'*32,2147483647)
+        b=self.manager.snapshot('b'*32,2147483647)
+        self.assertNotEqual(a['input_fingerprint'],b['input_fingerprint'])
+        self.assertEqual(a['execution_config']['model'],'qwen')
+        self.assertNotIn('private system',json.dumps(a))
+        self.assertEqual(a['events'],[])
+        self.assertEqual(self.request('GET','/comparison.js')[0],200)
