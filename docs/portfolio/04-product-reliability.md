@@ -49,6 +49,14 @@ def executions(self):
 [웹 실행·삭제 코드](https://github.com/yuchanahn/travel-agent/blob/cbaa4ea/src/travel_agent/web_app.py) · [조건 확인3턴 실행기](https://github.com/yuchanahn/travel-agent/blob/cbaa4ea/scripts/smoke_local_journey.py)
 </details>
 
+## 085 실제 브라우저 시연
+
+083과 같은 합성 세 질문을 웹 화면에서 직접 입력했습니다. 실제 Qwen3응답이 모두 종료했고 날짜·인원·출발지·자가용을 유지하며 예산40→30만 원 정정을 반영했습니다. 도구·자동HTTP는0회이며 압축 후 RAG 복원 시험이 아닙니다. 재시작 후에도 저장 대화를 복원했고 시험 실행3개를 화면에서 삭제한 뒤 API404·목록0개를 확인했습니다.
+
+![실제 후속 질문과30만 원 정정 답변](https://raw.githubusercontent.com/yuchanahn/travel-agent/f5f4a56/docs/assets/travel-agent-budget-correction.png)
+
+![지정한 합성 시험 대화를 삭제한 뒤 빈 목록](https://raw.githubusercontent.com/yuchanahn/travel-agent/f5f4a56/docs/assets/travel-agent-test-cleanup.png)
+
 ## 현재 제품 경계
 
 로컬 개인용 프로토타입이며 실제 예약·결제·다중 사용자 인증·금융 컴플라이언스·대규모 운영 경험을 포함하지 않습니다. 화면 캡처는 실제 브라우저에서 확인한 자료만 추가하며 기능 검사 결과를 화면 시연처럼 소개하지 않습니다.

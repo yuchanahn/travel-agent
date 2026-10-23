@@ -4,6 +4,10 @@
 
 노션 허브: https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f
 
+- [085: 브라우저 연결 복구와 실제 화면 시연](2026-10-23-085-browser-demonstration.md) — 서버200·모델 연결 확인, 작업 화면 활성화 후 앱 내 브라우저 연결. 실제 합성3턴·지표·비교·시험3개삭제/API404, 캡처7장·비교 첫열 폭 보완. 외부검색0회·079품질0/2 유지.
+
+085 노션 동기화: https://app.notion.com/p/402d058c022e81bab8a8cdd1d743bf83
+
 - [084: 문서 상태 정리와 로컬 검사 재확인](2026-10-23-084-portfolio-review.md) — README 호스트 실행 안내·포트폴리오 상태 통합·Notion 코드 블록 복구, Node24 기준 Python279·UI JS5종·과거 연구용JS8검사 통과. 브라우저 연결 불가로 실제 캡처 미완료, 여행 품질0/2 유지.
 
 084 노션 동기화 완료: https://app.notion.com/p/402d058c022e81cdbe9ef432449b03f4

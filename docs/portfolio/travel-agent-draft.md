@@ -2,7 +2,8 @@
 
 <columns>
 	<column ratio="60">
-		\[여행 에이전트 채팅 화면 사진\]
+		![실제 로컬 웹 첫 화면 · 다크 테마](https://raw.githubusercontent.com/yuchanahn/travel-agent/f5f4a56/docs/assets/travel-agent-home-dark.png)
+
 		[GitHub](https://github.com/yuchanahn/travel-agent) · <mention-page url="https://app.notion.com/p/3ffd058c022e8143a521f4ae83244936">같은 질문으로 검증한 실제 답변·호출 기록</mention-page>
 	</column>
 	<column ratio="40">
@@ -66,7 +67,7 @@ flowchart TD
 
 종료 태그를 별도로 요구하는 방식도 실험했습니다. 태그 형식 때문에 재요청이 늘어나는 동작을 관찰한 뒤, 현재는 도구 호출이 없는 일반 답변으로 종료하는 native 방식을 사용합니다.
 
-\[검색·병렬 도구 호출·최종 답변 실행 영상\]
+도구 실행 사례는 아래 접힌 실제 로그에서 확인할 수 있습니다. 화면 캡처의 조건 확인 시연에는 도구 호출이 없습니다.
 
 <details>
 <summary>코드 · 도구 요청과 모델 응답을 연결하는 실행 기록</summary>
@@ -114,7 +115,7 @@ def rrf(rankings: list[list[int]], k=60) -> dict[int, float]:
 [검색·메모리 코드](https://github.com/yuchanahn/travel-agent/blob/07634dc/src/travel_agent/memory.py) · [웹/CLI 적용 범위](https://github.com/yuchanahn/travel-agent/blob/07634dc/docs/memory-rag.md)
 </details>
 
-\[이전 조건을 기억하고 이어서 질문하는 화면 사진\]
+![실제 Qwen 후속 대화 · 숙박비40→30만 원 정정. 짧은 최근 대화이며 요약 후 RAG 복원 시연과 다릅니다.](https://raw.githubusercontent.com/yuchanahn/travel-agent/f5f4a56/docs/assets/travel-agent-budget-correction.png)
 
 ### 검색 발췌와 본문을 분리하고, 주변 페이지를 선택하게 하기
 
@@ -147,7 +148,7 @@ out.update(text=fragment, truncated=end < len(text), next_start_index=end if end
 [문서 수집·읽기 코드](https://github.com/yuchanahn/travel-agent/blob/07634dc/src/travel_agent/web_documents.py)
 </details>
 
-\[검색 결과·주변 문서 목록·선택한 본문 사진\]
+검색·주변 문서 수집과 선택한 본문의 실제 흐름은 아래079 도구 로그와 위 구조도로 설명합니다.
 
 ---
 
@@ -215,7 +216,7 @@ out.update(text=fragment, truncated=end < len(text), next_start_index=end if end
 <mention-page url="https://app.notion.com/p/3ffd058c022e8143a521f4ae83244936">고정 질문·양쪽 실제 답변·전체 도구 기록</mention-page>
 </details>
 
-\[같은 질문의 답변과 도구 기록을 비교한 사진\]
+![개별 실행 비교 실제 화면 · 서로 다른 두 턴의 질문/입력 차이를 표시. 품질 개선 대조 실험이 아닙니다.](https://raw.githubusercontent.com/yuchanahn/travel-agent/f5f4a56/docs/assets/travel-agent-execution-comparison.png)
 
 ### 현재 한계와 마무리 범위
 
@@ -229,21 +230,16 @@ out.update(text=fragment, truncated=end < len(text), next_start_index=end if end
 
 ---
 
-## 04 · 코드·영상
+## 04 · 코드·실제 화면
 
-[전체 소스 코드](https://github.com/yuchanahn/travel-agent) · [고정 질문 평가 실행기](https://github.com/yuchanahn/travel-agent/blob/07634dc/scripts/evaluate_fixed_travel.py)
+[전체 소스 코드](https://github.com/yuchanahn/travel-agent) · [로컬 검사 실행기](https://github.com/yuchanahn/travel-agent/blob/b01fa69/scripts/verify_local.ps1)
 
-<mention-page url="https://app.notion.com/p/3ffd058c022e8143a521f4ae83244936">최신 평가 · 같은 질문의 실제 답변과 호출 기록</mention-page>
+<mention url="https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f" />
 
-<mention-page url="https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f">개발 연구일지</mention-page>
+![이번 실제 응답의 실행 지표 · 모델1회·도구0회·자동HTTP0회](https://raw.githubusercontent.com/yuchanahn/travel-agent/f5f4a56/docs/assets/travel-agent-execution-metrics.png)
 
-<details>
-<summary>실행 영상</summary>
+![실행 비교 하단 · 질문이 다른 두 턴의 시간·호출·token을 분리 표시](https://raw.githubusercontent.com/yuchanahn/travel-agent/f5f4a56/docs/assets/travel-agent-comparison-metrics.png)
 
-\[여행 조건 입력 → 검색·본문 선택 → 비교 답변 영상\]
-\[후속 질문 → 메모리 참조 영상\]
-</details>
-
-<callout icon="📝" color="gray_bg">
-	**포트폴리오 초안** · 사진·영상은 대괄호 위치에 직접 추가합니다. 갤러리 카드용 이미지는 페이지 속성의 ‘대표 이미지’에 업로드합니다.
+<callout icon="📝">
+	실제 앱 내 브라우저로 화면을 확인하고 캡처했습니다. 시연은 외부 검색/MCP 없이 로컬 Qwen으로 조건을 확인한 합성3턴입니다. 실제 여행 검색·시설 검증 결과는079 기록과 구분합니다. 시험 실행3개는 보존 자료를 비공개로 남긴 뒤 삭제했습니다.
 </callout>
