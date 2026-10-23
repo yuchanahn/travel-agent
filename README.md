@@ -12,6 +12,8 @@
 
 주소는 http://127.0.0.1:50733/ 으로 고정한다. PowerShell에서 시작은 `.\scripts\start_web.ps1`, 코드 변경 후 재시작은 `.\scripts\restart_web.ps1`, 중지는 `.\scripts\start_web.ps1 -Action stop`을 사용한다. 시작을 반복해도 서버를 더 띄우지 않는다. 현재 공유 터널·Docker 웹은 중지했으며 [운영 방식](docs/web-interface.md)을 따른다.
 
+화면은 ‘여행 노트’로 다듬었다. 질문 카드·후속 대화·다크/라이트·접힌 연결 정보·실행 지표와 비교를 제공한다. [실제 새 화면과 확인 결과](docs/research/2026-10-23-088-travel-notebook-ui.md).
+
 071부터 현재 웹 공급자는 Ollama `qwen3.5:4b-q4_K_M`다. 컨텍스트65536·출력4096을 사용하며 이전 Nexus 대화의 툴 인자도 전송 시 변환한다. [공급자 설정](docs/llm-providers.md)을 따른다.
 
 ## 완료 흐름 검증
