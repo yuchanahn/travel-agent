@@ -49,9 +49,17 @@ def add_parser(subparsers):
     show = actions.add_parser("show")
     show.add_argument("request_id")
     show.add_argument("--dir", default="data/private/traces")
+    summary = actions.add_parser("summary", help="Summarize counts without exposing message contents")
+    summary.add_argument("request_id")
+    summary.add_argument("--dir", default="data/private/traces")
 
 
 def run(args):
     records = read_trace(args.dir, args.request_id)
-    print(json.dumps({"request_id": args.request_id, "events": records}, ensure_ascii=False, indent=2))
+    if args.trace_action == 'summary':
+        from .observability import summarize
+        output = summarize(records)
+    else:
+        output = {"request_id": args.request_id, "events": records}
+    print(json.dumps(output, ensure_ascii=False, indent=2))
     return 0

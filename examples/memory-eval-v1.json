@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "scope": "synthetic local BM25 memory evaluation; not live travel recommendation",
+  "targets": {"hit_at_3_min": 7, "positive_count": 8, "cross_scope_leaks_max": 0},
+  "summary": "여행 후보를 논의했다. 예산 정정 금액과 후보 제외의 세부 이유는 요약에서 빠졌다.",
+  "events": [
+    {"id":"budget-old","session":"trip","text":"여행 총예산은 처음 40만 원으로 정했다."},
+    {"id":"budget-new","session":"trip","text":"최신 여행 총예산 정정: 앞서 정한 40만 원을 취소하고 25만 원으로 변경한다."},
+    {"id":"exclude","session":"trip","text":"강릉 후보 제외 이유: 숙소로 가는 환승 시간이 길어 이동 부담이 컸다."},
+    {"id":"car","session":"trip","text":"이동 수단은 자가용이다. 대중교통 대신 차를 이용하기로 결정했다."},
+    {"id":"food","session":"trip","text":"식사 취향: 매운 음식은 싫고 담백한 음식을 선호한다."},
+    {"id":"past-price","session":"trip","text":"과거 관측: 숙소 A의 2025년 5월 조회 요금은 12만 원이었다. 현재 가격은 확인하지 않았다."},
+    {"id":"branch-secret","session":"sibling","text":"형제 분기 전용 숙소 암호는 파란등대이다."},
+    {"id":"other-secret","session":"other","text":"다른 세션 전용 예약번호는 SYNTHETIC-8621이다."}
+  ],
+  "cases": [
+    {"id":"budget","split":"dev","session":"trip","query":"최신 정정된 여행 총예산은?","gold":["budget-new"],"generate":true},
+    {"id":"exclude","split":"dev","session":"trip","query":"강릉 후보를 제외한 이유는?","gold":["exclude"],"generate":true},
+    {"id":"car","split":"dev","session":"trip","query":"이동 수단은 자가용이었나?","gold":["car"]},
+    {"id":"food","split":"dev","session":"trip","query":"매운 음식 취향은?","gold":["food"]},
+    {"id":"past-price","split":"dev","session":"trip","query":"2025년 5월 숙소 A 조회 요금은?","gold":["past-price"]},
+    {"id":"old-budget","split":"dev","session":"trip","query":"처음 정한 여행 총예산은?","gold":["budget-old"]},
+    {"id":"missing-name","split":"dev","session":"trip","query":"여행 동행인의 이름은?","gold":[],"negative":"missing","generate":true},
+    {"id":"sibling","split":"dev","session":"trip","query":"형제 분기 전용 숙소 암호는?","gold":[],"negative":"scope","forbidden":["branch-secret"]},
+    {"id":"budget-paraphrase","split":"holdout","session":"trip","query":"여행 예산을 바꾼 후 금액을 알려줘","gold":["budget-new"]},
+    {"id":"exclude-paraphrase","split":"holdout","session":"trip","query":"강릉 이동 환승 부담 때문에 빠졌던 이유를 알려줘","gold":["exclude"]},
+    {"id":"missing-date","split":"holdout","session":"trip","query":"확정한 여행 출발 날짜는?","gold":[],"negative":"missing","generate":true},
+    {"id":"other","split":"holdout","session":"trip","query":"다른 세션 전용 예약번호는?","gold":[],"negative":"scope","forbidden":["other-secret"]}
+  ]
+}

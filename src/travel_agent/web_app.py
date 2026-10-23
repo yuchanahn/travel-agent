@@ -18,6 +18,7 @@ from .brave_provider import api_key
 from .llm_client import settings as llm_settings, headers as llm_headers
 from .llm_config import generation_options
 from .memory import MemoryStore, build_bm25_index
+from .observability import summarize as summarize_trace
 from .session_context import compact_context, trace_events, turn_events, write_json
 
 STATIC = Path(__file__).with_name('static')
@@ -302,6 +303,7 @@ class RunManager:
                 raise KeyError(run_id)
             result=dict(self.jobs[run_id])
         events=[]
+        observed=[]
         sequence=after
         for path in (self.directory/run_id/'traces').glob('*.jsonl'):
             for line in path.read_text(encoding='utf-8').splitlines():
@@ -309,12 +311,14 @@ class RunManager:
                     event=json.loads(line)
                 except ValueError:  # An append may still be in progress.
                     continue
+                observed.append(event)
                 if event['sequence']>after:
                     sequence=max(sequence,event['sequence'])
                     projected=visible_event(event)
                     if projected:
                         events.append(projected)
         result.update(events=events,next_sequence=sequence)
+        result['execution_summary']=summarize_trace(observed)
         result['conversation']=self.conversation(result)
         result['can_continue']=self.can_continue(result)
         return result
