@@ -4,6 +4,10 @@
 
 노션 허브: https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f
 
+- [082: 고정 메모리 평가와 실행 요약](2026-10-23-082-memory-eval-and-monitoring.md) — BM258/8·MRR0.875·누출0/2, 실제Qwen12응답·손실 요약/원문 검색 대조. 실행별 도구/오류/자동HTTP 집계·CLI·웹,278개Python·JS4종 통과. 여행 품질 개선과 별도.
+
+082 노션 동기화 완료: https://app.notion.com/p/402d058c022e8187bcb3e98348157693
+
 - [081: 공고 요구사항별3~5일 마무리 계획](2026-10-23-081-completion-plan.md) — 로컬 Qwen/Python·추가 비용 없음 확정, 기존 RAG 성적 활용·고정 메모리 평가·실행 지표 요약·제품 흐름 계획과 Notion 상세4개 연결. 추가 구현/새 평가는 아직 전.
 
 081 노션 동기화 완료: https://app.notion.com/p/402d058c022e81459344ca7aa34dc045

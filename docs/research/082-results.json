@@ -1,0 +1,343 @@
+{
+  "synthetic": true,
+  "scope": "082 fixed BM25 retrieval and controlled local generation; not live travel quality",
+  "retrieval": {
+    "positive_count": 8,
+    "hit_at_3_count": 8,
+    "mrr_at_3": 0.875,
+    "scope_cases": 2,
+    "scope_leaks": 0,
+    "missing_cases": 2
+  },
+  "initial_connection_errors": 12,
+  "queries": [
+    {
+      "id": "budget",
+      "split": "dev",
+      "query": "최신 정정된 여행 총예산은?",
+      "gold": [
+        "budget-new"
+      ],
+      "hit_at_3": true,
+      "reciprocal_rank": 0.5,
+      "cross_scope_leak": false
+    },
+    {
+      "id": "exclude",
+      "split": "dev",
+      "query": "강릉 후보를 제외한 이유는?",
+      "gold": [
+        "exclude"
+      ],
+      "hit_at_3": true,
+      "reciprocal_rank": 1.0,
+      "cross_scope_leak": false
+    },
+    {
+      "id": "car",
+      "split": "dev",
+      "query": "이동 수단은 자가용이었나?",
+      "gold": [
+        "car"
+      ],
+      "hit_at_3": true,
+      "reciprocal_rank": 1.0,
+      "cross_scope_leak": false
+    },
+    {
+      "id": "food",
+      "split": "dev",
+      "query": "매운 음식 취향은?",
+      "gold": [
+        "food"
+      ],
+      "hit_at_3": true,
+      "reciprocal_rank": 1.0,
+      "cross_scope_leak": false
+    },
+    {
+      "id": "past-price",
+      "split": "dev",
+      "query": "2025년 5월 숙소 A 조회 요금은?",
+      "gold": [
+        "past-price"
+      ],
+      "hit_at_3": true,
+      "reciprocal_rank": 1.0,
+      "cross_scope_leak": false
+    },
+    {
+      "id": "old-budget",
+      "split": "dev",
+      "query": "처음 정한 여행 총예산은?",
+      "gold": [
+        "budget-old"
+      ],
+      "hit_at_3": true,
+      "reciprocal_rank": 1.0,
+      "cross_scope_leak": false
+    },
+    {
+      "id": "missing-name",
+      "split": "dev",
+      "query": "여행 동행인의 이름은?",
+      "gold": [],
+      "hit_at_3": null,
+      "reciprocal_rank": null,
+      "cross_scope_leak": false
+    },
+    {
+      "id": "sibling",
+      "split": "dev",
+      "query": "형제 분기 전용 숙소 암호는?",
+      "gold": [],
+      "hit_at_3": null,
+      "reciprocal_rank": null,
+      "cross_scope_leak": false
+    },
+    {
+      "id": "budget-paraphrase",
+      "split": "holdout",
+      "query": "여행 예산을 바꾼 후 금액을 알려줘",
+      "gold": [
+        "budget-new"
+      ],
+      "hit_at_3": true,
+      "reciprocal_rank": 0.5,
+      "cross_scope_leak": false
+    },
+    {
+      "id": "exclude-paraphrase",
+      "split": "holdout",
+      "query": "강릉 이동 환승 부담 때문에 빠졌던 이유를 알려줘",
+      "gold": [
+        "exclude"
+      ],
+      "hit_at_3": true,
+      "reciprocal_rank": 1.0,
+      "cross_scope_leak": false
+    },
+    {
+      "id": "missing-date",
+      "split": "holdout",
+      "query": "확정한 여행 출발 날짜는?",
+      "gold": [],
+      "hit_at_3": null,
+      "reciprocal_rank": null,
+      "cross_scope_leak": false
+    },
+    {
+      "id": "other",
+      "split": "holdout",
+      "query": "다른 세션 전용 예약번호는?",
+      "gold": [],
+      "hit_at_3": null,
+      "reciprocal_rank": null,
+      "cross_scope_leak": false
+    }
+  ],
+  "generation": [
+    {
+      "case": "budget",
+      "condition": "full",
+      "query": "최신 정정된 여행 총예산은?",
+      "status": "completed",
+      "answer": "최신 여행 총예산은 40 만 원을 취소하고 25 만 원으로 변경되었습니다 [budget-new].",
+      "elapsed_seconds": 5.652,
+      "prompt_tokens": 240,
+      "output_tokens": 26
+    },
+    {
+      "case": "budget",
+      "condition": "summary",
+      "query": "최신 정정된 여행 총예산은?",
+      "status": "completed",
+      "answer": "제공된 기록에는 여행 총예산에 대한 정보가 포함되어 있지 않습니다.",
+      "elapsed_seconds": 0.271,
+      "prompt_tokens": 108,
+      "output_tokens": 15
+    },
+    {
+      "case": "budget",
+      "condition": "summary_rag",
+      "query": "최신 정정된 여행 총예산은?",
+      "status": "completed",
+      "answer": "최신 여행 총예산은 25 만 원입니다 [budget-new].",
+      "elapsed_seconds": 0.269,
+      "prompt_tokens": 221,
+      "output_tokens": 17
+    },
+    {
+      "case": "exclude",
+      "condition": "full",
+      "query": "강릉 후보를 제외한 이유는?",
+      "status": "completed",
+      "answer": "숙소로 가는 환승 시간이 길어 이동 부담이 컸기 때문입니다 [exclude].",
+      "elapsed_seconds": 0.353,
+      "prompt_tokens": 238,
+      "output_tokens": 20
+    },
+    {
+      "case": "exclude",
+      "condition": "summary",
+      "query": "강릉 후보를 제외한 이유는?",
+      "status": "completed",
+      "answer": "제공된 기록에는 강릉 후보 제외의 세부 이유가 명시되어 있지 않습니다.",
+      "elapsed_seconds": 0.287,
+      "prompt_tokens": 106,
+      "output_tokens": 17
+    },
+    {
+      "case": "exclude",
+      "condition": "summary_rag",
+      "query": "강릉 후보를 제외한 이유는?",
+      "status": "completed",
+      "answer": "숙소로 가는 환승 시간이 길어 이동 부담이 컸기 때문입니다 [exclude].",
+      "elapsed_seconds": 0.28,
+      "prompt_tokens": 162,
+      "output_tokens": 20
+    },
+    {
+      "case": "missing-name",
+      "condition": "full",
+      "query": "여행 동행인의 이름은?",
+      "status": "completed",
+      "answer": "제공된 기록에는 여행 동행인의 이름에 대한 정보가 없습니다.",
+      "elapsed_seconds": 0.321,
+      "prompt_tokens": 238,
+      "output_tokens": 15
+    },
+    {
+      "case": "missing-name",
+      "condition": "summary",
+      "query": "여행 동행인의 이름은?",
+      "status": "completed",
+      "answer": "제공된 기록에는 여행 동행인의 이름에 대한 정보가 없습니다.",
+      "elapsed_seconds": 0.284,
+      "prompt_tokens": 106,
+      "output_tokens": 15
+    },
+    {
+      "case": "missing-name",
+      "condition": "summary_rag",
+      "query": "여행 동행인의 이름은?",
+      "status": "completed",
+      "answer": "제공된 기록에는 여행 동행인의 이름에 대한 정보가 없습니다.",
+      "elapsed_seconds": 0.258,
+      "prompt_tokens": 219,
+      "output_tokens": 15
+    },
+    {
+      "case": "missing-date",
+      "condition": "full",
+      "query": "확정한 여행 출발 날짜는?",
+      "status": "completed",
+      "answer": "제공된 기록에는 여행 출발 날짜에 대한 정보가 없습니다.",
+      "elapsed_seconds": 0.277,
+      "prompt_tokens": 238,
+      "output_tokens": 13
+    },
+    {
+      "case": "missing-date",
+      "condition": "summary",
+      "query": "확정한 여행 출발 날짜는?",
+      "status": "completed",
+      "answer": "제공된 기록에는 여행 출발 날짜에 대한 정보가 없습니다.",
+      "elapsed_seconds": 0.257,
+      "prompt_tokens": 106,
+      "output_tokens": 13
+    },
+    {
+      "case": "missing-date",
+      "condition": "summary_rag",
+      "query": "확정한 여행 출발 날짜는?",
+      "status": "completed",
+      "answer": "제공된 기록에는 여행 출발 날짜에 대한 정보가 없습니다.",
+      "elapsed_seconds": 0.24,
+      "prompt_tokens": 219,
+      "output_tokens": 13
+    }
+  ],
+  "manual_review": {
+    "positive_fact_recovery": {
+      "full": "2/2",
+      "summary": "0/2",
+      "summary_rag": "2/2"
+    },
+    "missing_information_abstention": {
+      "full": "2/2",
+      "summary": "2/2",
+      "summary_rag": "2/2"
+    },
+    "reviewer": "implementation author, not blind",
+    "scope": "four synthetic questions, once per condition"
+  },
+  "saved_079_summaries": {
+    "gapyeong-stays": {
+      "status": "completed",
+      "elapsed_seconds": 171.221,
+      "model_requests": 12,
+      "model_responses": 12,
+      "model_errors": 0,
+      "malformed_tool_events": 0,
+      "tool_requests": 13,
+      "tool_successes": 9,
+      "tool_errors": 4,
+      "tool_pending": 0,
+      "errors_by_type": {
+        "duplicate_rejected": 3,
+        "http_error": 1
+      },
+      "tool_error_ratio": 0.3076923076923077,
+      "stored_document_reads": 1,
+      "automatic_http_observations": 6,
+      "automatic_http_states": {
+        "failed": 2,
+        "ready": 4
+      },
+      "prompt_tokens": {
+        "reported_sum": 189796,
+        "reported_calls": 12,
+        "expected_calls": 12,
+        "complete": true
+      },
+      "output_tokens": {
+        "reported_sum": 2949,
+        "reported_calls": 12,
+        "expected_calls": 12,
+        "complete": true
+      }
+    },
+    "garden-visit": {
+      "status": "completed",
+      "elapsed_seconds": 60.91,
+      "model_requests": 3,
+      "model_responses": 3,
+      "model_errors": 0,
+      "malformed_tool_events": 0,
+      "tool_requests": 2,
+      "tool_successes": 2,
+      "tool_errors": 0,
+      "tool_pending": 0,
+      "errors_by_type": {},
+      "tool_error_ratio": 0.0,
+      "stored_document_reads": 1,
+      "automatic_http_observations": 6,
+      "automatic_http_states": {
+        "ready": 6
+      },
+      "prompt_tokens": {
+        "reported_sum": 28146,
+        "reported_calls": 3,
+        "expected_calls": 3,
+        "complete": true
+      },
+      "output_tokens": {
+        "reported_sum": 709,
+        "reported_calls": 3,
+        "expected_calls": 3,
+        "complete": true
+      }
+    }
+  }
+}
