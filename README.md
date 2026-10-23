@@ -16,6 +16,10 @@
 
 ## 완료 흐름 검증
 
+[현재 마무리 현황](docs/portfolio/completion-plan.md)과 [포트폴리오 설명](docs/portfolio/travel-agent-draft.md)에 구현·검증·남은 한계를 나눠 정리했다. 082의 고정 합성 메모리 평가·실행 요약과 083의 개별 실행 비교·응답 지침·검색 없는 조건 정정3턴은 확인했다. 실제 여행 추천의 최신 근거 검토는079의0/2이며 새 지침의 최종 추천 품질은 미확인이다.
+
+로컬 계약 검사는 `.\scripts\verify_local.ps1`로 실행한다. Python 가상환경과 Node24 이상이 필요하며, 빈 MCP 설정으로 검사하고 런타임을 설치하지 않는다. 실제 검색·모델 추천 품질·브라우저 시연 검증과 별도다.
+
 [여행3턴 인수 테스트](docs/acceptance-testing.md)로 날짜 미정·조건 확정·예산 변경을 확인한다. 068의 보완 실행은3턴을 완주했지만 사실 근거 검토는fail이다. 실행 완료를 제품 품질 통과로 보지 않는다. [숙박 API·공개 페이지 조사](docs/lodging-sources.md)에는 여기어때 실제 읽기와 NOL403, YCS 호텔별 API 범위를 구분했다.
 
 [070 동일 근거 전후 비교](docs/quality-comparison.md)는24회 실행했으나 공급자 오류19회로 정상 쌍은1개였다. 해당 시설 쌍은이전·현재8/8 동점이며 일반 품질 향상을 입증하지 못했다.
@@ -30,8 +34,7 @@
 - LLM이 메모리 검색·원문 조회를 선택하는 Agentic RAG와 요청별 실행 추적
 - 호스트 에이전트는 공식 Brave 웹검색 MCP와 web_read를 연결한다. 추가 검색 발췌를 완전한 항목 단위로 보존하고 전달한 출처의 본문을 읽는다. OpenBnB는 숙소 조회 MCP로 유지한다. 직접 API 검색은 독립 검색 CLI·이전 비교에 남긴다. 키는 Git 제외 로컬 파일에서 읽는다. [연결 방법](docs/mcp.md)
 - 독립 검색 파이프라인: 후보 수집 → 중복 제거·BM25Plus 재정렬 → 본문 읽기 → 제한된 발췌. Bing 직접 HTTP는 명시적 비교 경로로 남기며 자동 대체하지 않는다. [현재 실행법](docs/web-search.md)
-- 선택형 webserp Google·Yahoo 연구 경로: Google은 미해결, DuckDuckGo/Yahoo 조합에서 공식 주소 조회와 실제 에이전트 답변 확인 (연구일지019)
-- Google HTTP 직접 구현: `python -m travel_agent.google_http "Python official website"`. 쿠키 파일 저장·재사용, HTML 결과 파서, 선택형 QuickJS 확인 스크립트 실험. 브라우저 방식은 폐기했다. 실제 검색은 아직 실패하며 에이전트 연결 전이다. [HTTP 구현 기록](docs/research/2026-10-18-022-google-http-session.md)
+- 이전 webserp·Google HTTP 구현은 연구 이력으로 보존한다. Google 검색은 미해결 상태로 조사를 중단했으며 현재 에이전트의 검색 경로가 아니다. [HTTP 연구 기록](docs/research/2026-10-18-022-google-http-session.md)
 - 한 응답의 여러 웹검색을 병렬 실행하고 호출별 결과·오류를 모델에 전달
 - 프로젝트 기술 결정과 연구일지 기반
 
@@ -56,14 +59,14 @@ Brave 연결 후 실제 에이전트는044에서 초기·중간·보완본 여�
 - Python 3.12 이상, 로컬 개발은 가상환경 사용
 - Ollama HTTP API, 기본 모델 `qwen3.5:4b-q4_K_M`
 - 단일 에이전트의 구조화된 도구 호출 루프: 관찰 → 행동 → 결과 → 재판단
-- Docker는 앱 배포 시 도입 예정. 로컬 Ollama는 호스트에서 실행
-- 프레임워크·RAG·멀티 에이전트는 필요를 평가한 뒤 선택
+- 현재 웹은 호스트 Python으로 실행한다. 기존 Docker 구성은 선택적 배포 자료이며 기본 시작 스크립트는 Docker를 사용하지 않는다.
+- RAG는 대화 원문 메모리에 구현했다. 웹 BM25와 별도 CLI 하이브리드 경로를 구분하며 멀티 에이전트는 현재 범위에 포함하지 않는다.
 
 구체적인 선택 이유: [초기 기술 결정](docs/decisions/0001-initial-architecture.md).
 
 ## 개발 시작
 
-웹 화면으로 직접 실험하려면 호스트 Ollama와 Docker를 켜고 `.\scripts\start_web.ps1`을 실행한다. 출력된 로컬 주소에서 질문과 실제 도구 기록을 확인한다. 답변 뒤 이어서 질문하거나 새 대화로 시작할 수 있다. [Docker 웹 화면 사용법](docs/web-interface.md)에 실행·중지·기록 보존 방식을 정리했다.
+웹 화면으로 직접 실험하려면 호스트 Ollama를 켜고 `.\scripts\start_web.ps1`을 실행한다. 고정 주소 http://127.0.0.1:50733/ 에서 질문과 실제 도구 기록을 확인한다. 답변 뒤 이어서 질문하거나 새 대화로 시작할 수 있다. [웹 화면 사용법](docs/web-interface.md)에 실행·중지·기록 보존 방식을 정리했다. Docker는 필요하지 않다.
 
 Windows PowerShell, Python 3.12가 필요하다. 처음 한 번 가상환경을 만들고 프로젝트를 개발 모드로 설치한다. 가상환경이 이미 있으면 생성 명령은 생략한다.
 
@@ -102,7 +105,7 @@ $env:OLLAMA_MODEL = 'qwen3.5:4b-q4_K_M'
 
 - [MCP 서버 연결·국문 관광정보 후보·현재 검증 범위](docs/mcp.md)
 
-- [검색 툴 단독 수집·재정렬·발췌 실행과 검증](docs/search-pipeline.md) — 현재 우선순위, 에이전트 연결 보류
+- [독립 검색 파이프라인의 수집·재정렬·발췌 실행과 검증](docs/search-pipeline.md) — 현재 에이전트의 MCP 검색 경로와 구분
 
 - [연구일지 인덱스와 기록 규칙](docs/research/README.md)
 - [첫 실험: 로컬 모델 공급과 실패 발견](docs/research/2026-10-17-001-local-llm.md)
