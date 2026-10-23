@@ -4,6 +4,10 @@
 
 노션 허브: https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f
 
+- [083: 실행 비교와 응답 지침 보완](2026-10-23-083-comparison-and-prompt.md) — 개별 실행 비교·SYSTEM 보완·동일 저장 입력4회 재생, 새 지침은 후속 도구 미실행으로 최종 품질 미확인. 검색 없는 실제Qwen3턴 조건정정·시험3개삭제,279개Python·JS5종 통과.
+
+083 노션 동기화 완료: https://app.notion.com/p/402d058c022e81d38d2ad15fa9ee6425
+
 - [082: 고정 메모리 평가와 실행 요약](2026-10-23-082-memory-eval-and-monitoring.md) — BM258/8·MRR0.875·누출0/2, 실제Qwen12응답·손실 요약/원문 검색 대조. 실행별 도구/오류/자동HTTP 집계·CLI·웹,278개Python·JS4종 통과. 여행 품질 개선과 별도.
 
 082 노션 동기화 완료: https://app.notion.com/p/402d058c022e8187bcb3e98348157693
