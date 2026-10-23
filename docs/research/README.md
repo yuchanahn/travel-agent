@@ -4,6 +4,10 @@
 
 노션 허브: https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f
 
+- [087: 구조·기술·결과가 보이는 항목별 포트폴리오](2026-10-23-087-illustrated-portfolio.md) — 실행·RAG·평가3항목 각각 기술/의도/구조/시도/결과와이미지1장·코드토글1개. 설명용그림2개/실제화면1개구분·Notion읽기검토. 여행조사노트UI는제안이며미구현.
+
+087 노션 동기화: https://app.notion.com/p/402d058c022e815d8609f8b7993c1d3b
+
 - [086: 설명하기 쉬운 한 페이지 포트폴리오](2026-10-23-086-concise-portfolio.md) — 의도·기술 선택·시도·구현 결과만 남기고 세부 연결 제거, 상세4페이지는 허브에 보존. 코드토글3개·실제사진1장·Notion 읽기 검토.
 
 086 노션 동기화: https://app.notion.com/p/402d058c022e81a3b4c0e5bb6fad69bf
