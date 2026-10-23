@@ -49,6 +49,15 @@ flowchart TD
 
 ## 02 · 구현 과정
 
+### 주제별 개발 기록과 후속 계획
+
+- <mention url="https://app.notion.com/p/402d058c022e81e59994fff9ca840992" />
+- <mention url="https://app.notion.com/p/402d058c022e810595d6d6e5d8842436" />
+- <mention url="https://app.notion.com/p/402d058c022e811db68fc26e5d81be8d" />
+- <mention url="https://app.notion.com/p/402d058c022e8158ba5ec381d0874718" />
+
+<mention url="https://app.notion.com/p/402d058c022e81459344ca7aa34dc045" />
+
 ### 도구 호출을 연결하고, 멈춘 이유를 남기기
 
 모델이 검색을 예고하고도 일반 답변으로 종료하거나, 같은 본문 요청을 반복하는 문제가 있었습니다. 모델의 판단과 실행기의 역할을 나눠, 다음 행동은 모델이 선택하고 실행기는 인자 검증·호출·예산·실행 기록을 담당하도록 구성했습니다.

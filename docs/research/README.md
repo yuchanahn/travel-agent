@@ -4,6 +4,10 @@
 
 노션 허브: https://app.notion.com/p/3fcd058c022e81dda6eff44a0bb29d4f
 
+- [081: 공고 요구사항별3~5일 마무리 계획](2026-10-23-081-completion-plan.md) — 로컬 Qwen/Python·추가 비용 없음 확정, 기존 RAG 성적 활용·고정 메모리 평가·실행 지표 요약·제품 흐름 계획과 Notion 상세4개 연결. 추가 구현/새 평가는 아직 전.
+
+081 노션 동기화 완료: https://app.notion.com/p/402d058c022e81459344ca7aa34dc045
+
 - [080: 포트폴리오 초안과 AI 태그 연결](2026-10-20-080-portfolio-draft.md) — 기존 프로젝트 형식에 맞춰 실행기·메모리·추적·평가를 정리. [새 포트폴리오 페이지](https://app.notion.com/p/3ffd058c022e81fcad07e15f9e665cbe)를 기존 갤러리와 AI 보기에 추가. 사진·영상은 자리표시자.
 
 080 노션 동기화 완료: https://app.notion.com/p/3ffd058c022e8189bfbefcb029152d63
