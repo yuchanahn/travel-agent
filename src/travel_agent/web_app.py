@@ -21,6 +21,7 @@ from .llm_config import generation_options
 from .memory import MemoryStore, build_bm25_index
 from .observability import summarize as summarize_trace
 from .session_context import compact_context, trace_events, turn_events, write_json
+from .travel_plan import blank as blank_plan, mutate as mutate_plan, budget as plan_budget, markdown as plan_markdown
 
 STATIC = Path(__file__).with_name('static')
 RUN_ID = re.compile(r'[a-f0-9]{32}')
@@ -96,6 +97,33 @@ class RunManager:
         temporary.write_text(json.dumps(job,ensure_ascii=False),encoding='utf-8')
         temporary.replace(folder/'run.json')
 
+    def _plan(self,job):
+        seen=set()
+        while job:
+            if job['id'] in seen or len(seen)>=100:raise ValueError('잘못된 계획 경로입니다.')
+            seen.add(job['id'])
+            path=self.directory/job['id']/'plan.json'
+            if path.exists():return json.loads(path.read_text(encoding='utf-8'))
+            job=self._job(job['parent_id']) if job.get('parent_id') else None
+        return blank_plan()
+
+    def plan(self,run_id):
+        with self.lock:
+            plan=self._plan(self._job(run_id))
+            return {**plan,'budget':plan_budget(plan),'confirmed_budget':plan_budget(plan,True)}
+
+    def update_plan(self,run_id,payload,*,model=False):
+        if not isinstance(payload,dict) or set(payload)-{'revision','action','items','id','confirmed'}:raise ValueError('계획 변경 형식을 확인해주세요.')
+        with self.lock:
+            job=self._job(run_id)
+            plan=self._plan(job)
+            if not model and (type(payload.get('revision')) is not int or payload['revision']!=plan['revision']):
+                raise RuntimeError('계획이 변경됐습니다. 새로고침 후 다시 편집해주세요.')
+            updated=mutate_plan(plan,payload.get('action'),payload,model=model,run_id=run_id)
+            if len(json.dumps(updated,ensure_ascii=False).encode())>60000:raise ValueError('계획 저장 크기를 초과했습니다. 항목을 줄여주세요.')
+            write_json(self.directory/run_id/'plan.json',updated)
+            return updated
+
     def _job(self,run_id):
         if not isinstance(run_id,str) or not RUN_ID.fullmatch(run_id):
             raise ValueError('대화 실행 ID가 올바르지 않습니다.')
@@ -162,6 +190,7 @@ class RunManager:
             with self.lock:
                 self.jobs[job['id']]=job
                 self._save(job)
+                write_json(self.directory/job['id']/'plan.json',self._plan(self._job(parent_id)) if parent_id else blank_plan())
                 completed=[j for j in self.jobs.values() if j['state'] not in {'queued','running'}]
                 for old in sorted(completed,key=lambda j:j['created_at'])[:max(0,len(self.jobs)-30)]:
                     self.jobs.pop(old['id'],None)
@@ -205,12 +234,16 @@ class RunManager:
                     {'query':job['query'],'top_k':3},mode='bm25',rerank=False,max_bytes=6000) if summary and before_index['chunks'] else {'hits':[]}
                 context.update(memory_events=before_index['events'],memory_chunks=before_index['chunks'],
                                recalled_hits=len(recalled['hits']))
+                def plan_handler(name,args):
+                    if name=='plan_read':
+                        return self.plan(run_id)
+                    return self.update_plan(run_id,{'action':'upsert',**args},model=True)
                 result=run_agent(store,'local-web',session,job['query'],mode='bm25',summary=summary,
                                  history=history,prior_sources=parent['result'].get('web_sources',[]) if parent else [],
                                  prior_memory_ids=[i for i in parent['result'].get('evidence_ids',[]) if i.startswith(('m-','event:'))] if parent else [],
                                  prior_mcp_sources=parent['result'].get('mcp_sources',[]) if parent else [],
                                  recalled_memory=recalled,context_info=context,
-                                 enable_web=job['enable_web'],trace_dir=folder/'traces',timeout=360)
+                                 enable_web=job['enable_web'],trace_dir=folder/'traces',timeout=360,plan_handler=plan_handler)
                 finished = {**job,'finished_at':now(),'result':result}
                 inserted = store.add('local-web',session,turn_events(self.directory,finished))
                 after_index = build_bm25_index(store,'local-web',session)
@@ -405,6 +438,16 @@ def handler_for(manager):
                 return self._send(200,{'runs':manager.summaries()})
             if path.path=='/api/executions':
                 return self._send(200,{'runs':manager.executions()})
+            if path.path.startswith('/api/plans/'):
+                match=re.fullmatch(r'/api/plans/([a-f0-9]{32})(/markdown)?',path.path)
+                if not match:return self._send(404,{'error':'계획을 찾을 수 없습니다.'})
+                try:
+                    plan=manager.plan(match[1])
+                    if match[2]:
+                        confirmed=parse_qs(path.query).get('confirmed',['0'])[0]=='1'
+                        return self._send(200,plan_markdown(plan,confirmed).encode('utf-8'),'text/markdown; charset=utf-8')
+                    return self._send(200,plan)
+                except ValueError:return self._send(404,{'error':'계획을 찾을 수 없습니다.'})
             if path.path.startswith('/api/runs/'):
                 run_id=path.path.removeprefix('/api/runs/')
                 if not RUN_ID.fullmatch(run_id):
@@ -417,7 +460,7 @@ def handler_for(manager):
                     return self._send(400,{'error':'잘못된 조회 위치입니다.'})
                 except KeyError:
                     return self._send(404,{'error':'실행을 찾을 수 없습니다.'})
-            files={'/':('index.html','text/html; charset=utf-8'),'/app.js':('app.js','text/javascript; charset=utf-8'),'/comparison.js':('comparison.js','text/javascript; charset=utf-8'),'/style.css':('style.css','text/css; charset=utf-8'),'/theme.js':('theme.js','text/javascript; charset=utf-8'),'/theme.css':('theme.css','text/css; charset=utf-8')}
+            files={'/':('index.html','text/html; charset=utf-8'),'/app.js':('app.js','text/javascript; charset=utf-8'),'/plan.js':('plan.js','text/javascript; charset=utf-8'),'/comparison.js':('comparison.js','text/javascript; charset=utf-8'),'/style.css':('style.css','text/css; charset=utf-8'),'/theme.js':('theme.js','text/javascript; charset=utf-8'),'/theme.css':('theme.css','text/css; charset=utf-8'),'/plan.css':('plan.css','text/css; charset=utf-8')}
             if path.path in files:
                 name,kind=files[path.path]
                 return self._send(200,(STATIC/name).read_bytes(),kind)
@@ -426,15 +469,20 @@ def handler_for(manager):
         def do_POST(self):
             if not self._allowed():
                 return self._send(403,{'error':'로컬 화면에서만 요청할 수 있습니다.'})
-            if self.path!='/api/runs':
+            plan_match=re.fullmatch(r'/api/plans/([a-f0-9]{32})',self.path)
+            if self.path!='/api/runs' and not plan_match:
                 return self._send(404,{'error':'페이지를 찾을 수 없습니다.'})
             if self.headers.get('Content-Type','').split(';')[0]!='application/json':
                 return self._send(415,{'error':'JSON 요청만 지원합니다.'})
             try:
                 size=int(self.headers.get('Content-Length','0'))
-                if not 0<size<=32768:
+                if not 0<size<=(65536 if plan_match else 32768):
                     return self._send(413,{'error':'질문이 너무 큽니다.'})
                 payload=json.loads(self.rfile.read(size))
+                if plan_match:
+                    try:return self._send(200,manager.update_plan(plan_match[1],payload))
+                    except RuntimeError as exc:return self._send(409,{'error':str(exc)})
+                    except ValueError as exc:return self._send(400,{'error':str(exc)})
                 if not isinstance(payload,dict) or set(payload)-{'query','enable_web','parent_id'}:
                     raise ValueError()
                 run_id=manager.submit(payload.get('query'),payload.get('enable_web',True),payload.get('parent_id'))

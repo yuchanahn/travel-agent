@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>여행 노트 · 여행 에이전트</title><script src="/theme.js"></script><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/theme.css"><script src="/app.js" defer></script><script src="/comparison.js" defer></script></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>여행 노트 · 여행 에이전트</title><script src="/theme.js"></script><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/theme.css"><link rel="stylesheet" href="/plan.css"><script src="/app.js" defer></script><script src="/comparison.js" defer></script><script src="/plan.js" defer></script></head>
 <body>
 <aside id="sidebar" class="sidebar" aria-label="대화 탐색">
   <div class="sidebar-brand"><span class="brand-icon">↗</span><strong>여행 노트</strong><button id="close-sidebar" class="icon-button mobile-only" aria-label="목록 닫기">×</button></div>
@@ -43,6 +43,25 @@
     </form><p class="composer-caption">Enter로 보내기 · Shift + Enter로 줄바꿈 <span>AI 답변의 중요한 정보는 확인해주세요.</span></p>
   </div></footer>
 </main>
+<button id="plan-open" class="plan-launch" type="button">▤ 여행 계획서</button>
+<dialog id="plan-dialog" aria-labelledby="plan-title">
+  <header class="plan-header"><div><span class="eyebrow">YOUR TRAVEL NOTE</span><h2 id="plan-title">우리의 여행 계획</h2><p>대화에서 모은 초안을 살펴보고, 마음에 드는 항목을 선택 확정하세요.</p></div><button id="plan-close" class="icon-button" aria-label="계획서 닫기">×</button></header>
+  <div class="plan-toolbar"><nav aria-label="계획서 보기 방식"><button type="button" data-plan-view="summary" aria-pressed="true">요약</button><button type="button" data-plan-view="timeline" aria-pressed="false">시간표</button><button type="button" data-plan-view="budget" aria-pressed="false">예산</button></nav><label><input id="plan-confirmed" type="checkbox"> 선택 확정만</label><button id="plan-refresh" type="button">새로고침</button><a id="plan-download" download="travel-plan.md">Markdown 저장</a><button id="plan-print" type="button">인쇄 / PDF</button></div>
+  <p class="plan-disclaimer">선택 확정은 예약 완료나 정보 검증이 아닙니다. 금액·시간·출처는 방문 전 확인해주세요.</p>
+  <p id="plan-message" role="status"></p>
+  <section id="plan-content" aria-live="polite"></section>
+  <details id="plan-editor"><summary>＋ 계획 항목 직접 추가</summary>
+    <form id="plan-form" class="plan-form">
+      <label>종류<select id="plan-kind"><option value="activity">일정</option><option value="lodging">숙소</option><option value="cost">비용</option><option value="transport">교통</option><option value="note">메모·조건</option></select></label>
+      <label class="plan-wide">항목 이름<input id="plan-item-title" maxlength="160" required placeholder="예: 수목원 산책"></label>
+      <label>날짜<input id="plan-date" type="date"></label><label>시작<input id="plan-start" type="time"></label><label>종료<input id="plan-end" type="time"></label>
+      <label class="plan-wide">장소<input id="plan-place" maxlength="200" placeholder="미정이면 비워두세요"></label><label class="plan-wide">주소<input id="plan-address" maxlength="300"></label>
+      <div id="plan-cost-fields" class="plan-wide" hidden><label>금액 (원)<input id="plan-amount" type="number" min="0" max="10000000000" step="1" placeholder="모르면 비워두세요"></label><label>금액 구분<select id="plan-cost-status"><option value="unknown">미확인</option><option value="estimate">예상 금액</option><option value="observed">조회 금액</option></select></label><label>적용 기준<input id="plan-basis" maxlength="200" placeholder="예: 성인2명, 1박 합계"></label></div>
+      <label class="plan-wide">출처 링크<input id="plan-source" type="url" maxlength="2000" placeholder="https://"></label><label class="plan-wide">메모<textarea id="plan-note" maxlength="1000" rows="2"></textarea></label>
+      <div class="plan-wide"><button class="dialog-primary" type="submit">초안 저장</button><button id="plan-cancel-edit" class="dialog-secondary" type="button">편집 취소</button></div>
+    </form>
+  </details>
+</dialog>
 <dialog id="compare-dialog" aria-labelledby="compare-title">
 <h2 id="compare-title">저장된 실행 비교</h2>
 <p>각 질문 실행의 지표를 비교합니다. 설정·이전 대화·검색 자료가 다르면 개선 효과로 단정할 수 없습니다.</p>

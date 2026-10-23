@@ -17,7 +17,7 @@ try {
     $env:MCP_CONFIG_FILE = (Resolve-Path -LiteralPath 'examples/mcp-servers.example.json').Path
     & '.\.venv\Scripts\python.exe' -m unittest discover -s tests -q
     if ($LASTEXITCODE -ne 0) { throw 'Python contract tests failed.' }
-    foreach ($taskTest in @('test_chat_continuation.cjs','test_chat_deletion.cjs','test_comparison.cjs','test_evidence_links.cjs','test_execution_metrics.cjs')) {
+    foreach ($taskTest in @('test_chat_continuation.cjs','test_chat_deletion.cjs','test_comparison.cjs','test_evidence_links.cjs','test_execution_metrics.cjs','test_plan_viewer.cjs')) {
         & $NodePath (Join-Path 'tests' $taskTest)
         if ($LASTEXITCODE -ne 0) { throw "JavaScript check failed: $taskTest" }
     }
