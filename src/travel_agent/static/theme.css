@@ -24,3 +24,4 @@
 @media(max-width:700px){.header-actions{gap:7px}.theme-toggle{font-size:10px;padding:4px 7px}.header-actions .connection{max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
 
 #compare-dialog{width:min(1000px,90vw);max-height:85vh;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:24px;background:#fff;color:#252b25}#compare-dialog::backdrop{background:#0007}#compare-dialog select{max-width:100%;padding:8px;margin:8px}#compare-dialog label{display:block}#compare-dialog table{border-collapse:collapse;width:100%}#compare-dialog td,#compare-dialog th{border:1px solid var(--line);padding:8px;text-align:left;overflow-wrap:anywhere}[data-theme="dark"] #compare-dialog{background:#202222;color:#e4e8e3}
+#compare-dialog th:first-child{min-width:6.5em;white-space:nowrap;overflow-wrap:normal}
