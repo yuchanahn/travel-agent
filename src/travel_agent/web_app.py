@@ -268,7 +268,13 @@ class RunManager:
                     saved_history = [m for m in latest if m['role']!='system']
                     # The request wrapper contains summary/retrieval. Preserve the
                     # original user query in the rolling checkpoint instead.
-                    user_index=next(i for i in range(len(saved_history)-1,-1,-1) if saved_history[i]['role']=='user')
+                    # A finalization instruction can also have role=user. Restore
+                    # the actual question wrapper, not that harness instruction.
+                    user_index=next((i for i in range(len(saved_history)-1,-1,-1)
+                                     if saved_history[i]['role']=='user' and
+                                     (saved_history[i].get('content')==job['query'] or
+                                      saved_history[i].get('content','').endswith('\n질문:\n'+job['query']))),
+                                    next(i for i in range(len(saved_history)-1,-1,-1) if saved_history[i]['role']=='user'))
                     saved_history[user_index] = {'role':'user','content':job['query']}
                 else:
                     saved_history = history + [{'role':'user','content':job['query']}]

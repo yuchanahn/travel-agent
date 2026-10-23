@@ -12,6 +12,23 @@ from test_agent import call,reply
 
 
 class RuntimeWebTests(TestCase):
+    def test_checkpoint_restores_question_not_harness_feedback(self):
+        from travel_agent.trace import Trace
+        def agent(store,user,session,query,**kwargs):
+            Trace(kwargs['trace_dir']).emit('model_start',messages=[{'role':'system','content':'rules'},
+                {'role':'user','content':'현재 요약:\n\n질문:\n'+query},
+                {'role':'user','content':'harness finalization'}])
+            return {'status':'completed','answer':'fixture'}
+        with TemporaryDirectory() as folder,patch('travel_agent.web_app.run_agent',side_effect=agent):
+            manager=RunManager(folder)
+            try:
+                with patch.object(manager.pool,'submit'):rid=manager.submit('actual question',False)
+                manager._execute(rid)
+                saved=json.loads((Path(folder)/rid/'context.json').read_text(encoding='utf-8'))['history']
+                self.assertEqual(saved[0]['content'],'actual question')
+                self.assertEqual(saved[1]['content'],'harness finalization')
+            finally:manager.pool.shutdown()
+
     def test_current_tool_original_is_searchable_after_same_turn_compaction(self):
         requests=[]
         def model(messages,**kwargs):
