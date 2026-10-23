@@ -1,23 +1,30 @@
 <!doctype html>
 <html lang="ko">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>여행 에이전트</title><script src="/theme.js"></script><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/theme.css"><script src="/app.js" defer></script><script src="/comparison.js" defer></script></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>여행 노트 · 여행 에이전트</title><script src="/theme.js"></script><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/theme.css"><script src="/app.js" defer></script><script src="/comparison.js" defer></script></head>
 <body>
 <aside id="sidebar" class="sidebar" aria-label="대화 탐색">
-  <div class="sidebar-brand"><span class="brand-icon">↗</span><strong>여행 에이전트</strong><button id="close-sidebar" class="icon-button mobile-only" aria-label="목록 닫기">×</button></div>
+  <div class="sidebar-brand"><span class="brand-icon">↗</span><strong>여행 노트</strong><button id="close-sidebar" class="icon-button mobile-only" aria-label="목록 닫기">×</button></div>
   <button id="new-chat" class="new-chat" type="button">＋ 새 대화</button>
-  <div class="history-heading">최근 기록 <span id="run-count">0</span></div>
+  <div class="history-heading">나의 여행 기록 <span id="run-count">0</span></div>
   <nav id="history" aria-label="이전 대화"></nav>
-  <div class="sidebar-bottom">● 로컬 워크스페이스<small>대화는 이 컴퓨터에 저장됩니다.</small></div>
+  <div class="sidebar-bottom"><span class="status-dot"></span> 나만의 여행 기록<small>대화는 이 컴퓨터에 저장됩니다.</small></div>
 </aside>
 <button id="sidebar-backdrop" class="sidebar-backdrop" aria-label="목록 닫기" hidden></button>
 <main class="chat-shell">
-    <header class="chat-header"><div class="header-left"><button id="toggle-sidebar" class="icon-button mobile-only" aria-label="대화 목록 열기">☰</button><strong id="model-name">여행 에이전트</strong><span class="local-label">로컬</span><span id="model-options" class="sr-only"></span></div><div class="header-actions"><button id="compare-open" class="text-button" type="button">실행 비교</button><span id="connection" class="connection">연결 확인 중</span><button id="theme-toggle" class="theme-toggle" type="button" aria-label="화면 테마 전환">테마</button></div></header>
+    <header class="chat-header"><div class="header-left"><button id="toggle-sidebar" class="icon-button mobile-only" aria-label="대화 목록 열기">☰</button><strong>여행 노트<span class="brand-caption">TRAVEL COMPANION</span></strong></div><div class="header-actions"><button id="compare-open" class="text-button" type="button">실행 비교</button><details class="runtime-info"><summary>연결 정보</summary><div class="runtime-card"><span id="connection" class="connection">연결 확인 중</span><strong id="model-name">여행 에이전트</strong><span id="model-options"></span></div></details><button id="theme-toggle" class="theme-toggle" type="button" aria-label="화면 테마 전환">테마</button></div></header>
   <section id="chat-scroll" class="chat-scroll" aria-label="대화 내용" tabindex="0"><div class="chat-column">
-    <div id="empty-state" class="empty-state"><div class="welcome-mark">↗</div><h1>어떤 여행을 떠나볼까요?</h1><p>가고 싶은 곳부터, 아직 정하지 못한 조건까지.<br>함께 이야기하며 여행을 준비해요.</p><div id="presets" class="presets"></div></div>
+    <div id="empty-state" class="empty-state">
+      <div class="journey-art" aria-hidden="true"><svg viewBox="0 0 280 130" fill="none"><path d="M15 114L78 37l54 61 39-48 91 64" stroke="currentColor" stroke-width="1.5"/><path d="M42 114c29-27 39-3 64-20s38-23 56-10 35 6 62-22" stroke="currentColor" stroke-width="2" stroke-dasharray="3 7"/><circle cx="219" cy="31" r="16" fill="currentColor" opacity=".13"/><path d="M219 18c-9 0-14 6-14 13 0 10 14 23 14 23s14-13 14-23c0-7-5-13-14-13z" stroke="currentColor" stroke-width="1.5"/><circle cx="219" cy="31" r="4" stroke="currentColor" stroke-width="1.5"/></svg></div>
+      <span class="eyebrow">A LITTLE PLAN. A GOOD TRIP.</span>
+      <h1>좋은 여행은,<br>작은 대화에서 시작돼요.</h1>
+      <p>어디로 갈지, 무엇을 할지 아직 몰라도 괜찮아요.<br>우리에게 맞는 여행을 함께 골라봐요.</p>
+      <div class="feature-strip"><span>조건에 맞는 후보</span><span>출처와 함께 비교</span><span>이어서 대화</span></div>
+      <div class="preset-heading">이런 여행은 어때요?</div><div id="presets" class="presets"></div>
+    </div>
     <div id="run-content" hidden>
       <div id="conversation" aria-label="이전 대화"></div>
       <div class="asked-question"><span class="sr-only">이번 질문</span><p id="asked-text"></p></div>
-      <article class="assistant-turn"><div class="assistant-label"><span class="assistant-icon">↗</span> 여행 에이전트</div>
+      <article class="assistant-turn"><div class="assistant-label"><span class="assistant-icon">↗</span> 여행 노트</div>
         <div id="progress" class="progress" role="status"><span class="spinner"></span><span id="progress-text">실행 준비 중</span></div>
         <div id="answer" class="prose" aria-live="polite"></div>
         <div class="response-actions"><span id="state" class="state idle">실행 대기</span><span id="elapsed" class="elapsed"></span><button id="copy" class="text-button" hidden>답변 복사</button></div>
@@ -31,7 +38,7 @@
     <span id="composer-title" class="sr-only">새 대화</span><span id="conversation-note" class="sr-only">답변이 끝나면 이어서 질문할 수 있습니다.</span>
     <p id="form-error" class="error" role="alert" hidden></p>
     <form id="question-form" class="composer">
-      <label for="question" class="sr-only">메시지 입력</label><textarea id="question" name="question" rows="1" maxlength="4000" placeholder="여행에 관해 무엇이든 물어보세요" required></textarea>
+      <label for="question" class="sr-only">메시지 입력</label><textarea id="question" name="question" rows="1" maxlength="4000" placeholder="떠나고 싶은 여행을 이야기해주세요" required></textarea>
       <div class="composer-tools"><label class="web-option"><input id="enable-web" type="checkbox" checked><span>◎</span> 웹 검색</label><span id="char-count">0 / 4,000</span><button id="send" class="send-button" type="submit" aria-label="메시지 보내기">↑</button></div>
     </form><p class="composer-caption">Enter로 보내기 · Shift + Enter로 줄바꿈 <span>AI 답변의 중요한 정보는 확인해주세요.</span></p>
   </div></footer>
@@ -41,7 +48,7 @@
 <p>각 질문 실행의 지표를 비교합니다. 설정·이전 대화·검색 자료가 다르면 개선 효과로 단정할 수 없습니다.</p>
 <label>실행 A <select id="compare-left"></select></label>
 <label>실행 B <select id="compare-right"></select></label>
-<button id="compare-run" type="button">비교</button><button id="compare-close" type="button">닫기</button>
+<button id="compare-run" class="dialog-primary" type="button">비교</button><button id="compare-close" class="dialog-secondary" type="button">닫기</button>
 <div id="compare-output" aria-live="polite"></div>
 </dialog>
 </body></html>
