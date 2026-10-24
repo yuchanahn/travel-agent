@@ -10,6 +10,7 @@ from pathlib import Path
 import re
 import shutil
 import time
+import traceback
 from threading import BoundedSemaphore, Lock
 from urllib.parse import parse_qs, urlsplit
 from urllib.request import urlopen
@@ -101,9 +102,7 @@ class RunManager:
     def _save(self,job):
         folder=self.directory/job['id']
         folder.mkdir(parents=True,exist_ok=True)
-        temporary=folder/'run.tmp'
-        temporary.write_text(json.dumps(job,ensure_ascii=False),encoding='utf-8')
-        temporary.replace(folder/'run.json')
+        write_json(folder/'run.json',job)
 
     def _plan(self,job):
         seen=set()
@@ -339,6 +338,11 @@ class RunManager:
                 job.update(state='done',finished_at=finished['finished_at'],result=public_result(result),context=context)
                 self._save(job)
         except Exception as exc:
+            # Full diagnostics stay private; API exposes only the exception type.
+            try:
+                write_json(self.directory/run_id/'execution-error.json',
+                           {'error_type':type(exc).__name__,'traceback':traceback.format_exc()})
+            except OSError:pass
             with self.lock:
                 self.jobs[run_id].update(state='error',finished_at=now(),
                                          error='실행 중 오류가 발생했습니다: '+type(exc).__name__)

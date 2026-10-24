@@ -15,6 +15,15 @@ def response(items):
 
 
 class PlanSyncTests(TestCase):
+    def test_wrong_source_repaired_only_when_quote_and_name_exist_in_answer(self):
+        data=[{'kind':'activity','title':'합성 정원','source':'user','quote':'합성 정원'},
+              {'kind':'activity','title':'없는 정원','source':'user','quote':'없는 인용'}]
+        with TemporaryDirectory() as folder:
+            items,usage=extract(blank(),'정원을 찾아줘','합성 정원 추천',chat=lambda *a,**kw:response(data),
+                model='fixture',base_url='fixture',folder=folder)
+        self.assertEqual(len(items),1);self.assertIn('미검증',items[0]['note'])
+        self.assertEqual(usage['corrected_sources'],1);self.assertEqual(usage['rejected_candidates'],1)
+
     def test_explicit_budget_corrections_and_date_shorthand_are_preserved(self):
         items=user_conditions('두 사람이 총25만원 예산으로 2026년 10월 30부터 31일에 차 없이 여행해.',blank())
         self.assertEqual({i['title'] for i in items},{'인원','총예산','여행기간','이동수단'})

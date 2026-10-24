@@ -13,7 +13,15 @@ def write_json(path, value):
     path = Path(path)
     temporary = path.with_suffix('.tmp')
     temporary.write_text(json.dumps(value, ensure_ascii=False), encoding='utf-8')
-    temporary.replace(path)
+    # Windows scanners/readers can briefly deny atomic replace. Retry only this
+    # filesystem operation; never repeat a model/tool request or discard target.
+    for attempt in range(4):
+        try:
+            temporary.replace(path)
+            break
+        except PermissionError:
+            if attempt==3:raise
+            time.sleep(.025*(attempt+1))
 
 
 def trace_events(directory, job):
