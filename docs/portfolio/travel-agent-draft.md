@@ -1,43 +1,62 @@
-> 여행 조건을 기억하고, 대화를 여행 계획서로 남기는 로컬 AI 도우미입니다.
+> 여행 조건을 기억하고, 조사한 내용을 편집 가능한 계획서로 남기는 로컬 AI 도우미입니다.
 
-여자친구와 여행을 준비하며 겪은 반복 검색과 정보 누락을 줄이려 만들었습니다. 개인 프로젝트로 문제 정의·설계·검증을 진행했고 구현에 Codex를 활용했습니다.
+여자친구와 여행을 준비하며 겪은 반복 검색과 정보 누락을 줄이기 위해 만들었습니다. 개인 프로젝트로 구조 설계·평가·제품 흐름을 구성했고, 구현에 Codex를 활용했습니다.
 
-## 01 · 검색은 넓게, 모델 입력은 작게
+## 01 · 구조 설계
 
-**Python · Qwen · MCP · BM25Plus**
+**Python · Qwen · MCP · 병렬 Tool Calling**
 
-검색 원문을 보존하고 문장 중복 제거·관련도 정렬·최대 30개 선별을 적용했습니다. 같은 저장 결과의 전달량을 **85KB→29KB**로 줄였습니다. 모델은 필요한 본문을 선택해 읽고, 호출 기록으로 동작을 확인합니다.
+대화·검색·본문 조회·계획서 저장을 하나의 실행 흐름으로 연결했습니다. 모델은 다음 행동을 선택하고, 실행기는 최대 3개 병렬 호출과 중복 요청·실행 예산을 관리합니다.
 
-![검색 구조 · 저장 자료 재포장 측정이며 추천 품질 지표는 아님](https://raw.githubusercontent.com/yuchanahn/travel-agent/b73822f/docs/assets/portfolio-095-search.png)
+![설명용 검색 구조 · 85KB→29KB는 동일 저장 자료의 전달량 비교](https://raw.githubusercontent.com/yuchanahn/travel-agent/997fd29/docs/assets/portfolio-095-search.png)
 
 <details>
-<summary>코드 · 관련도 정렬과 개수 제한</summary>
+<summary>구현 코드 · 선택한 네트워크 도구를 병렬 실행</summary>
 
-`src/travel_agent/search_selection.py` · `select` · 기준 `b73822f`. 실제 구현 발췌.
+`src/travel_agent/agent.py` · `execute_batch` · 기준 `997fd29`.
 
 ```python
-    q=tokens(query);overlap=bool(q and any(set(q)&set(t) for t in corpus))
-    scores=BM25Plus(corpus).get_scores(q) if hits and overlap else [0]*len(hits)
-    # Zero lexical overlap is not proof of irrelevance (e.g. linked English page).
-    eligible=list(range(len(hits)))
-    order=sorted(eligible,key=lambda i:(-float(scores[i]),i))
-    selected=[hits[i] for i in order[:limit]]
-    for hit,i in zip(selected,order):hit['relevance_score']=round(float(scores[i]),6)
+    else:
+        with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="travel-web") as pool:
+            futures = []
+            for job in jobs:
+                if job[2] in network_tools:
+                    attempted_web |= is_web_search(job[2]) and time.perf_counter() < deadline
 ```
 </details>
 
-## 02 · 요약에서 빠진 조건을 원문으로 복원
+## 02 · Observability·trajectory 추적
+
+**JSONL Trace · 호출 ID · 실행 비교**
+
+모델 요청부터 도구 인자·검색어·반환 결과·오류·다음 모델 입력까지 연결해 기록합니다. 화면에서 실행별 시간·토큰·중복 호출을 확인하고, 서로 다른 실행을 비교할 수 있습니다.
+
+![실제 실행 비교 화면 · 서로 다른 두 턴의 기능 시연](https://raw.githubusercontent.com/yuchanahn/travel-agent/997fd29/docs/assets/portfolio-095-comparison.png)
+
+<details>
+<summary>구현 코드 · 모델 요청과 실행을 호출 ID로 연결</summary>
+
+`src/travel_agent/agent.py` · `execute_batch.emit_start` · 기준 `997fd29`.
+
+```python
+    def emit_start(index, name, call):
+        trace.emit("tool_start", step=step, span=f"{step}.{index + 1}", name=name,
+                   call_index=index, tool_call_id=call.get("id"), arguments=call["function"].get("arguments"))
+```
+</details>
+
+## 03 · Memory 등 필요한 미들웨어
 
 **SQLite · BM25 · 임베딩 · RRF · 리랭킹**
 
-원문과 요약을 따로 저장하고 매 모델 호출 전에 문맥을 검사합니다. 웹은 BM25, 별도 CLI는 하이브리드 검색을 비교했습니다. 합성 평가 12응답에서 세부 조건 복원은 **요약만 0/2→원문 검색 추가 2/2**였습니다.
+대화 원문과 요약을 분리하고, 매 모델 호출 전에 문맥을 관리합니다. 과거 조건은 원문 검색으로 보완하며 대화 분기별 조회 범위를 분리합니다. 웹은 BM25를 사용하고, 별도 CLI에서 하이브리드 검색과 리랭킹을 제공합니다.
 
-![메모리 구조 · 통제된 합성 평가 결과](https://raw.githubusercontent.com/yuchanahn/travel-agent/b73822f/docs/assets/portfolio-095-memory.png)
+![설명용 메모리 구조 · 웹 BM25와 별도 CLI 하이브리드를 구분](https://raw.githubusercontent.com/yuchanahn/travel-agent/997fd29/docs/assets/portfolio-095-memory.png)
 
 <details>
-<summary>코드 · 서로 다른 검색 점수를 순위로 결합</summary>
+<summary>구현 코드 · BM25와 임베딩 검색 순위 결합</summary>
 
-`src/travel_agent/memory.py` · `rrf` · 기준 `b73822f`. 실제 구현 발췌.
+`src/travel_agent/memory.py` · `rrf` · 기준 `997fd29`.
 
 ```python
 def rrf(rankings: list[list[int]], k=60) -> dict[int, float]:
@@ -49,29 +68,72 @@ def rrf(rankings: list[list[int]], k=60) -> dict[int, float]:
 ```
 </details>
 
-## 03 · 대화가 끝나도 남는 여행 계획서
+## 04 · 데이터와 평가 체계로 품질 증명
 
-**로컬 웹 · 자동 초안 · JSONL Trace · Eval Harness**
+**고정 평가셋 · Eval Harness · 근거 검토**
 
-대화 후 초안을 저장하고 요약·시간표·예산으로 보여줍니다. 직접 편집·선택 확정·Markdown 저장·PDF 출력을 제공합니다. 실제 브라우저 3턴의 예산·인원 정정과 모바일 화면, Python 검사 **307개**를 확인했습니다.
+기능 동작·메모리 복원·답변의 사실 정확도를 분리해 평가합니다. Python 검사 311개를 통과했고, 통제된 합성 평가에서 세부 조건 복원은 요약만 0/2·원문 검색 추가 2/2였습니다. 실제 여행 두 질문은 근거 검토 0/2로, 추천 품질 개선은 아직 미입증입니다.
 
-![실제 계획서 화면 · 합성 여행이며 숙박비 15만원은 시연용 직접 입력](https://raw.githubusercontent.com/yuchanahn/travel-agent/b73822f/docs/assets/portfolio-095-plan-budget.png)
+![설명용 평가 요약 · 기존 결과를 구분한 자료이며 실제 대시보드가 아님](https://raw.githubusercontent.com/yuchanahn/travel-agent/997fd29/docs/assets/portfolio-evaluation-scopes.png)
 
 <details>
-<summary>코드 · 자동 정리가 사용자 편집을 덮어쓰지 않도록</summary>
+<summary>구현 코드 · 기능 통과와 사실 검토를 별도 판정</summary>
 
-`src/travel_agent/web_app.py` · `RunManager.update_plan` · 기준 `b73822f`. 실제 구현 발췌.
+`src/travel_agent/acceptance.py` · `assessment` · 기준 `997fd29`.
 
 ```python
-            job=self._job(run_id)
-            plan=self._plan(job)
-            if expected_revision is not None and plan['revision']!=expected_revision:
-                raise RuntimeError('계획이 변경돼 자동 정리를 적용하지 않았습니다.')
-            if not model and (type(payload.get('revision')) is not int or payload['revision']!=plan['revision']):
-                raise RuntimeError('계획이 변경됐습니다. 새로고침 후 다시 편집해주세요.')
+    quality=report.get('manual_review',{}).get('verdict','pending')
+    return {'mechanical_gate':mechanical,'quality_verdict':quality,
+            'release_gate':mechanical and quality=='pass','cleanup':report.get('cleanup')}
 ```
 </details>
 
-현재는 프로토타입입니다. 고정 여행 질문 2개는 실행을 마쳤지만 **주소·출처 검토 0/2**로 추천 품질은 미통과입니다. 대규모 운영 경험이나 일반적인 품질 향상을 주장하지 않습니다.
+## 05 · 프로덕션 개발·운영 기본기
+
+**요청 대기열 · 체크포인트 · 장애 처리**
+
+실행 1개·대기 2개로 요청을 제한하고, 시간·호출 예산과 오류 상태를 관리합니다. 대화·계획서를 저장해 재시작 후 복원하며 세션 삭제와 고정 주소 재시작을 제공합니다. 현재는 로컬 운영이며 대규모 서비스 운영 경험은 포함하지 않습니다.
+
+![실제 로컬 웹 화면 · 대화·계획서·실행 비교 진입점](https://raw.githubusercontent.com/yuchanahn/travel-agent/997fd29/docs/assets/portfolio-095-home-light.png)
+
+<details>
+<summary>구현 코드 · 일시적 파일 교체 실패만 제한적으로 재시도</summary>
+
+`src/travel_agent/session_context.py` · `write_json` · 기준 `997fd29`.
+
+```python
+    for attempt in range(4):
+        try:
+            temporary.replace(path)
+            break
+        except PermissionError:
+            if attempt==3:raise
+            time.sleep(.025*(attempt+1))
+
+```
+</details>
+
+## 06 · 신뢰·설명가능성·컴플라이언스
+
+**출처 표시 · 미확인 상태 · 사용자 선택 확정**
+
+후보의 출처를 함께 보여주고, 계획서에서 조회·예상·미확인 비용을 분리합니다. 사용자가 직접 편집·선택 확정하며, 선택 확정은 실제 예약이나 가격 검증과 구분합니다. 금융 규정 준수·감사 체계를 구현한 프로젝트는 아닙니다.
+
+![실제 계획서 · 합성 여행과 직접 입력한 시연용 숙박비](https://raw.githubusercontent.com/yuchanahn/travel-agent/997fd29/docs/assets/portfolio-095-plan-budget.png)
+
+<details>
+<summary>구현 코드 · 확정 작업은 사용자 요청에만 허용</summary>
+
+`src/travel_agent/travel_plan.py` · `mutate` · 기준 `997fd29`.
+
+```python
+    elif action in {'confirm','delete'} and not model:
+        item=next((x for x in out['items'] if x['id']==payload.get('id')),None)
+        if item is None:raise ValueError('항목을 찾을 수 없습니다.')
+        if action=='confirm':
+            if type(payload.get('confirmed')) is not bool:raise ValueError('확정 여부는 true/false입니다.')
+            item['confirmed']=payload['confirmed']
+```
+</details>
 
 [GitHub](https://github.com/yuchanahn/travel-agent)
