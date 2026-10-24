@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import time
 from threading import BoundedSemaphore, Lock
 from urllib.parse import parse_qs, urlsplit
 from urllib.request import urlopen
@@ -24,6 +25,7 @@ from .session_context import trace_events, turn_events, write_json
 from .runtime_context import prepare as prepare_runtime_context, SUMMARY_PREFIX
 from .llm_client import chat as context_chat
 from .travel_plan import blank as blank_plan, mutate as mutate_plan, budget as plan_budget, markdown as plan_markdown
+from .plan_sync import extract as extract_plan, user_conditions
 
 STATIC = Path(__file__).with_name('static')
 RUN_ID = re.compile(r'[a-f0-9]{32}')
@@ -66,6 +68,10 @@ def visible_event(event):
         view.update(query=event['query'], result=event['result'])
     elif kind=='mcp_discovery':
         view['servers']=event['servers']
+    elif kind=='plan_sync':
+        view['result']=event['result']
+    elif kind=='search_selection':
+        view.update({k:v for k,v in event.items() if k not in {'request_id','sequence','timestamp','kind'}})
     else:
         return None
     return view
@@ -112,13 +118,16 @@ class RunManager:
     def plan(self,run_id):
         with self.lock:
             plan=self._plan(self._job(run_id))
-            return {**plan,'budget':plan_budget(plan),'confirmed_budget':plan_budget(plan,True)}
+            return {**plan,'budget':plan_budget(plan),'confirmed_budget':plan_budget(plan,True),
+                    'plan_sync':self._job(run_id).get('result',{}).get('plan_sync')}
 
-    def update_plan(self,run_id,payload,*,model=False):
+    def update_plan(self,run_id,payload,*,model=False,expected_revision=None):
         if not isinstance(payload,dict) or set(payload)-{'revision','action','items','id','confirmed'}:raise ValueError('계획 변경 형식을 확인해주세요.')
         with self.lock:
             job=self._job(run_id)
             plan=self._plan(job)
+            if expected_revision is not None and plan['revision']!=expected_revision:
+                raise RuntimeError('계획이 변경돼 자동 정리를 적용하지 않았습니다.')
             if not model and (type(payload.get('revision')) is not int or payload['revision']!=plan['revision']):
                 raise RuntimeError('계획이 변경됐습니다. 새로고침 후 다시 편집해주세요.')
             updated=mutate_plan(plan,payload.get('action'),payload,model=model,run_id=run_id)
@@ -135,6 +144,41 @@ class RunManager:
             return json.loads((self.directory/run_id/'run.json').read_text(encoding='utf-8'))
         except (OSError,ValueError):
             raise ValueError('이전 대화를 찾을 수 없습니다.')
+
+    def sync_plan(self,job,ancestors,result,folder,remaining):
+        snapshot=self.plan(job['id'])
+        pending={}
+        # Hydrate conditions missing in older plans, then apply latest corrections.
+        for turn in ancestors:
+            for item in user_conditions(turn['query'],snapshot):
+                if not item.get('id'):pending[(item['kind'],item['title'])]=item
+        for item in user_conditions(job['query'],snapshot):pending[(item['kind'],item['title'])]=item
+        conditions=list(pending.values())
+        if conditions:
+            try:self.update_plan(job['id'],{'action':'upsert','items':conditions},model=True,expected_revision=snapshot['revision'])
+            except RuntimeError:return {'status':'conflict','error':'편집 중인 계획을 보호했습니다.','model_calls':0}
+            snapshot=self.plan(job['id'])
+        if remaining<=1:return {'status':'conditions_saved' if conditions else 'failed','error':'실행 시간 부족','model_calls':0}
+        try:
+            config=llm_settings()
+            user_text='\n'.join(t['query'] for t in [*ancestors,job])
+            # Keep extraction bounded; original conversation remains in private memory.
+            user_text=user_text.encode()[-12000:].decode('utf-8',errors='ignore')
+            items,usage=extract_plan(snapshot,user_text,result.get('answer','')[:8000],chat=context_chat,
+                model=config['model'],base_url=config['base_url'],folder=folder/'plan-sync',timeout=min(30,remaining))
+            if items:self.update_plan(job['id'],{'action':'upsert','items':items},model=True,expected_revision=snapshot['revision'])
+            return {'status':'saved' if items else 'conditions_saved' if conditions else 'no_trip_items',
+                    'item_count':len(items),'condition_count':len(conditions),**usage}
+        except RuntimeError:
+            return {'status':'conflict','error':'편집 중인 계획을 보호하기 위해 자동 정리를 건너뛰었습니다.','model_calls':1}
+        except Exception as exc:
+            # Honest fallback: preserve a request memo, never pretend it is an itinerary.
+            try:
+                if not conditions:self.update_plan(job['id'],{'action':'upsert','items':[{'kind':'note','title':'정리하지 못한 여행 요청',
+                    'note':job['query'][:1000]}]},model=True,expected_revision=snapshot['revision'])
+            except (ValueError,RuntimeError):pass
+            return {'status':'conditions_saved' if conditions else 'request_only','candidate_status':'failed',
+                    'condition_count':len(conditions),'error':'후보 자동 정리에 실패했습니다: '+type(exc).__name__,'model_calls':1}
 
     def conversation(self,job):
         turns=[]
@@ -239,11 +283,12 @@ class RunManager:
                     for key in ('summary_model_calls','summary_input_tokens','summary_output_tokens'):
                         context[key]+=info.get(key,0)
                     context['summary_usage_complete'] &= info.get('summary_usage_complete',True)
+                    # Ranking can omit excerpts even without compaction. Make the
+                    # full current-turn observations searchable before inference.
+                    inserted_now=store.add('local-web',session,turn_events(self.directory,job))
+                    if inserted_now:build_bm25_index(store,'local-web',session)
                     if info['compacted']:
                         context.update(compacted=True,compactions=context['compactions']+1)
-                        # Original tool results remain searchable in this run, too.
-                        store.add('local-web',session,turn_events(self.directory,job))
-                        build_bm25_index(store,'local-web',session)
                     return prepared,info
                 recalled = execute_tool(store,'local-web',session,'memory_search',
                     {'query':job['query'],'top_k':3},mode='bm25',rerank=False,max_bytes=6000) if (summary or any(m.get('content','').startswith(SUMMARY_PREFIX) for m in history)) and before_index['chunks'] else {'hits':[]}
@@ -253,13 +298,20 @@ class RunManager:
                     if name=='plan_read':
                         return self.plan(run_id)
                     return self.update_plan(run_id,{'action':'upsert',**args},model=True)
+                run_deadline=time.perf_counter()+360
                 result=run_agent(store,'local-web',session,job['query'],mode='bm25',summary=summary,
                                  history=history,prior_sources=parent['result'].get('web_sources',[]) if parent else [],
                                  prior_memory_ids=[i for i in parent['result'].get('evidence_ids',[]) if i.startswith(('m-','event:'))] if parent else [],
                                  prior_mcp_sources=parent['result'].get('mcp_sources',[]) if parent else [],
                                  recalled_memory=recalled,context_info=context,
-                                 enable_web=job['enable_web'],trace_dir=folder/'traces',timeout=360,plan_handler=plan_handler,
+                                 enable_web=job['enable_web'],trace_dir=folder/'traces',timeout=330,plan_handler=plan_handler,
                                  context_manager=context_manager)
+                if result.get('trace_path') and Path(result['trace_path']).is_file():
+                    result['plan_sync']=self.sync_plan(job,ancestors,result,folder,run_deadline-time.perf_counter())
+                    last=trace_events(self.directory,job)[-1]
+                    with Path(result['trace_path']).open('a',encoding='utf-8') as output:
+                        output.write(json.dumps({'request_id':last['request_id'],'sequence':last['sequence']+1,
+                            'timestamp':now(),'kind':'plan_sync','result':result['plan_sync']},ensure_ascii=False)+'\n')
                 finished = {**job,'finished_at':now(),'result':result}
                 inserted = store.add('local-web',session,turn_events(self.directory,finished))
                 after_index = build_bm25_index(store,'local-web',session)
@@ -302,7 +354,8 @@ class RunManager:
                 root = turns[0]
                 if root['id'] not in chats:
                     chats[root['id']] = {**{k:job[k] for k in ('id','state','created_at')},
-                        'query':root['query'], 'conversation_id':root['id'], 'turn_count':len(turns)}
+                        'query':root['query'], 'conversation_id':root['id'], 'turn_count':len(turns),
+                        'result_status':job.get('result',{}).get('status')}
             return list(chats.values())
 
     def executions(self):

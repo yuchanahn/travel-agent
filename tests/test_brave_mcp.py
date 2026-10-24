@@ -23,8 +23,9 @@ class BraveMCPTests(unittest.TestCase):
             {'id':'web:1','title':'large','description':'x'*10000},
             {'id':'web:2','title':'small','status':'ready','url':'https://example.com/pool'}]}
         packet=json.loads(model_result(raw,max_bytes=1500))
-        self.assertEqual([d['title'] for d in packet['document_catalog']],['small'])
-        self.assertEqual(packet['document_catalog_omitted'],1)
+        self.assertEqual([d['title'] for d in packet['document_catalog']],['large','small'])
+        self.assertTrue(packet['document_catalog'][0]['description_truncated'])
+        self.assertEqual(packet['document_catalog_omitted'],0)
         self.assertLessEqual(len(model_result(raw,max_bytes=1500).encode()),1500)
 
     def test_read_schema_excludes_completed_pages_without_mutating_shared_tools(self):
@@ -39,21 +40,21 @@ class BraveMCPTests(unittest.TestCase):
                      'extra_snippets':['검증 문장. '*180]} for i in range(20)])
         previous=json.loads(model_result(raw,max_bytes=48000))
         expanded=json.loads(model_result(raw))
-        self.assertLess(previous['returned_results'],20)
+        self.assertEqual(previous['returned_results'],20)
         self.assertEqual(expanded['returned_results'],20)
         self.assertEqual(expanded['omitted_results'],0)
-        self.assertEqual(expanded['hits'][-1]['extra_snippets'],['검증 문장. '*180])
+        self.assertEqual(expanded['hits'][-1]['snippet'],'검증 문장.')
         self.assertLessEqual(len(model_result(raw).encode()),96000)
 
     def test_complete_records_and_extra_snippets_survive_default_packet(self):
         sentence='문장 전체를 보존합니다. '*500
         raw=result([{'title':'안내','url':'https://example.com/visit','description':'요약','extra_snippets':[sentence]}])
         packet=json.loads(model_result(raw))
-        self.assertEqual(packet['hits'][0]['extra_snippets'],[sentence])
+        self.assertEqual(packet['hits'][0]['extra_snippets'],['문장 전체를 보존합니다.'])
         self.assertFalse(packet['truncated'])
         small=json.loads(model_result(raw,max_bytes=1000))
-        self.assertEqual(small['hits'],[])
-        self.assertEqual(small['omitted_results'],1)
+        self.assertEqual(small['returned_results'],1)
+        self.assertGreater(small['selection']['exact_sentences_removed'],0)
         self.assertLessEqual(len(model_result(raw,max_bytes=1000).encode()),1000)
 
     def test_oversized_record_does_not_hide_following_small_record_or_split_text(self):

@@ -12,6 +12,28 @@ from test_agent import call,reply
 
 
 class RuntimeWebTests(TestCase):
+    def test_current_raw_result_is_searchable_without_compaction(self):
+        requests=[]
+        def model(messages,**kwargs):
+            requests.append(copy.deepcopy(messages))
+            if len(requests)==1:return reply(calls=[call('web_search',query='synthetic',top_k=1)])
+            if len(requests)==2:return reply(calls=[call('memory_search',query='합성 원문표식 12345원',top_k=1)])
+            return reply('fixture')
+        with TemporaryDirectory() as folder, \
+             patch.dict(os.environ,{'MCP_CONFIG_FILE':str(Path('examples/mcp-servers.example.json').resolve())}), \
+             patch('travel_agent.agent.chat',side_effect=model), \
+             patch('travel_agent.web_app.context_chat',return_value=reply('fixture')), \
+             patch('travel_agent.agent.web_search',return_value={'hits':[{'id':'web:'+'b'*16,'title':'synthetic',
+               'url':'https://example.invalid','snippet':'합성 원문표식 12345원'}],'searched_at':'2026-10-24'}):
+            manager=RunManager(folder)
+            try:
+                with patch.object(manager.pool,'submit'):rid=manager.submit('합성 시험',True)
+                manager._execute(rid)
+                self.assertEqual(manager.jobs[rid]['result']['status'],'completed')
+                self.assertEqual(manager.jobs[rid]['context']['compactions'],0)
+                self.assertIn('12345',requests[-1][-1]['content'])
+            finally:manager.pool.shutdown()
+
     def test_checkpoint_restores_question_not_harness_feedback(self):
         from travel_agent.trace import Trace
         def agent(store,user,session,query,**kwargs):

@@ -223,7 +223,7 @@ class MCPRegistry:
                     **({'model_adapter':'openbnb','request_context':{
                         key:args[key] for key in ('location','checkin','checkout','adults','children','infants','minPrice','maxPrice') if key in args
                     }} if self.adapters.get(name)=='openbnb' else {}),
-                    **({'model_adapter':'brave_search'} if self.adapters.get(name)=='brave_search' else {}),
+                    **({'model_adapter':'brave_search','search_query':args.get('query','')} if self.adapters.get(name)=='brave_search' else {}),
                     **({'error':'MCP server error or unsupported input request'} if failed else {})}
         except Exception as exc:
             # Exception strings can contain request URLs or credentials.
@@ -233,7 +233,7 @@ class MCPRegistry:
 def model_result(result,max_bytes=None):
     """Bound the model packet while keeping the full result in private trace."""
     if max_bytes is None:
-        max_bytes=96000 if result.get('model_adapter')=='brave_search' else 6000
+        max_bytes=min(24000,result.get('packet_byte_budget',24000)) if result.get('model_adapter')=='brave_search' else 6000
     if max_bytes < 256:
         raise ValueError('MCP packet budget must be at least 256 bytes')
     if result.get('model_adapter')=='brave_search':

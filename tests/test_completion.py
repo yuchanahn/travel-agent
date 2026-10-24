@@ -79,7 +79,7 @@ class CompletionTests(unittest.TestCase):
     def test_missing_signal_stops_at_limit_without_success(self):
         r=self.run_fixture(reply('진행 중입니다.'),max_steps=3)
         self.assertEqual((r['status'],r['model_calls'],r['completion_signal_received']),('step_limit',3,False))
-        self.assertEqual(r['answer'],'')
+        self.assertIn('조사를 완료하지 못했습니다',r['answer'])
 
     def test_forced_final_is_marked_as_budget_stop(self):
         r=self.run_fixture(reply('<final>현재 결과</final>'),max_steps=1)

@@ -43,7 +43,7 @@ function renderPlan(){
 }
 async function refreshPlan(){
   if(!planRunId)return;
-  try{const id=planRunId,value=await api('/api/plans/'+id);if(id!==planRunId)return;planData=value;renderPlan();planMessage(value.items.length+'개 항목 · '+value.items.filter(i=>i.confirmed).length+'개 선택 확정');}
+  try{const id=planRunId,value=await api('/api/plans/'+id);if(id!==planRunId)return;planData=value;renderPlan();const sync=value.plan_sync,notice={saved:'대화에서 초안을 자동 정리했어요.',conditions_saved:'명시한 여행 조건을 기록했어요. 후보·상세 일정은 추가 확인이 필요해요.',request_only:'자동 정리 실패 · 요청 메모만 보존했어요. 일정은 생성되지 않았어요.',failed:'계획 자동 정리에 실패했어요.',conflict:'직접 편집한 내용을 보호하기 위해 자동 정리를 건너뛰었어요.',no_trip_items:'모델이 기록할 여행 항목을 찾지 못했어요.'}[sync?.status]||'';planMessage(value.items.length+'개 항목 · '+value.items.filter(i=>i.confirmed).length+'개 선택 확정'+(notice?' · '+notice:'')+(sync?.candidate_status==='failed'?' · 후보 자동 추출 실패':''));}
   catch(exc){planMessage(exc.message);}
 }
 async function changePlan(payload,revision=planData?.revision){

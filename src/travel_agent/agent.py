@@ -443,6 +443,10 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
         trace.emit('memory_recalled', query=query, result=recalled_memory)
 
     def finish(status, answer="", **extra):
+        if status!='completed' and not answer:
+            reason={'context_limit':'문맥을 안전한 크기로 정리하지 못했습니다.','model_error':'모델 호출에 실패했습니다.',
+                    'timeout':'실행 시간이 초과되었습니다.','output_limit':'모델 출력이 한도에 도달했습니다.'}.get(status,'조사를 완료하지 못했습니다.')
+            answer=reason+' 확인되지 않은 추천이나 금액을 완성된 결과로 제시하지 않겠습니다. 실행 기록을 확인하고 이어서 요청할 수 있습니다.'
         citations = CITATIONS.findall(answer)
         citation_status = ("valid" if all(item in evidence_ids for item in citations) else "invalid") if citations else ("missing" if evidence_ids else "no_evidence")
         result = {"request_id": trace.request_id, "trace_path": str(trace.path.resolve()),
@@ -597,6 +601,9 @@ def run_agent(store, user, session, query, *, summary="", mode="hybrid", rerank=
                                           page_cache=page_cache, lodging=lodging, document_collection=document_collection,
                                           **({'plan_handler':plan_handler} if plan_handler is not None else {}))
         web_attempted |= attempted
+        if any(r.get('model_adapter')=='brave_search' for _,r in results):
+            from .brave_mcp import select_batch
+            trace.emit('search_selection',step=step,**select_batch(results,query))
         for source_id, page in page_cache.pages.items():
             if source_id not in recorded_pages:
                 trace.emit('page_snapshot', source_id=source_id, **page)
