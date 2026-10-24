@@ -76,9 +76,13 @@ def ollama_messages(messages):
     return result
 
 
-def chat(messages, *, model, base_url, timeout, tools):
+def chat(messages, *, model, base_url, timeout, tools, max_output_tokens=None):
     config = settings()
     options = generation_options()
+    if max_output_tokens is not None:
+        if type(max_output_tokens) is not int or not 128<=max_output_tokens<=8192:
+            raise ValueError('Invalid per-request output token budget')
+        options['num_predict']=max_output_tokens
     if config['provider'] == 'ollama':
         body = {'model': model, 'messages': ollama_messages(messages), 'tools': tools, 'stream': False,
                 'think': False, 'options': options}

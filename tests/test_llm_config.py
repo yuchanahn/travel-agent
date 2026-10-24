@@ -19,6 +19,13 @@ def response():
 
 
 class ContextTests(unittest.TestCase):
+    def test_summary_output_override_does_not_change_normal_request_budget(self):
+        from travel_agent.llm_client import chat as provider_chat
+        with patch.dict(os.environ,{},clear=True),patch('travel_agent.llm_client.urlopen',side_effect=[response(),response()]) as http:
+            provider_chat([],model='test',base_url='http://localhost',timeout=1,tools=[],max_output_tokens=2048)
+            self.assertEqual(json.loads(http.call_args.args[0].data)['options']['num_predict'],2048)
+            provider_chat([],model='test',base_url='http://localhost',timeout=1,tools=[])
+            self.assertEqual(json.loads(http.call_args.args[0].data)['options']['num_predict'],4096)
     def test_output_budget_is_explicit_and_context_stays_64k(self):
         with patch.dict(os.environ, {'AGENT_MAX_OUTPUT_TOKENS':'1536'}), patch('travel_agent.llm_client.urlopen',return_value=response()) as http:
             chat([],model='test',base_url='http://localhost',timeout=1)

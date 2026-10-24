@@ -57,12 +57,25 @@ def prepare(messages, tools, *, chat, model, base_url, folder, step, deadline, m
     No mutation on failure. Full originals and every summary request are private files.
     """
     before=request_bytes(messages,tools)
-    requested=int(os.environ.get('AGENT_CONTEXT_TARGET_BYTES','64000'))
+    requested=int(os.environ.get('AGENT_CONTEXT_TARGET_BYTES','96000'))
     if not 4000<=requested<=512000:raise ValueError('Invalid AGENT_CONTEXT_TARGET_BYTES')
     target=min(requested,int(max_bytes*.65))
+    trigger=int(os.environ.get('AGENT_CONTEXT_TRIGGER_BYTES','128000'))
+    if not 4000<=trigger<=1048576:raise ValueError('Invalid AGENT_CONTEXT_TRIGGER_BYTES')
+    trigger=min(max(trigger,target),max_bytes)
+    summary_timeout=int(os.environ.get('AGENT_SUMMARY_TIMEOUT_SECONDS','180'))
+    if not 1<=summary_timeout<=300:raise ValueError('Invalid AGENT_SUMMARY_TIMEOUT_SECONDS')
     info={'compacted':False,'before_bytes':before,'target_bytes':target,
+          'trigger_bytes':trigger,'hard_limit_bytes':max_bytes,
           'summary_model_calls':0,'summary_input_tokens':0,'summary_output_tokens':0,'summary_usage_complete':True}
-    if before<=target:return messages,info
+    if before<=trigger:return messages,info
+    folder=Path(folder)
+    state_file=folder/'context-summary-backoff.json'
+    try:retry_after=json.loads(state_file.read_text(encoding='utf-8')).get('retry_after',0)
+    except (OSError,ValueError,TypeError):retry_after=0
+    if before<=max_bytes and time.time()<retry_after:
+        info.update(compression_deferred=True,deferred_reason='summary_backoff')
+        return messages,info
     anchor=next((i for i in range(len(messages)-1,-1,-1) if messages[i]['role']=='user'
                  and (latest_user is None or messages[i]==latest_user)),None)
     if anchor is None:raise ValueError('Latest user message is required')
@@ -74,13 +87,14 @@ def prepare(messages, tools, *, chat, model, base_url, folder, step, deadline, m
     fixed=request_bytes([*system,*users,latest],tools)
     # Large fixed instructions/query cannot be safely compressed as conversation.
     if fixed+2000>target:
-        info['warning']='fixed_context_exceeds_target'
+        if before<=max_bytes:info.update(compression_deferred=True,deferred_reason='fixed_context_exceeds_target')
+        else:info['warning']='fixed_context_exceeds_target'
         return messages,info
     records=deepcopy([{'position':i,**m} for i,m in enumerate(messages) if m['role']!='system' and i!=anchor])
     for record in records:
         record['provenance']='unverified_assistant_claim' if record['role']=='assistant' else 'user_statement' if record['role']=='user' else 'tool_observation_not_booking_verification'
     if not records:return messages,info
-    folder=Path(folder);folder.mkdir(parents=True,exist_ok=True)
+    folder.mkdir(parents=True,exist_ok=True)
     def save(name,value):
         (folder/name).write_text(json.dumps(value,ensure_ascii=False,indent=2),encoding='utf-8')
     save(f'context-{step}-before.json',{'messages':messages,'tools':tools})
@@ -122,7 +136,7 @@ def prepare(messages, tools, *, chat, model, base_url, folder, step, deadline, m
             if request_bytes(prompt,[])>max_bytes:raise ValueError('Summary request exceeds byte guard')
             save(f'context-{step}-summary-{index}-request.json',prompt)
             info['summary_model_calls']+=1
-            reply=chat(prompt,model=model,base_url=base_url,timeout=min(60,remaining),tools=[])
+            reply=chat(prompt,model=model,base_url=base_url,timeout=min(summary_timeout,remaining),tools=[],max_output_tokens=2048)
             save(f'context-{step}-summary-{index}-response.json',reply)
             text=reply.get('message',{}).get('content','')
             if reply.get('prompt_eval_count') is None or reply.get('eval_count') is None:info['summary_usage_complete']=False
@@ -138,6 +152,10 @@ def prepare(messages, tools, *, chat, model, base_url, folder, step, deadline, m
         save(f'context-{step}-after.json',{'messages':prepared,'info':info})
         return prepared,info
     except Exception as exc:
-        info.update(warning='summary_failed',error_type=type(exc).__name__)
+        info.update(error_type=type(exc).__name__,summary_usage_complete=False)
+        if before<=max_bytes:
+            info.update(compression_deferred=True,deferred_reason='summary_failed')
+            save(state_file.name,{'retry_after':time.time()+60,'error_type':type(exc).__name__})
+        else:info['warning']='summary_failed'
         save(f'context-{step}-failure.json',info)
         return messages,info

@@ -165,7 +165,7 @@ class BranchMemoryTests(unittest.TestCase):
             Trace(kwargs['trace_dir']).emit('model_start',messages=prepared)
             return {'status':'completed','answer':'확인했습니다.'}
         with TemporaryDirectory() as folder, patch('travel_agent.web_app.run_agent',side_effect=agent), \
-             patch.dict(os.environ,{'AGENT_CONTEXT_TARGET_BYTES':'4000'}), \
+             patch.dict(os.environ,{'AGENT_CONTEXT_TARGET_BYTES':'4000','AGENT_CONTEXT_TRIGGER_BYTES':'4000'}), \
              patch('travel_agent.web_app.context_chat',return_value={'message':{'content':'여행 후보를 검토 중이다. 상세 제외 이유는 요약에서 빠졌다.'},'done_reason':'stop'}):
             manager=RunManager(folder)
             try:
