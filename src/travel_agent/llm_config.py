@@ -15,7 +15,7 @@ def _integer(name, default, minimum, maximum):
 
 def generation_options():
     return {"num_ctx": _integer("AGENT_CONTEXT_TOKENS", 65536, 1024, 1048576),
-            "num_predict": _integer("AGENT_MAX_OUTPUT_TOKENS", 4096, 128, 8192), "temperature": 0}
+            "num_predict": _integer("AGENT_MAX_OUTPUT_TOKENS", 8192, 128, 8192), "temperature": 0}
 
 
 def input_byte_limit():

@@ -25,7 +25,7 @@ class ContextTests(unittest.TestCase):
             provider_chat([],model='test',base_url='http://localhost',timeout=1,tools=[],max_output_tokens=2048)
             self.assertEqual(json.loads(http.call_args.args[0].data)['options']['num_predict'],2048)
             provider_chat([],model='test',base_url='http://localhost',timeout=1,tools=[])
-            self.assertEqual(json.loads(http.call_args.args[0].data)['options']['num_predict'],4096)
+            self.assertEqual(json.loads(http.call_args.args[0].data)['options']['num_predict'],8192)
     def test_output_budget_is_explicit_and_context_stays_64k(self):
         with patch.dict(os.environ, {'AGENT_MAX_OUTPUT_TOKENS':'1536'}), patch('travel_agent.llm_client.urlopen',return_value=response()) as http:
             chat([],model='test',base_url='http://localhost',timeout=1)
@@ -38,7 +38,7 @@ class ContextTests(unittest.TestCase):
             chat([{"role": "user", "content": "안녕"}], model="test", base_url="http://localhost", timeout=1)
         body = json.loads(http.call_args.args[0].data)
         self.assertEqual(body["options"]["num_ctx"], 65536)
-        self.assertEqual(body["options"]["num_predict"], 4096)
+        self.assertEqual(body["options"]["num_predict"], 8192)
 
     def test_recall_uses_same_config_and_accepts_summary_larger_than_old_budget(self):
         hit = {"chunk_id": "m-abcdef", "timestamp": "2026-10-18T00:00:00+09:00", "text": "합성 근거", "events": []}

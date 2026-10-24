@@ -35,7 +35,7 @@ class ProviderTests(unittest.TestCase):
         body=json.loads(request.data)
         self.assertEqual(body['messages'][0]['tool_calls'][0]['function']['arguments'],{'adults':2})
         self.assertEqual(body['options']['num_ctx'],65536)
-        self.assertEqual(body['options']['num_predict'],4096)
+        self.assertEqual(body['options']['num_predict'],8192)
         self.assertFalse(body['think'])
 
     def test_invalid_saved_arguments_are_rejected_before_ollama_network_request(self):
@@ -84,7 +84,7 @@ class ProviderTests(unittest.TestCase):
             self.assertNotIn('tools', body)
             self.assertNotIn('options', body)
             self.assertNotIn('think', body)
-            self.assertEqual(body['max_tokens'], 4096)
+            self.assertEqual(body['max_tokens'], 8192)
             self.assertEqual(result['done_reason'], 'length')
             self.assertEqual(result['response_model'], 'resolved-model')
             self.assertEqual(result['prompt_eval_count'], 10)
