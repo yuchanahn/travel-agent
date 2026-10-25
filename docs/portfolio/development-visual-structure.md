@@ -1,6 +1,6 @@
 # 여행 에이전트 · 개발 흐름과 시각 구성안
 
-## 01 · 여행 준비를 하나의 흐름으로
+## 01 · Ollama·Qwen — 여행 대화에서 계획서까지
 
 ```mermaid
 flowchart LR
@@ -13,7 +13,7 @@ flowchart LR
 
 ---
 
-## 02 · 에이전트 협업으로 검색 전략 결정하기
+## 02 · Codex·Claude Code — 검색 연구와 Brave Search MCP 선택
 
 ```mermaid
 flowchart TD
@@ -33,7 +33,7 @@ flowchart TD
 
 ---
 
-## 03 · 검색 결과를 모델이 읽을 근거로
+## 03 · BM25Plus·중복 제거 — 웹 근거 선별과 전달
 
 ```mermaid
 flowchart LR
@@ -49,7 +49,7 @@ flowchart LR
 
 ---
 
-## 04 · 도구 호출과 실행 상태를 관리하는 하네스
+## 04 · Tool Calling·MCP — 에이전트 실행 하네스
 
 ```mermaid
 flowchart TD
@@ -67,7 +67,7 @@ flowchart TD
 
 ---
 
-## 05 · 대화 원문과 필요한 기억을 연결하기
+## 05 · SQLite·BM25 RAG — 원문 기억과 문맥 관리
 
 ```mermaid
 flowchart TD
@@ -86,7 +86,7 @@ flowchart TD
 
 ---
 
-## 06 · 실행을 추적하고 평가로 개선하기
+## 06 · JSONL Trace·Eval Harness — 실행 추적과 평가
 
 ```mermaid
 flowchart LR
@@ -102,7 +102,7 @@ flowchart LR
 
 ---
 
-## 07 · 조사에서 편집·확정 가능한 계획서로
+## 07 · Human-in-the-loop·JSON — 계획서 편집과 선택 확정
 
 ```mermaid
 flowchart LR

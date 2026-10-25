@@ -1,5 +1,9 @@
 # 연구일지
 
+- [104: 기술명·선택 판단 근거·공고 매칭·제작 단계](2026-10-25-104-portfolio-decisions-and-stages.md) — 시각 구성의 기술명 제목, 연구에 연결한 선택 근거 카드, 공고별 원고와 PDF까지의 여섯 단계 계획.
+
+104 Notion: https://app.notion.com/p/404d058c022e81cfb83fe58c17331ee8
+
 - [103: 개발 흐름·구조 다이어그램·사진 구성안](2026-10-25-103-portfolio-visual-structure.md) — 상세 본문 없이 개발 협업·검색·하네스·메모리·평가·계획서의 구조와 기존 이미지/미확보 사진 자리를 배치했다.
 
 103 Notion: https://app.notion.com/p/404d058c022e8140a803cd35a4098271
