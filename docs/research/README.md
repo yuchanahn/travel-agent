@@ -1,5 +1,7 @@
 # 연구일지
 
+- [106: 개발 계기·Qwen 선택 설명·캡처 순서](2026-10-25-106-origin-model-and-captures.md) — 두 포트폴리오 도입을 보완하고 같은 실행의 호출 트리·도구 상세·다음 입력·Context 캡처를 우선하도록 정리했다.
+
 - [105: 공고별 실제 포트폴리오 페이지·추적 화면 구성](2026-10-25-105-role-specific-portfolio-pages.md) — 두 목차 페이지를 서로 다른 본문·기술 선택·구조도로 전환. 호출 경로·trajectory·Context 캡처 연결 자리를 마련했다.
 
 105 Notion: https://app.notion.com/p/404d058c022e813091e8dc0606bbbdf5 · https://app.notion.com/p/404d058c022e8176a4dacfe26bc290d9
