@@ -20,6 +20,7 @@
 | 발표용 본문 | [여섯 역량 포트폴리오](portfolio/travel-agent-draft.md) |
 | 토스 두 공고에 맞춘 서류 준비 | [서류 설계 기준](knowledge/toss-hiring-brief.md), [공고1](knowledge/toss-ai-engineer.md), [공고2](knowledge/toss-securities-ai-engineer.md) |
 | 공고별 포트폴리오 목차안 | [전개 순서와 파트 제목](portfolio/toss-outlines.md) |
+| 공고별 실제 포트폴리오 원고 | [토스](portfolio/toss-ai-engineer.md), [토스증권](portfolio/toss-securities-ai-engineer.md), [추적 화면 연결](portfolio/trace-capture-brief.md) |
 | 개발 흐름 중심의 시각 구성안 | [구조 다이어그램과 연결 이미지](portfolio/development-visual-structure.md) |
 | 기술 선택 근거·공고 매칭·제작 단계 | [판단 근거](portfolio/technology-decisions.md), [제작 계획](plans/2026-10-25-toss-portfolio-production.md) |
 

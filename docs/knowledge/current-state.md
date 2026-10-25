@@ -45,4 +45,4 @@
 
 최신 서류 편집은 [사람이 읽는 포트폴리오 규칙](portfolio-presentation.md)을 따른다. Notion에서 먼저 구성하고 요청 시 별도 디자인의 PDF를 만든다. 과거 발표 본문의 한계 명시 방식은 새 지원서의 필수 양식이 아니다.
 
-현재 포트폴리오 작업 단계는 [개발 흐름·구조·이미지 구성](../portfolio/development-visual-structure.md)이다. 상세 본문 없이 구조 다이어그램과 기존 이미지·미확보 사진 자리만 배치한다. 개발 과정의 Codex/Claude Code 연구 협업과 여행 제품 내부 실행 하네스는 구분한다.
+현재 포트폴리오는 [토스 원고](../portfolio/toss-ai-engineer.md)와 [토스증권 원고](../portfolio/toss-securities-ai-engineer.md)로 분리했다. 사용자 요청에 따라 실제 짧은 본문·선택 이유·다이어그램·기존 화면을 배치했고, 호출 경로·trajectory·Context 캡처는 사용자 제공 자료를 연결할 자리로 남겼다. [공통 시각 구성](../portfolio/development-visual-structure.md)은 이전 준비 자료다. 개발 과정의 Codex/Claude Code 연구 협업과 여행 제품 내부 실행 하네스는 구분한다.
