@@ -18,5 +18,6 @@
 | 설계 결정 | [초기 ADR](decisions/0001-initial-architecture.md) |
 | 당시 실행·실패·결정 | [연구일지 인덱스](research/README.md) |
 | 발표용 본문 | [여섯 역량 포트폴리오](portfolio/travel-agent-draft.md) |
+| 토스 두 공고에 맞춘 서류 준비 | [서류 설계 기준](knowledge/toss-hiring-brief.md), [공고1](knowledge/toss-ai-engineer.md), [공고2](knowledge/toss-securities-ai-engineer.md) |
 
 기능 문서 안의 예전 수치와 공급자는 당시 이력일 수 있다. 현재 상태의 원근거와 실제 코드로 확인하고, 충돌하면 최신 사용자 결정과 실제 동작을 기준으로 수정한다. [이전 AGENTS 보존본](knowledge/history/2026-10-25-agents-before-harness.md)은 과거 근거를 찾을 때만 읽는다.
