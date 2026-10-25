@@ -32,5 +32,6 @@
 - 구조·그림 배치: [공통 시각 구성](../portfolio/development-visual-structure.md).
 - 근거 준비: [기술 선택과 공고 매칭](../portfolio/technology-decisions.md).
 - 판단 기준: [두 공고 분석](../knowledge/toss-hiring-brief.md), [편집 규칙](../knowledge/portfolio-presentation.md).
-- 다음 행동: [추적 화면 연결 가이드](../portfolio/trace-capture-brief.md)에 따라 사용자 제공 호출 스택·trajectory·Context 화면을 각 파트와 대조해 배치한다. 비교표 화면을 주된 관측 근거로 사용하지 않는다.
+- 107에서 직접 공개2턴의 검색·메모리·Context 화면과 실제 로그 발췌 자료를 확보해 두 원고에 연결했다. 시험 대화는 비공개 원본 보존 후 정리했다.
+- 다음 행동: [추적 화면 연결 가이드](../portfolio/trace-capture-brief.md)에 따라 과거 개발 협업·동일 질문 평가·복원 장면의 원본 자료를 검토하고, 확보한 추적 이미지의 독자 가독성을 사용자와 확인한다. 비교표 화면을 주된 관측 근거로 사용하지 않는다.
 - 제품 변경·새 모델 실험·임의 외부 트래픽·PDF 제작은 이번 문서 준비를 위해 실행하지 않는다.

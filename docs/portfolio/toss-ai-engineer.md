@@ -20,7 +20,7 @@ flowchart LR
     B --> D["답변·계획 초안"]
 ```
 
-[호출 경로 화면: 사용자 요청 → 모델의 도구 선택 → 실제 호출 인자·결과 → 다음 모델 입력]
+![실제 제품 화면 · Brave MCP 검색 인자·호출 ID·반환 결과](../assets/portfolio-107-live-tool.jpg)
 
 ## 02 · SQLite·BM25 RAG — 요약에 없는 선택 이유 찾기
 
@@ -33,7 +33,9 @@ flowchart LR
     C --> D["최근 대화·요약과 함께 입력"]
 ```
 
-[Context 추적 화면: 같은 질문에 사용된 최근 대화·요약·검색 원문과 출처 위치]
+![실제 제품 화면 · memory_search가 찾은 사용자 원문](../assets/portfolio-107-live-memory.jpg)
+
+![실제 저장 로그 발췌 · 검색 원문이 다음 모델 입력에 포함된 기록](../assets/portfolio-107-context-input-records.png)
 
 ## 03 · Codex·Claude Code·Brave MCP — 검색 전략을 비교하고 선택
 
@@ -60,13 +62,13 @@ flowchart LR
     A --> E["원문 보존·재검색"]
 ```
 
-[Context 추적 화면: 도구 원시 결과 → 선별된 발췌 → 모델에 실제 전달된 문맥]
+![실제 저장 로그 발췌 · MCP 원시 반환과 선별된 모델 입력](../assets/portfolio-107-search-input-records.png)
 
 ## 05 · JSONL Trace·Eval Harness — 답변에서 실행 과정으로 거슬러 확인
 
 최종 답변만 보면 자료를 못 찾았는지, 전달 과정에서 빠졌는지, 모델이 잘못 해석했는지 구분하기 어렵습니다. 호출 ID로 모델 요청·도구 인자·반환 결과·다음 입력을 연결했습니다. 고정 질문과 근거 기준으로 변경을 확인하고, 메모리는 같은 질문에 제공 문맥을 달리해 선택 이유의 복원을 대조했습니다.
 
-[Trajectory 화면: 한 답변의 모델 요청·도구 실행·반환·다음 입력을 단계별로 펼친 기록]
+![실제 저장 로그 발췌 · 모델 요청·도구 호출·반환·다음 입력의 실행 경로](../assets/portfolio-107-trajectory-records.png)
 
 ## 06 · Human-in-the-loop·JSON — 조사 결과를 편집 가능한 계획서로
 

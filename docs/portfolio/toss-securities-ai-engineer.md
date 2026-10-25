@@ -22,7 +22,7 @@ flowchart TD
     B --> F["답변·종료 상태 저장"]
 ```
 
-[호출 스택·실행 경로 화면: run_agent → execute_batch → 도구 실행 → 결과 반환]
+![실제 저장 로그 발췌 · 모델·도구·다음 입력의 실행 경로](../assets/portfolio-107-trajectory-records.png)
 
 ## 02 · JSONL Trace·Observability — 결과를 만든 경로 확인
 
@@ -36,7 +36,7 @@ flowchart LR
     D --> E["답변·종료 사유"]
 ```
 
-[Trajectory 추적 화면: 한 실행의 모델·도구 호출 트리와 선택한 단계의 원문 결과]
+![실제 제품 화면 · 호출 ID로 연결된 검색 도구의 인자와 반환 결과](../assets/portfolio-107-live-tool.jpg)
 
 ## 03 · SQLite·BM25 RAG — 분기별 원문과 Context 관리
 
@@ -51,7 +51,7 @@ flowchart TD
     D --> E
 ```
 
-[Context 추적 화면: 대화 분기·원문 ID·요약 전후 문맥·검색으로 주입된 근거]
+![실제 저장 로그 발췌 · 원문 ID·도구 호출 ID·다음 모델의 Context](../assets/portfolio-107-context-input-records.png)
 
 ## 04 · Brave MCP·BM25Plus — 출처를 유지하는 검색 데이터 흐름
 
@@ -65,7 +65,7 @@ flowchart LR
     D --> E["모델 전달"]
 ```
 
-[데이터 추적 화면: 검색 원시 결과의 출처 ID와 선별·전달된 발췌를 연결한 장면]
+![실제 저장 로그 발췌 · 검색 반환에서 모델 전달까지](../assets/portfolio-107-search-input-records.png)
 
 ## 05 · Eval Harness — 실행 동작과 근거 사용을 나눠 평가
 
