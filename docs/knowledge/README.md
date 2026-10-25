@@ -8,6 +8,7 @@
 | [근거와 평가의 함정](evidence-and-evaluation.md) | 모델·검색·압축·품질을 구현하거나 설명할 때 |
 | [연구 기록 정책](research-policy.md) | 연구일지·Notion 작성과 기술 설명 전 |
 | [토스 두 공고의 서류 설계 기준](toss-hiring-brief.md) | 두 지원 서류의 목표·사례·표현을 정하기 전 |
+| [포트폴리오 편집·시각 구성·PDF 규칙](portfolio-presentation.md) | 사람이 읽는 본문·그림 전개·Notion 편집과 별도 PDF 제작 전 |
 | [공고1 · 토스 AI Engineer](toss-ai-engineer.md) | 고객 문제·상호작용·에이전트 개선 중심의 인재상 확인 |
 | [공고2 · 토스증권 AI Engineer](toss-securities-ai-engineer.md) | 구조·미들웨어·관측·운영·신뢰 중심의 인재상 확인 |
 
