@@ -20,5 +20,6 @@
 | 발표용 본문 | [여섯 역량 포트폴리오](portfolio/travel-agent-draft.md) |
 | 토스 두 공고에 맞춘 서류 준비 | [서류 설계 기준](knowledge/toss-hiring-brief.md), [공고1](knowledge/toss-ai-engineer.md), [공고2](knowledge/toss-securities-ai-engineer.md) |
 | 공고별 포트폴리오 목차안 | [전개 순서와 파트 제목](portfolio/toss-outlines.md) |
+| 개발 흐름 중심의 시각 구성안 | [구조 다이어그램과 연결 이미지](portfolio/development-visual-structure.md) |
 
 기능 문서 안의 예전 수치와 공급자는 당시 이력일 수 있다. 현재 상태의 원근거와 실제 코드로 확인하고, 충돌하면 최신 사용자 결정과 실제 동작을 기준으로 수정한다. [이전 AGENTS 보존본](knowledge/history/2026-10-25-agents-before-harness.md)은 과거 근거를 찾을 때만 읽는다.
