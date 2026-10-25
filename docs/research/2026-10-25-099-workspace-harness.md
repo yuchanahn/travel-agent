@@ -41,12 +41,14 @@ flowchart TD
 
 전체 로컬 검사는 Python311개·UI JavaScript6종·과거 연구용 JavaScript8개를 통과했다(Node24.22.1). 이는 개발 계약 검사이며 새 여행 추천·브라우저 시연·일반 품질 향상을 뜻하지 않는다. 기존 Notion 허브 아래에099를 만들고 요청 콜아웃·흐름도·실제 검사 코드·검사 결과·기본 접힌 상세/조회 로그2개를 재조회했다. Git 반영은 이번 작업 파일만 대상으로 수행한다.
 
+적용 커밋 `c985eba`를 기존 `origin/main`에 푸시했다. 연구 인덱스는099 항목만 포함하고 기존 사용자 수정·미추적 논문·산출물·임시 파일은 보존했다.
+
 제품 로직·여행 SYSTEM·모델 설정·기존 개인 대화·실행 서버는 변경하지 않았다. 이번 여행 모델 호출과 여행 도구 실행은0회다. 자료 조사를 위한 공개 웹 조회와 Notion 기록은 별개다. 일반 여행 근거0/2와 반복 응답 문제는 해결로 표시하지 않는다. 새 의존성·서비스·상주 자동화·모델 다운로드는 추가하지 않았다.
 
 <details>
 <summary>적용 문서와 검사 상세</summary>
 
-- 기준 제품 커밋: `cc6c513`. 문서 구조 변경의 커밋은 Git 이력에서 확인한다.
+- 기준 제품 커밋: `cc6c513`. 추가 검사 `scripts/verify_workspace.py`의 `check(root)`와 적용 문서의 기준 커밋: `c985eba`.
 - 루트: `AGENTS.md`, `ARCHITECTURE.md`, `README.md`.
 - 탐색·운영: `docs/README.md`, `docs/agent-workflow.md`, `docs/plans/README.md`.
 - 지식: `docs/knowledge/README.md`, `current-state.md`, `evidence-and-evaluation.md`, `research-policy.md`.
