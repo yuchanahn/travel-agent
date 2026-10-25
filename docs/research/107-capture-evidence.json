@@ -1,0 +1,196 @@
+[
+  {
+    "run_id": "845a4b72272d4a5ca2189ebb7695d3a8",
+    "query": "공개 캡처용 시험입니다. 웹 검색 도구를 한 번 사용해 국립춘천박물관 공식 홈페이지를 찾고, 공식 링크 한 개만 한 문장으로 알려줘. 본문 추가 조회나 여행 추천은 하지 마.",
+    "answer": "국립춘천박물관 공식 홈페이지는 **https://chuncheon.museum.go.kr**입니다.",
+    "model_calls": 2,
+    "tool_calls": 1,
+    "tool_log": [
+      {
+        "sequence": 8,
+        "timestamp": "2026-10-25T14:27:22.744132+00:00",
+        "name": "mcp_brave_brave_web_search",
+        "tool_call_id": "call_ypvkvx2w",
+        "arguments": {
+          "query": "국립춘천박물관 공식 홈페이지",
+          "country": "KR",
+          "search_lang": "ko",
+          "ui_lang": "ko-KR",
+          "count": 10
+        },
+        "span": "1.1",
+        "result_sequence": 10,
+        "result_timestamp": "2026-10-25T14:27:24.695376+00:00",
+        "next_model_sequence": 15,
+        "next_model_roles": [
+          "system",
+          "user",
+          "assistant",
+          "tool"
+        ],
+        "packet_fields": [
+          "available_results",
+          "content_kind",
+          "document_catalog",
+          "document_catalog_omitted",
+          "document_collection",
+          "hits",
+          "id",
+          "omitted_results",
+          "page_fetched",
+          "provider",
+          "returned_results",
+          "selection",
+          "truncated",
+          "verified_current",
+          "web_search_performed"
+        ],
+        "result_id": "mcp:7f4be4bee06c5d61",
+        "remote_tool": "brave_web_search",
+        "first_model_hit": {
+          "extra_snippets": [
+            "이 누리집은 대한민국 공식 전자정부 누리집입니다. 관람시간 평일 : 09:00 - 18:00 · 정기 휴관일매주 월요일, 1월 1일, 설 및 추석 당일 · 대체휴관일 *10월 5일(월) 개관 · 실감 영상 · 온라인 전시 · 통합예약 ·",
+            "정보공개 · LOGIN · KOR · ENG · 日本語 · 中國語 · RUS · 본관09:00 ~ 18:00 · 어린이박물관 관람시간9:30-17:30 (입장마감 17시) 아장아장 박물관 첫걸음10:00 ~ 17:00 ·",
+            "사이트맵 누리집 가이드국립춘천박물관"
+          ],
+          "id": "web:3d304d6766e0d244",
+          "relevance_score": 63.902553,
+          "snippet": "이 누리집은 대한민국 공식 전자정부 누리집입니다 · 국립춘천박물관의 각종 관람예약과 이용안내를 확인하실 수 있습니다",
+          "title": "사이트맵 > 누리집 가이드 > 국립춘천박물관",
+          "url": "https://chuncheon.museum.go.kr/kor/sitemap.do;jsessionid=[REDACTED]"
+        },
+        "model_adapter": "brave_search",
+        "is_error": false,
+        "automatic_documents": [
+          {
+            "id": "web:60431bce567be767",
+            "url": "https://cultural-facilities.tistory.com/m/1177",
+            "status": "ready",
+            "http_status": 200,
+            "fetched_at": "2026-10-25T14:27:23.837625+00:00"
+          },
+          {
+            "id": "web:dd939b5944193796",
+            "url": "https://access.visitkorea.or.kr/ms/detail.do?cotId=dd691326-12e6-467d-b6a2-8ce3ae4963f9",
+            "status": "ready",
+            "http_status": 200,
+            "fetched_at": "2026-10-25T14:27:23.750220+00:00"
+          },
+          {
+            "id": "web:3d304d6766e0d244",
+            "url": "https://chuncheon.museum.go.kr/kor/sitemap.do;jsessionid=[REDACTED]",
+            "status": "ready",
+            "http_status": 200,
+            "fetched_at": "2026-10-25T14:27:23.900336+00:00"
+          },
+          {
+            "id": "web:72d1e577440dc53b",
+            "url": "https://cultural-facilities.tistory.com/m/category/%EA%B0%95%EC%9B%90%EB%8F%84",
+            "status": "empty",
+            "http_status": 200,
+            "fetched_at": "2026-10-25T14:27:24.309381+00:00",
+            "error": "No readable page text"
+          },
+          {
+            "id": "web:57d1769c9fecdfcb",
+            "url": "https://cultural-facilities.tistory.com/tag/%EA%B0%95%EC%9B%90%EB%8F%84",
+            "status": "ready",
+            "http_status": 200,
+            "fetched_at": "2026-10-25T14:27:24.390434+00:00"
+          },
+          {
+            "id": "web:151131240c4239e6",
+            "url": "https://cultural-facilities.tistory.com/tag/%EA%B5%AD%EB%A6%BD%EC%B6%98%EC%B2%9C%EB%B0%95%EB%AC%BC%EA%B4%80",
+            "status": "ready",
+            "http_status": 200,
+            "fetched_at": "2026-10-25T14:27:24.172899+00:00"
+          },
+          {
+            "id": "web:7dbf48b80cbb29b7",
+            "url": "https://chuncheon.museum.go.kr/kor/index.do",
+            "status": "ready",
+            "http_status": 200,
+            "fetched_at": "2026-10-25T14:27:24.534365+00:00"
+          },
+          {
+            "id": "web:1cf6239a9fc54ca1",
+            "url": "https://chuncheon.museum.go.kr/child/index.do",
+            "status": "ready",
+            "http_status": 200,
+            "fetched_at": "2026-10-25T14:27:24.569561+00:00"
+          },
+          {
+            "id": "web:69c20ff4ffb2f143",
+            "url": "https://chuncheon.museum.go.kr/prog/yeyakInfo/CHILDMUSEUM/kor/sub01_0204/list.do",
+            "status": "ready",
+            "http_status": 200,
+            "fetched_at": "2026-10-25T14:27:24.695376+00:00"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "run_id": "89a6f9d3723646f6bfe45125578186c5",
+    "query": "공개 캡처용 후속 시험입니다. memory_search 도구를 사용해 이전 사용자 요청에서 본문 추가 조회에 대해 무엇이라고 했는지 찾아줘. 검색된 사용자 원문 한 문장만 인용하고 웹 검색은 하지 마.",
+    "answer": "과거 사용자 요청에서 본문을 추가 조회에 대해 언급한 문장은 다음과 같습니다.\n\n**\"본문 추가 조회나 여행 추천은 하지 마.\"**",
+    "model_calls": 2,
+    "tool_calls": 1,
+    "tool_log": [
+      {
+        "sequence": 8,
+        "timestamp": "2026-10-25T14:31:11.517670+00:00",
+        "name": "memory_search",
+        "tool_call_id": "call_e5wxfgey",
+        "arguments": {
+          "query": "본문 추가 조회",
+          "top_k": 3
+        },
+        "span": "1.1",
+        "result_sequence": 9,
+        "result_timestamp": "2026-10-25T14:31:11.517670+00:00",
+        "next_model_sequence": 14,
+        "next_model_roles": [
+          "system",
+          "user",
+          "assistant",
+          "tool",
+          "assistant",
+          "user",
+          "assistant",
+          "tool"
+        ],
+        "packet_fields": [
+          "historical_only",
+          "hits",
+          "mode",
+          "omitted_hits",
+          "reranker_revision",
+          "web_search_performed"
+        ],
+        "result_first_hit": {
+          "id": "m-36411ed5ae31991efdb5",
+          "text": "[user | 2026-10-25T14:27:20.138060+00:00]\n공개 캡처용 시험입니다. 웹 검색 도구를 한 번 사용해 국립춘천박물관 공식 홈페이지를 찾고, 공식 링크 한 개만 한 문장으로 알려줘. 본문 추가 조회나 여행 추천은 하지 마.",
+          "timestamp": "2026-10-25T14:27:20.138060+00:00",
+          "events": [
+            {
+              "event_id": "u-845a4b72272d4a5ca2189ebb7695d3a8",
+              "role": "user",
+              "source_url": null,
+              "timestamp": "2026-10-25T14:27:20.138060+00:00"
+            }
+          ],
+          "scores": {
+            "bm25": 11.536264862464417,
+            "dense": null,
+            "rrf": 0.01639344262295082,
+            "reranker": null
+          }
+        },
+        "model_adapter": null,
+        "is_error": false,
+        "automatic_documents": []
+      }
+    ]
+  }
+]
