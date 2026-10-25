@@ -4,6 +4,8 @@ $taskRoot = Split-Path -Parent $PSScriptRoot
 $taskPreviousMcp = $env:MCP_CONFIG_FILE
 Push-Location $taskRoot
 try {
+    & '.\.venv\Scripts\python.exe' scripts/verify_workspace.py
+    if ($LASTEXITCODE -ne 0) { throw 'Workspace documentation checks failed.' }
     if (-not $NodePath) {
         $taskBundledNode = Join-Path $env:USERPROFILE '.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe'
         $NodePath = if (Test-Path -LiteralPath $taskBundledNode) { $taskBundledNode } else { (Get-Command node -ErrorAction Stop).Source }
